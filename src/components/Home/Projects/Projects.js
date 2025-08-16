@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import banner1 from '../../../images/projects/1.jpg'
 import banner2 from '../../../images/projects/2.jpg'
 import banner3 from '../../../images/projects/3.jpg'
@@ -9,20 +10,25 @@ import './Projects.css';
 
 function Projects() {
     return (
-        <div id="rs-portfolio" class=" bg42 pb-5 mb-3">
-            <div class="" style={{ width: '90%', margin: 'auto' }}>
-                <div class="sec-title4 text-center p-5">
-                    <span class="sub-title white-color pb-15">Projects</span>
-                    <h2 class="title white-color">Recent Portfolios</h2>
+        <section id="rs-portfolio" className="bg42 pb-5 mb-3" aria-label="Recent Portfolios - Web & App Projects Kano">
+            <Helmet>
+                <title>Portfolio | Web, App & Software Projects Kano Nigeria</title>
+                <meta name="description" content="View our recent web design, app development, and software projects in Kano, Nigeria. Portfolio of websites, mobile apps, and eCommerce solutions." />
+                <meta name="keywords" content="portfolio web design Kano, app development projects Nigeria, software projects Kano" />
+            </Helmet>
+            <div className="" style={{ width: '90%', margin: 'auto' }}>
+                <div className="sec-title4 text-center p-5">
+                    <span className="sub-title white-color pb-15">Projects</span>
+                    <h2 className="title white-color">Recent Portfolios: Web, App & Software Development in Kano, Nigeria</h2>
                 </div>
-                <div class="slider-part">
-                    <div class="row">
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner1} className="images" alt="" />
-                                <div class="content-part">
+                <div className="slider-part">
+                    <div className="row">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner1} className="images" alt="Web Design Project Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -30,12 +36,12 @@ function Projects() {
 
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner2} className="images" alt="" />
-                                <div class="content-part">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner2} className="images" alt="Mobile App Development Project Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -43,12 +49,12 @@ function Projects() {
 
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner3} className="images" alt="" />
-                                <div class="content-part">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner3} className="images" alt="E-commerce Website Development Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -56,12 +62,12 @@ function Projects() {
 
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner4} className="images" alt="" />
-                                <div class="content-part">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner4} className="images" alt="Portfolio Website Design Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -69,12 +75,12 @@ function Projects() {
 
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner5} className="images" alt="" />
-                                <div class="content-part">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner5} className="images" alt="Blog Website Development Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -82,12 +88,12 @@ function Projects() {
 
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
-                            <div class="img-part">
-                                <img src={banner6} className="images" alt="" />
-                                <div class="content-part">
+                        <div className="col-lg-4 col-md-6 col-sm-12 portfolio-wrap">
+                            <div className="img-part">
+                                <img src={banner6} className="images" alt="Landing Page Design Kano" />
+                                <div className="content-part">
                                     <div className="text">
-                                        <i class="fa fa-link" style={{ fontSize: '30px' }}></i>
+                                        <i className="fa fa-link" style={{ fontSize: '30px' }}></i>
                                         <h4 className="text-white">VIEW WEBSITE</h4>
                                     </div>
 
@@ -99,13 +105,13 @@ function Projects() {
                     </div>
                 </div>
 
-                <div class="btn-part">
-                    <div class="form-group">
-                        <button className="readon2 submit-btn con-btn">View More</button>
+                <div className="btn-part">
+                    <div className="form-group">
+                        <button className="readon2 submit-btn con-btn" aria-label="View More Web & App Projects">View More</button>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     )
 }
 

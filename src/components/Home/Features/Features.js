@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import Feature from './Feature';
 import './Features.css';
 import icon2 from '../../../images/whychooseus/icon/ecommerce.png'
@@ -35,21 +36,32 @@ const featureData = [
 
 function Features() {
     return (
-        <div className="features-container   m-auto">
+        <section className="features-container m-auto" aria-label="Why Choose Us - Features">
+            <Helmet>
+                <title>Features | Web Design & Software Development Kano Nigeria</title>
+                <meta name="description" content="Discover features of our web design, app development, and software solutions in Kano, Nigeria. Responsive design, page speed, eCommerce, flexible CMS." />
+                <meta name="keywords" content="responsive design, page speed, eCommerce, flexible CMS, web development Kano, app development Nigeria" />
+            </Helmet>
             <div className="text-center pt-5">
-                <h4 style={{fontWeight:'300', marginBottom:'10px'}}>WHY CHOOSE US</h4>
-                <h2 style={{fontSize:'45px'}}>FEATURES</h2>
+                <h2 style={{fontWeight:'300', marginBottom:'10px'}}>Why Choose Us: Web Design & Software Development Features</h2>
+                <h3 style={{fontSize:'45px'}}>Features for Web, App & Software Development in Kano, Nigeria</h3>
             </div>
-            <div className="row  m-auto">
+            <div className="row m-auto">
                 {
-                    featureData.map(data =><Feature data={data} key={featureData.id}></Feature>)
+                    featureData.map(data =>
+                        <Feature
+                            data={{...data, alt: `${data.title} - ${data.description}`}}
+                            key={data.id}
+                        />
+                    )
                 }
             </div>
-
             <div className="text-center mt-5">
-                <p style={{fontWeight:'600'}}>Increase your business success with technology. <a href="">Let’s get started</a></p>
+                <p style={{fontWeight:'600'}}>
+                    Increase your business success with technology. <a href="" aria-label="Get started with web and app development in Kano, Nigeria">Let’s get started</a>
+                </p>
             </div>
-        </div>
+        </section>
     )
 }
 

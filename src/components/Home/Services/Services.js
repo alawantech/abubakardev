@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import './Services.css';
 import icon1 from '../../../images/services/icon/service-shape.png';
 import icon2 from '../../../images/services/icon/blue-flexible-cms.png';
@@ -35,18 +36,27 @@ const servicesData =[
 
 function Services() {
     return (
-        <div className="service-container">
+        <section className="service-container" aria-label="Our Services - Web, App & Software Development">
+            <Helmet>
+                <title>Services | Web, App & Software Development Kano Nigeria</title>
+                <meta name="description" content="Explore our web design, app development, and software services in Kano, Nigeria. Dynamic websites, web applications, SEO, eCommerce solutions." />
+                <meta name="keywords" content="web design services, app development, software development, SEO, eCommerce Kano Nigeria" />
+            </Helmet>
             <div className="text-center pt-5 w-50 m-auto">
-                <h4 style={{fontWeight:'300', marginBottom:'10px'}}>SERVICES THAT WE PROVIDE DEDICATEDLY</h4>
-                <h2 style={{fontSize:''}}>OUR SERVICES</h2>
+                <h2 style={{fontWeight:'300', marginBottom:'10px'}}>Services That We Provide Dedicatedly in Kano, Nigeria</h2>
+                <h3 style={{fontSize:'32px'}}>Our Web, App & Software Development Services</h3>
             </div>
-
             <div className="row service">
                 {
-                    servicesData.map(data =><Service data={data} key={data.id}></Service>)
+                    servicesData.map(data =>
+                        <Service
+                            data={{...data, alt: `${data.name} - ${data.description}`}}
+                            key={data.id}
+                        />
+                    )
                 }
             </div>
-        </div>
+        </section>
     )
 }
 
