@@ -48,21 +48,23 @@ function Footer() {
                                     <div className="desc">374 William S Canning Blvd, Fall River MA 2721, USA</div>
                                 </li>
                                 <li>
-                                    <i className="flaticon-call"></i>
-                                    <div className="desc">
-                                        <a href="tel:+8801739753105">(+880)173-9753105</a>
-                                    </div>
-                                </li>
-                                <li>
                                     <i className="flaticon-email"></i>
                                     <div className="desc">
-                                        <a href="mailto:support@rstheme.com">support@rstheme.com</a>
+                                        <a href="mailto:info@abubakardev.dev">info@abubakardev.dev</a>
                                     </div>
                                 </li>
                                 <li>
                                     <i className="flaticon-clock"></i>
                                     <div className="desc">
-                                        10:00 - 17:00
+                                  
+                                    </div>
+                                </li>
+                                <li>
+                                    <div className="desc" style={{display: 'flex', alignItems: 'center'}}>
+                                        <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi%20AbubakarDev.%20I%20need%20information%20about%20your%20services." style={{color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                                            <i className="fa fa-whatsapp" style={{marginRight: '2px', fontSize: '18px'}}></i>
+                                            Contact us on WhatsApp
+                                        </a>
                                     </div>
                                 </li>
                             </ul>
@@ -114,7 +116,7 @@ function Footer() {
                     <div className="row y-middle">
                         <div className="col-lg-6 col-md-8 sm-mb-21">
                             <div className="copyright">
-                                <p>© Copyright 2021 Reobiz. All Rights Reserved.</p>
+                                <p>© Copyright 2025 AbubakarDev. All Rights Reserved.</p>
                             </div>
                         </div>
                         <div className="col-lg-6 col-md-4 text-right sm-text-center">

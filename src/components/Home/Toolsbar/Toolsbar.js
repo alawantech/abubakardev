@@ -7,13 +7,20 @@ function Toolsbar() {
             <div class="row inner-tools-area" >
                 <div className="col-md-2 toolsbar">
                     <ul className="text-left" style={{textAlign:'center'}}>
-                        <li><a href="mailto:info@yourwebsite.com">support@rstheme.com</a></li>
+                        <li><a href="mailto:info@abubakardev.dev">info@abubakardev.dev</a></li>
                     </ul>
                 </div>
                 <div className="col-md-8 toolsbar" style={{borderLeft:'1px solid grey', borderRight:'1px solid grey'}}>
                     <ul className="d-flex justify-content-between">
-                        <li><i class="fa fa-phone"></i><a href="tel:+123456789">(+123) 456789</a></li>
-                        <li class="opening"> <i class="fa fa-clock-o"></i> Mon - Fri: 9:00 am - 06.00pm / Closed on Weekends</li>
+                        <li>
+                            <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi%20AbubakarDev.%20I%20need%20information%20about%20your%20services." style={{color: 'white', textDecoration: 'none'}}>
+                                <i class="fa fa-whatsapp" style={{marginRight: '5px'}}></i>
+                                Contact us on WhatsApp
+                            </a>
+                        </li>
+                        <li class="opening">
+                            <span style={{color: 'white'}}>We respond quickly to all WhatsApp messages!</span>
+                        </li>
                     </ul>
                 </div>
                 <div className="col-md-2 toolsbar">

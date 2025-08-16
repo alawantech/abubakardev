@@ -61,13 +61,20 @@ function Contact() {
                                     </div>
                                     <div class="address-box mb-4 " >
                                         <div class="box-icon">
-                                            <i class="fa fa-phone"></i>
+                                            <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi%20AbubakarDev.%20I%20need%20information%20about%20your%20services." style={{color: 'white'}}>
+                                                <i class="fa fa-whatsapp"></i>
+                                            </a>
                                         </div>
                                         <div class="address-text">
-                                            <span class="label">Telephone</span>
+                                            <span class="label">
+                                                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi%20AbubakarDev.%20I%20need%20information%20about%20your%20services." style={{color: 'white', textDecoration: 'none'}}>
+                                                    WhatsApp
+                                                </a>
+                                            </span>
                                             <p class="desc">
-                                                <a href="1235558888">p: (+123) 555 8888</a><br/>
-                                                <a href="1235558899">p: (+123) 555 8899</a>
+                                                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi%20AbubakarDev.%20I%20need%20information%20about%20your%20services." style={{color: 'white', textDecoration: 'none'}}>
+                                                    Contact us on WhatsApp
+                                                </a>
                                             </p>
                                         </div>
                                     </div>
@@ -78,8 +85,8 @@ function Contact() {
                                         <div class="address-text">
                                             <span class="label">Mail Us</span>
                                             <p class="desc">
-                                                <a href="#">E: support@rstheme.com</a><br/>
-                                                <a href="#">E: info@codesless.com</a>
+                                                <a href="#"> contact@abubakardev.dev</a><br/>
+                                                <a href="#"> info@abubakardev.dev</a>
                                             </p>
                                         </div>
                                     </div>
