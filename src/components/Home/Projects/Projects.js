@@ -1,5 +1,4 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import banner1 from '../../../images/projects/1.jpg'
 import banner2 from '../../../images/projects/2.jpg'
 import banner3 from '../../../images/projects/3.jpg'
@@ -11,15 +10,10 @@ import './Projects.css';
 function Projects() {
     return (
         <section id="rs-portfolio" className="bg42 pb-5 mb-3" aria-label="Recent Portfolios - Web & App Projects Kano">
-            <Helmet>
-                <title>Portfolio | Web, App & Software Projects Kano Nigeria</title>
-                <meta name="description" content="View our recent web design, app development, and software projects in Kano, Nigeria. Portfolio of websites, mobile apps, and eCommerce solutions." />
-                <meta name="keywords" content="portfolio web design Kano, app development projects Nigeria, software projects Kano" />
-            </Helmet>
             <div className="" style={{ width: '90%', margin: 'auto' }}>
                 <div className="sec-title4 text-center p-5">
                     <span className="sub-title white-color pb-15">Projects</span>
-                    <h2 className="title white-color">Recent Portfolios: Web, App & Software Development in Kano, Nigeria</h2>
+                    <h2 className="title white-color">Recent Portfolios</h2>
                 </div>
                 <div className="slider-part">
                     <div className="row">
@@ -116,3 +110,4 @@ function Projects() {
 }
 
 export default Projects
+         

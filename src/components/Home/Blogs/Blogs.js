@@ -1,5 +1,4 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import blog1 from '../../../images/blog/style7/6.jpg'
 import blog2 from '../../../images/blog/style7/2.jpg'
 import blog3 from '../../../images/blog/style7/3.jpg'
@@ -7,17 +6,12 @@ import blog3 from '../../../images/blog/style7/3.jpg'
 function Blogs() {
     return (
         <section id="rs-blog" className="rs-blog style4 pt-100 pb-100 md-pt-70 md-pb-70" aria-label="Latest News - Web & App Development Kano">
-            <Helmet>
-                <title>Blog | Web, App & Software Development News Kano Nigeria</title>
-                <meta name="description" content="Read the latest news and updates on web design, app development, and software solutions in Kano, Nigeria." />
-                <meta name="keywords" content="blog web development Kano, app development news Nigeria, software updates Kano" />
-            </Helmet>
             <div style={{width: '90%', margin: 'auto'}}>
                 <div className="y-middle d-flex">
                     <div className="col-md-6 sm-mb-20">
                         <div className="sec-title">
                             <span className="sub-title primary right-line">Latest News</span>
-                            <h2 className="title mb-0">Read Latest Updates on Web, App & Software Development in Kano, Nigeria</h2>
+                            <h2 className="title mb-0">Read Latest Updates</h2>
                         </div>
                     </div>
                     <div className="col-md-6">

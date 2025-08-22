@@ -1,5 +1,4 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import Feature from './Feature';
 import './Features.css';
 import icon2 from '../../../images/whychooseus/icon/ecommerce.png'
@@ -37,14 +36,8 @@ const featureData = [
 function Features() {
     return (
         <section className="features-container m-auto" aria-label="Why Choose Us - Features">
-            <Helmet>
-                <title>Features | Web Design & Software Development Kano Nigeria</title>
-                <meta name="description" content="Discover features of our web design, app development, and software solutions in Kano, Nigeria. Responsive design, page speed, eCommerce, flexible CMS." />
-                <meta name="keywords" content="responsive design, page speed, eCommerce, flexible CMS, web development Kano, app development Nigeria" />
-            </Helmet>
             <div className="text-center pt-5">
-                <h2 style={{fontWeight:'300', marginBottom:'10px'}}>Why Choose Us: Web Design & Software Development Features</h2>
-                <h3 style={{fontSize:'45px'}}>Features for Web, App & Software Development in Kano, Nigeria</h3>
+                <h2 style={{fontWeight:'300', marginBottom:'10px'}}>Why Choose Us</h2>
             </div>
             <div className="row m-auto">
                 {
@@ -66,3 +59,4 @@ function Features() {
 }
 
 export default Features
+           

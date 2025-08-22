@@ -1,5 +1,4 @@
 import React from 'react'
-import { Helmet } from 'react-helmet'
 import logo from '../../../images/logo.png'
 import sm1 from '../../../images/blog/small/1.jpg'
 import sm2 from '../../../images/blog/small/2.jpg'
@@ -8,11 +7,6 @@ import sm3 from '../../../images/blog/small/3.jpg'
 function Footer() {
     return (
         <footer id="rs-footer" className="rs-footer style4" aria-label="Footer - AbubakarDev Web & App Development Kano">
-            <Helmet>
-                <title>Contact & Info | AbubakarDev Web & App Development Kano Nigeria</title>
-                <meta name="description" content="Contact AbubakarDev for web design, app development, and software solutions in Kano, Nigeria. Find our latest posts and company info." />
-                <meta name="keywords" content="contact web development Kano, app development Nigeria, software company info" />
-            </Helmet>
             <div style={{width: '90%', margin: 'auto'}}>
                 <div className="footer-newsletter">
                     <div className="row y-middle">
@@ -135,3 +129,4 @@ function Footer() {
 }
 
 export default Footer
+      
