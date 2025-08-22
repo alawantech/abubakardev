@@ -39,9 +39,9 @@ function Home() {
             </header>
             <main>
                 <h1 style={{display:'none'}}>AbubakarDev | Web Design, Software & App Development in Kano, Nigeria</h1>
-                <Features />
-                <About />
                 <Services />
+                <About />
+                <Features />
                 <Projects />
                 <ProjectSummary />
                 <SkillSet />
