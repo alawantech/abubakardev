@@ -84,6 +84,11 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    padding: 0.8rem 0;
+    min-height: 60px; /* Ensure header has minimum height */
+  }
+
   .nav {
     position: absolute;
     top: 100%;

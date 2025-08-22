@@ -157,12 +157,15 @@
   .hero-title {
     font-size: 3rem;
   }
+  .hero {
+    padding-top: 70px; /* Add padding for tablet */
+  }
 }
 
 @media (max-width: 768px) {
   .hero {
     min-height: 90vh;
-    padding-top: 100px;
+    padding-top: 80px; /* Increase padding for mobile header */
   }
   
   .hero-content {
@@ -207,5 +210,8 @@
   .btn-primary, .btn-secondary {
     width: 100%;
     text-align: center;
+  }
+  .hero {
+    padding-top: 90px; /* Extra padding for small screens */
   }
 }
