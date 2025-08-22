@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { motion } from 'framer-motion'
+import { useInView } from 'react-intersection-observer'
 import './Contact.css'
 
 const Contact = () => {
@@ -54,50 +56,101 @@ const Contact = () => {
     }
   ]
 
+
+  // Animation variants
+  const fadeUp = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+  const fadeLeft = {
+    hidden: { opacity: 0, x: -40 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+  const fadeRight = {
+    hidden: { opacity: 0, x: 40 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+
+  // Intersection Observer for scroll animation
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.2 })
+
   return (
     <section id="contact" className="contact section">
       <div className="container">
-        <h2 className="section-title">Get In Touch</h2>
-        <p className="section-subtitle">
+        <motion.h2
+          className="section-title"
+          ref={ref}
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeUp}
+          whileHover={{ scale: 1.04 }}
+        >
+          Get In Touch
+        </motion.h2>
+        <motion.p
+          className="section-subtitle"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeLeft}
+        >
           Ready to start your next project? Let's discuss how we can help bring your ideas to life.
-        </p>
-        
-        <div className="contact-content">
-          <div className="contact-info">
+        </motion.p>
+
+        <motion.div
+          className="contact-content"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeUp}
+        >
+          <motion.div
+            className="contact-info"
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            variants={fadeLeft}
+          >
             <h3 className="contact-info-title">Let's Talk</h3>
             <p className="contact-info-description">
               We'd love to hear about your project and discuss how we can help. 
               Get in touch with us today and let's start building something amazing together.
             </p>
-            
+
             <div className="contact-methods">
               {contactInfo.map((info, index) => (
-                <a 
+                <motion.a
                   key={index}
                   href={info.link}
                   className="contact-method"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.15, duration: 0.6 }}
+                  whileHover={{ scale: 1.08, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
                 >
                   <div className="contact-method-icon">{info.icon}</div>
                   <div className="contact-method-content">
                     <h4 className="contact-method-title">{info.title}</h4>
                     <p className="contact-method-value">{info.value}</p>
                   </div>
-                </a>
+                </motion.a>
               ))}
             </div>
-            
+
             <div className="contact-hours">
               <h4>Business Hours</h4>
               <p>Monday - Friday: 9:00 AM - 6:00 PM PST</p>
               <p>Weekend: Emergency support available</p>
             </div>
-          </div>
-          
-          <div className="contact-form-container">
+          </motion.div>
+
+          <motion.div
+            className="contact-form-container"
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            variants={fadeRight}
+          >
             <form onSubmit={handleSubmit} className="contact-form">
               <div className="form-group">
                 <label htmlFor="name">Full Name</label>
-                <input
+                <motion.input
                   type="text"
                   id="name"
                   name="name"
@@ -105,12 +158,13 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   placeholder="Your full name"
+                  whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
-                <input
+                <motion.input
                   type="email"
                   id="email"
                   name="email"
@@ -118,12 +172,13 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   placeholder="your.email@example.com"
+                  whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="message">Project Details</label>
-                <textarea
+                <motion.textarea
                   id="message"
                   name="message"
                   value={formData.message}
@@ -131,25 +186,28 @@ const Contact = () => {
                   required
                   rows="5"
                   placeholder="Tell us about your project, timeline, and requirements..."
-                ></textarea>
+                  whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                ></motion.textarea>
               </div>
-              
-              <button
+
+              <motion.button
                 type="submit"
                 className="submit-btn"
                 disabled={isSubmitting}
+                whileHover={{ scale: 1.08, backgroundColor: '#0ea5e9', color: '#fff' }}
+                whileTap={{ scale: 0.96 }}
               >
                 {isSubmitting ? 'Sending...' : 'Send Message'}
-              </button>
-              
+              </motion.button>
+
               {submitStatus === 'success' && (
-                <div className="success-message">
+                <motion.div className="success-message" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   ✅ Thank you! Your message has been sent successfully. We'll get back to you soon.
-                </div>
+                </motion.div>
               )}
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   )

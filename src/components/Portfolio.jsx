@@ -1,4 +1,6 @@
 import React from 'react'
+import { motion } from 'framer-motion'
+import { useInView } from 'react-intersection-observer'
 import './Portfolio.css'
 
 const Portfolio = () => {
@@ -47,42 +49,92 @@ const Portfolio = () => {
     }
   ]
 
+
+  // Animation variants
+  const fadeUp = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+  const fadeLeft = {
+    hidden: { opacity: 0, x: -40 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+  const fadeRight = {
+    hidden: { opacity: 0, x: 40 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  }
+
+  // Intersection Observer for scroll animation
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.2 })
+
   return (
     <section id="portfolio" className="portfolio section">
       <div className="container">
-        <h2 className="section-title">Our Portfolio</h2>
-        <p className="section-subtitle">
+        <motion.h2
+          className="section-title"
+          ref={ref}
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeUp}
+          whileHover={{ scale: 1.04 }}
+        >
+          Our Portfolio
+        </motion.h2>
+        <motion.p
+          className="section-subtitle"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeLeft}
+        >
           Take a look at some of our recent projects and see how we've helped businesses achieve their goals
-        </p>
-        
-        <div className="portfolio-grid">
+        </motion.p>
+
+        <motion.div
+          className="portfolio-grid"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          variants={fadeUp}
+        >
           {projects.map((project, index) => (
-            <div key={index} className="portfolio-card">
-              <div className="portfolio-image">
+            <motion.div
+              key={index}
+              className="portfolio-card"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + index * 0.2, duration: 0.7 }}
+              whileHover={{ scale: 1.04, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
+            >
+              <motion.div className="portfolio-image" whileHover={{ scale: 1.03, rotate: 2 }}>
                 <img src={project.image} alt={project.title} />
-                <div className="portfolio-overlay">
+                <motion.div className="portfolio-overlay" initial={{ opacity: 0 }} whileHover={{ opacity: 1 }}>
                   <div className="portfolio-category">{project.category}</div>
-                </div>
-              </div>
-              
+                </motion.div>
+              </motion.div>
+
               <div className="portfolio-content">
                 <h3 className="portfolio-title">{project.title}</h3>
                 <p className="portfolio-description">{project.description}</p>
-                
+
                 <div className="portfolio-tech">
                   {project.tech.map((tech, idx) => (
-                    <span key={idx} className="tech-tag">{tech}</span>
+                    <motion.span key={idx} className="tech-tag" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + idx * 0.1 }}>
+                      {tech}
+                    </motion.span>
                   ))}
                 </div>
-                
+
                 <div className="portfolio-actions">
-                  <button className="portfolio-btn">View Project</button>
-                  <button className="portfolio-btn-secondary">Live Demo</button>
+                  <motion.button className="portfolio-btn" whileHover={{ scale: 1.08, backgroundColor: '#0ea5e9', color: '#fff' }} whileTap={{ scale: 0.96 }}>
+                    View Project
+                  </motion.button>
+                  <motion.button className="portfolio-btn-secondary" whileHover={{ scale: 1.08, backgroundColor: '#0ea5e9', color: '#fff' }} whileTap={{ scale: 0.96 }}>
+                    Live Demo
+                  </motion.button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )
