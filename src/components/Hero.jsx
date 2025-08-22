@@ -49,7 +49,7 @@ const Hero = () => {
             variants={fadeLeft}
           >
             <motion.h1 className="hero-title" whileHover={{ scale: 1.04 }}>
-              We Build Websites, Mobile Apps, and Custom Software for Businesses
+              <span className="hero-title-white">We Build Websites, Mobile Apps, and </span><span className="hero-title-gradient">Custom Software for Businesses</span>
             </motion.h1>
             <motion.p className="hero-description" variants={fadeUp}>
               Transform your business with cutting-edge technology solutions. 
