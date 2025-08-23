@@ -41,7 +41,7 @@ const Courses = () => {
           ></iframe>
         </div>
         <div className="register-btn-wrapper">
-          <a href="#register" className="register-btn">Register Now</a>
+          <a href="https://flutterwave.com/pay/wcov3b9vexq9" className="register-btn">Register Now</a>
         </div>
       </div>
 
@@ -74,7 +74,7 @@ const Courses = () => {
             <span role="img" aria-label="award">🏅</span> <strong>Certificate of Completion:</strong> Showcase your expertise and boost your career prospects.
           </div>
           <div className="register-btn-wrapper">
-            <a href="#register" className="register-btn">Register Now</a>
+            <a href="https://flutterwave.com/pay/wcov3b9vexq9" className="register-btn">Register Now</a>
           </div>
         </div>
       </div>
