@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import CountUp from 'react-countup'
 import './About.css'
 
 const About = () => {
@@ -128,7 +129,11 @@ const About = () => {
               transition={{ delay: 0.2 + index * 0.15, duration: 0.6 }}
               whileHover={{ scale: 1.08, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
             >
-              <span className="stat-number">{stat.number}</span>
+              <span className="stat-number">
+                {stat.number === "24/7"
+                  ? "24/7"
+                  : <CountUp end={parseInt(stat.number)} duration={2} suffix="+" start={inView ? 0 : undefined} />}
+              </span>
               <span className="stat-label">{stat.label}</span>
             </motion.div>
           ))}

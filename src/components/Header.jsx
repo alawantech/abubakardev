@@ -26,7 +26,9 @@ const Header = () => {
       <div className="container">
         <div className="header-content">
           <div className="logo">
-            <span>AbubakarDev</span>
+            <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }}>
+              <img src="/src/assets/images/logo2.png" alt="AbubakarDev Logo" style={{height: '40px'}} />
+            </a>
           </div>
           
           <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''}`}>

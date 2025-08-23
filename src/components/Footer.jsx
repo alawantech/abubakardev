@@ -51,7 +51,9 @@ const Footer = () => {
         <div className="footer-content">
           <div className="footer-section footer-about">
             <div className="footer-logo">
-              <span>AbubakarDev</span>
+              <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }}>
+                <img src="/src/assets/images/logo2.png" alt="AbubakarDev Logo" style={{height: '32px'}} />
+              </a>
             </div>
             <p className="footer-description">
               We build websites, mobile apps, and custom software solutions that help businesses grow and succeed in the digital world.

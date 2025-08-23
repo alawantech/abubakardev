@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import './Contact.css'
+import whatsappIcon from '../assets/images/whatsapp.png';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -38,21 +39,15 @@ const Contact = () => {
   const contactInfo = [
     {
       title: "Email Us",
-      value: "hello@abubakardev.com",
+      value: "info@abubakardev.dev",
       icon: "📧",
-      link: "mailto:hello@abubakardev.com"
+      link: "mailto:info@abubakardev.dev"
     },
     {
-      title: "Call Us",
-      value: "+1 (555) 123-4567",
-      icon: "📞",
-      link: "tel:+15551234567"
-    },
-    {
-      title: "Visit Us",
-      value: "123 Tech Street, Silicon Valley, CA",
-      icon: "📍",
-      link: "#"
+      title: "Chat Us",
+      value: "Message us on Watsapp",
+    icon: <img src={whatsappIcon} alt="WhatsApp" style={{width: '1.5em', verticalAlign: 'middle'}} />,
+      link: "https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services."
     }
   ]
 
@@ -136,8 +131,7 @@ const Contact = () => {
 
             <div className="contact-hours">
               <h4>Business Hours</h4>
-              <p>Monday - Friday: 9:00 AM - 6:00 PM PST</p>
-              <p>Weekend: Emergency support available</p>
+              <p>We are working 24/7. We reply to WhatsApp messages any time.</p>
             </div>
           </motion.div>
 
