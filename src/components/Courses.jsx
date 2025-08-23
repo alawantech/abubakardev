@@ -5,20 +5,35 @@ import './Courses.css';
 const Courses = () => {
   return (
     <div className="courses-page">
+      <div className="courses-page-title-wrapper animate-fade-in">
+        
+        <h1 className="courses-page-title animate-slide-up">Software Development (Web &amp; App Dev) Course</h1>
+      </div>
       <div className="video-section">
-        <h2 className="video-title highlight">Unlock Your Future in Tech!</h2>
-        <p className="video-desc highlight">
-          <span className="attention">&#9888; Important:</span> <br />
-          <strong>Before registering, you <span style={{color:'#ed8936'}}>must watch</span> this video!</strong><br />
-          It contains everything you need to know about our Software Development course, including benefits, curriculum, and outcomes. <br />
-          <span className="watch-now">Don't miss out—click and watch now!</span>
-        </p>
+        <div className="video-intro animate-fade-in">
+          <h2 className="video-title animate-slide-up">Unlock Your Future in Tech!</h2>
+          <div className="video-alert animate-pop">
+            <span className="video-icon">⚠️</span>
+            <span className="video-alert-text">Important:</span>
+          </div>
+          <div className="video-message animate-fade-in">
+            <strong>Before registering, you <span className="video-highlight">must watch this video!</span></strong>
+          </div>
+          <div className="video-details animate-slide-up">
+            <span className="video-icon" role="img" aria-label="info">💡</span> It contains everything you need to know about our <span className="video-course-name">Software Development course</span>, including <span className="video-benefits">benefits, curriculum, and outcomes</span>.
+          </div>
+          <div className="video-cta animate-pop">
+            <span className="video-cta-text">Don't miss out—</span>
+            <span className="video-cta-action">click and watch now!</span>
+            <span className="video-icon" role="img" aria-label="play">▶️</span>
+          </div>
+        </div>
         <div className="video-wrapper">
           <iframe
             width="100%"
             height="315"
-            src="https://www.youtube.com/embed/1hHMwLxN6EM"
-            title="Why Learn Software Development?"
+            src="https://www.youtube.com/embed/y3o7Tz8-PCU"
+            title="Course Overview & Details"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
