@@ -2,6 +2,14 @@
   padding: 2.5rem 1rem;
   background: #f9f9f9;
   min-height: 100vh;
+  margin-top: 6rem; /* Space for header separation */
+}
+
+@media (max-width: 768px) {
+  .pricing-page {
+    margin-top: 4.5rem;
+    padding: 1.5rem 0.5rem;
+  }
 }
 .pricing-title {
   text-align: center;

@@ -200,7 +200,15 @@
   padding: 2rem;
   min-height: 60vh;
   background: #f9f9f9;
+  margin-top: 6rem; /* Increased for header separation */
 }
+
+@media (max-width: 768px) {
+  .courses-page {
+    margin-top: 5rem; /* Increased for mobile header separation */
+  }
+}
+/* Removed stray closing bracket above */
 
 .video-section {
   background: #fff;
@@ -220,10 +228,7 @@
   color: #333;
   margin-bottom: 1.5rem;
 }
-.video-wrapper {
-  max-width: 600px;
-  margin: 0 auto 1.5rem auto;
-}
+/* Removed duplicate .video-wrapper definition */
 .register-btn-wrapper {
   margin: 1.5rem 0;
 }
