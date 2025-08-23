@@ -7,20 +7,35 @@ const Services = () => {
   const services = [
     {
       title: "Web Development",
-      description: "Custom websites built with modern technologies like React, Node.js, and responsive design principles. We create fast, secure, and user-friendly websites that drive business growth.",
-      features: ["Responsive Design", "SEO Optimized", "Fast Performance", "Modern UI/UX"],
+      description: "Grow your business with a stunning, high-converting website. We build fast, secure, and mobile-friendly sites that attract customers and turn visitors into loyal clients.",
+      features: [
+        "Increase your online sales & leads",
+        "100% mobile responsive for all devices",
+        "SEO-optimized to rank on Google",
+        "Modern, professional design that builds trust"
+      ],
       icon: "🌐"
     },
     {
       title: "Mobile App Development",
-      description: "Cross-platform mobile applications using React Native. Build once, deploy everywhere. We create intuitive mobile experiences that engage your users.",
-      features: ["Cross-Platform", "Native Performance", "Push Notifications", "App Store Ready"],
+      description: "Engage your audience anywhere with a custom mobile app. We deliver smooth, intuitive apps that keep users coming back and help you stand out in the app stores.",
+      features: [
+        "Reach customers on Android & iOS",
+        "Push notifications to boost engagement",
+        "Easy-to-use interface for happy users",
+        "App store launch & support"
+      ],
       icon: "📱"
     },
     {
       title: "Custom Software Solutions",
-      description: "Tailored software solutions for your unique business needs. From automation tools to complex enterprise systems, we build software that scales with your business.",
-      features: ["Scalable Architecture", "Integration Ready", "Cloud Deployment", "24/7 Support"],
+      description: "Streamline your business and save time with software built just for you. Automate tasks, manage data, and scale your operations with powerful, easy-to-use tools.",
+      features: [
+        "Automate repetitive tasks & save money",
+        "Integrate with your existing systems",
+        "Cloud-based for access anywhere",
+        "Ongoing support & updates"
+      ],
       icon: "⚙️"
     }
   ]
@@ -62,7 +77,7 @@ const Services = () => {
           animate={inView ? "visible" : "hidden"}
           variants={fadeLeft}
         >
-          We offer comprehensive software development services to help your business succeed in the digital world
+          Our solutions are designed to help you attract more customers, boost your revenue, and make your business run smoother—so you can focus on what matters most.
         </motion.p>
 
         <motion.div
