@@ -1,5 +1,6 @@
 import React from 'react'
 import './Footer.css'
+import whatsappIcon from '../assets/images/whatsapp.png';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
@@ -112,16 +113,20 @@ const Footer = () => {
             <h3 className="footer-title">Contact Info</h3>
             <div className="contact-info">
               <div className="contact-item">
-                <span className="contact-icon">📧</span>
-                <a href="mailto:hello@abubakardev.com">hello@abubakardev.com</a>
+                <a href="mailto:info@abubakardev.dev" className="contact-icon" style={{display: 'inline-block'}}>
+                  <span role="img" aria-label="Email">📧</span>
+                </a>
+                <a href="mailto:info@abubakardev.dev">info@abubakardev.dev</a>
               </div>
               <div className="contact-item">
-                <span className="contact-icon">📞</span>
-                <a href="tel:+15551234567">+1 (555) 123-4567</a>
+                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services." target="_blank" rel="noopener noreferrer" className="contact-icon" style={{display: 'inline-block'}}>
+                  <img src={whatsappIcon} alt="WhatsApp" style={{width: '1.5em', verticalAlign: 'middle', filter: 'brightness(0) invert(1)'}} />
+                </a>
+                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services." target="_blank" rel="noopener noreferrer">Whatsapp</a>
               </div>
               <div className="contact-item">
                 <span className="contact-icon">📍</span>
-                <span>Silicon Valley, CA</span>
+                <span>Kano Nigeria</span>
               </div>
             </div>
           </div>

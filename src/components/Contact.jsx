@@ -45,7 +45,7 @@ const Contact = () => {
     },
     {
       title: "Chat Us",
-      value: "Message us on Watsapp",
+      value: "Message us on Whatsapp",
     icon: <img src={whatsappIcon} alt="WhatsApp" style={{width: '1.5em', verticalAlign: 'middle'}} />,
       link: "https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services."
     }
