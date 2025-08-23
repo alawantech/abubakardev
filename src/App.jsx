@@ -30,7 +30,47 @@ function App() {
             </div>
           }
         />
-  <Route path="/links" element={<Links />} />
+        <Route
+          path="/services"
+          element={
+            <div className="App">
+              <Header />
+              <Services />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/portfolio"
+          element={
+            <div className="App">
+              <Header />
+              <Portfolio />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <div className="App">
+              <Header />
+              <About />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <div className="App">
+              <Header />
+              <Contact />
+              <Footer />
+            </div>
+          }
+        />
+        <Route path="/links" element={<Links />} />
       </Routes>
     </Router>
   );

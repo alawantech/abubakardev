@@ -147,7 +147,7 @@ const Contact = () => {
             animate={inView ? "visible" : "hidden"}
             variants={fadeRight}
           >
-            <form onSubmit={handleSubmit} className="contact-form">
+            <form onSubmit={handleSubmit} className="contact-form" id="contactform">
               <div className="form-group">
                 <label htmlFor="name">Full Name</label>
                 <motion.input

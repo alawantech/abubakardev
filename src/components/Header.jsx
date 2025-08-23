@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import './Header.css'
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -26,18 +27,18 @@ const Header = () => {
       <div className="container">
         <div className="header-content">
           <div className="logo">
-            <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }}>
+            <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
               <img src="/src/assets/images/logo2.png" alt="AbubakarDev Logo" style={{height: '40px'}} />
-            </a>
+            </Link>
           </div>
           
           <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''}`}>
             <ul className="nav-list">
-              <li><a href="#home" onClick={(e) => { e.preventDefault(); scrollToSection('home') }}>Home</a></li>
-              <li><a href="#services" onClick={(e) => { e.preventDefault(); scrollToSection('services') }}>Services</a></li>
-              <li><a href="#portfolio" onClick={(e) => { e.preventDefault(); scrollToSection('portfolio') }}>Portfolio</a></li>
-              <li><a href="#about" onClick={(e) => { e.preventDefault(); scrollToSection('about') }}>About</a></li>
-              <li><a href="#contact" onClick={(e) => { e.preventDefault(); scrollToSection('contact') }}>Contact</a></li>
+              <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link></li>
+              <li><Link to="/services" onClick={() => setIsMobileMenuOpen(false)}>Services</Link></li>
+              <li><Link to="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Portfolio</Link></li>
+              <li><Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link></li>
+              <li><Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link></li>
             </ul>
           </nav>
 
