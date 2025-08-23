@@ -32,7 +32,7 @@ const Courses = () => {
           <iframe
             width="100%"
             height="315"
-            src="https://www.youtube.com/embed/y3o7Tz8-PCU"
+            src="https://www.youtube.com/embed/mpeHpQdaTVU"
             title="Course Overview & Details"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

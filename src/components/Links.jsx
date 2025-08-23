@@ -5,34 +5,34 @@ import { FaLaptopCode, FaGlobe, FaServicestack, FaWhatsapp, FaLightbulb, FaBusin
 
 const links = [
   {
-    label: "Join Software development class (web & app developem)",
-    icon: <FaLaptopCode />, 
-    url: "#join-class"
-  },
-  {
     label: "Visit Our website.",
     icon: <FaGlobe />,
-    url: "#visit-website"
+    url: "/"
+  },
+  {
+    label: "Join Software development class (web & app developem)",
+    icon: <FaLaptopCode />, 
+    url: "/courses"
   },
   {
     label: "View our services.",
     icon: <FaServicestack />,
-    url: "#services"
+    url: "/services"
   },
   {
     label: "Chat on Whatsapp",
     icon: <FaWhatsapp />,
-    url: "https://wa.me/234000000000"
+    url: "https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services."
   },
   {
     label: "I need a website.",
     icon: <FaLightbulb />,
-    url: "#need-website"
+    url: "/contact"
   },
   {
     label: "I need software for my business.",
     icon: <FaBusinessTime />,
-    url: "#need-software"
+    url: "/contact"
   }
 ];
 
@@ -44,16 +44,27 @@ const Links = () => {
         <h2 className="links-title">Quick Actions</h2>
         <div className="links-list">
           {links.map((link, idx) => (
-            <a
-              key={idx}
-              href={link.url}
-              className="links-btn"
-              target={link.url.startsWith("http") ? "_blank" : "_self"}
-              rel="noopener noreferrer"
-            >
-              <span className="links-icon">{link.icon}</span>
-              {link.label}
-            </a>
+            link.url.startsWith("http") ? (
+              <a
+                key={idx}
+                href={link.url}
+                className="links-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="links-icon">{link.icon}</span>
+                {link.label}
+              </a>
+            ) : (
+              <a
+                key={idx}
+                href={link.url}
+                className="links-btn"
+              >
+                <span className="links-icon">{link.icon}</span>
+                {link.label}
+              </a>
+            )
           ))}
         </div>
       </div>
