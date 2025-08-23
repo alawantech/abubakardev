@@ -1,6 +1,7 @@
 import React from 'react'
 import './Footer.css'
 import whatsappIcon from '../assets/images/whatsapp.png';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
@@ -24,11 +25,11 @@ const Footer = () => {
   ]
 
   const quickLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'Services', href: '#services' },
-    { name: 'Portfolio', href: '#portfolio' },
-    { name: 'About', href: '#about' },
-    { name: 'Contact', href: '#contact' }
+  { name: 'Home', to: '/' },
+  { name: 'Services', to: '/services' },
+  { name: 'Projects', to: '/portfolio' },
+  { name: 'About', to: '/about' },
+  { name: 'Contact', to: '/contact' }
   ]
 
   const services = [
@@ -84,15 +85,9 @@ const Footer = () => {
             <ul className="footer-links">
               {quickLinks.map((link, index) => (
                 <li key={index}>
-                  <a
-                    href={link.href}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      scrollToSection(link.href)
-                    }}
-                  >
+                  <Link to={link.to}>
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
