@@ -55,7 +55,7 @@ const Footer = () => {
           <div className="footer-section footer-about">
             <div className="footer-logo">
               <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }}>
-                <img src="/src/assets/images/logo2.png" alt="AbubakarDev Logo" style={{height: '32px'}} />
+                <img src="/logo2.png" alt="AbubakarDev Logo" style={{height: '32px'}} />
               </a>
             </div>
             <p className="footer-description">

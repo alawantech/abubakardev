@@ -28,7 +28,7 @@ const Header = () => {
         <div className="header-content">
           <div className="logo">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <img src="/src/assets/images/logo2.png" alt="AbubakarDev Logo" style={{height: '40px'}} />
+              <img src="/logo2.png" alt="AbubakarDev Logo" style={{height: '40px'}} />
             </Link>
           </div>
           
