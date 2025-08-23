@@ -8,6 +8,13 @@ const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    whatsapp: '',
+    service: '',
+    customService: '',
+    businessName: '',
+    businessDescription: '',
+    features: '',
+    budget: '',
     message: ''
   })
   
@@ -29,8 +36,7 @@ const Contact = () => {
     setTimeout(() => {
       setIsSubmitting(false)
       setSubmitStatus('success')
-      setFormData({ name: '', email: '', message: '' })
-      
+      setFormData({ name: '', email: '', whatsapp: '', service: '', customService: '', businessName: '', businessDescription: '', budget: '', message: '' })
       // Reset status after 3 seconds
       setTimeout(() => setSubmitStatus(null), 3000)
     }, 1000)
@@ -170,16 +176,122 @@ const Contact = () => {
                 />
               </div>
 
+                <div className="form-group">
+                  <label htmlFor="whatsapp">WhatsApp Number</label>
+                  <motion.input
+                    type="tel"
+                    id="whatsapp"
+                    name="whatsapp"
+                    value={formData.whatsapp}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. +2348012345678"
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessName">Business Name</label>
+                  <motion.input
+                    type="text"
+                    id="businessName"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Your business name"
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessDescription">Business Description</label>
+                  <motion.input
+                    type="text"
+                    id="businessDescription"
+                    name="businessDescription"
+                    value={formData.businessDescription}
+                    onChange={handleChange}
+                    required
+                    placeholder="Describe your business"
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="features">Features & Goals (optional)</label>
+                  <motion.textarea
+                    id="features"
+                    name="features"
+                    value={formData.features}
+                    onChange={handleChange}
+                    rows="4"
+                    placeholder="Describe what features you want, what it should do, and what you want to achieve."
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  ></motion.textarea>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="budget">Budget (optional)</label>
+                  <motion.input
+                    type="number"
+                    id="budget"
+                    name="budget"
+                    value={formData.budget}
+                    onChange={handleChange}
+                    min="0"
+                    placeholder="Amount you budgeted (₦, $, etc.)"
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="service">Service You Want</label>
+                  <motion.select
+                    id="service"
+                    name="service"
+                    value={formData.service}
+                    onChange={handleChange}
+                    required
+                    whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                  >
+                    <option value="">Select a service</option>
+                    <option value="Website">Website</option>
+                    <option value="Software for Business">Software for Business</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="Business Website">Business Website</option>
+                    <option value="Ecommerce Website">Ecommerce Website</option>
+                    <option value="App">App</option>
+                    <option value="Software Development Online Class">Software Development Online Class (Web & App Dev)</option>
+                    <option value="Other">Other (please specify below)</option>
+                  </motion.select>
+                </div>
+
+                {formData.service === 'Other' && (
+                  <div className="form-group">
+                    <label htmlFor="customService">Please specify your service</label>
+                    <motion.input
+                      type="text"
+                      id="customService"
+                      name="customService"
+                      value={formData.customService}
+                      onChange={handleChange}
+                      required
+                      placeholder="Describe your service request"
+                      whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
+                    />
+                  </div>
+                )}
+
               <div className="form-group">
-                <label htmlFor="message">Project Details</label>
+                <label htmlFor="message">Additional Info (optional)</label>
                 <motion.textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  required
                   rows="5"
-                  placeholder="Tell us about your project, timeline, and requirements..."
+                  placeholder="Any extra details, questions, or requirements..."
                   whileFocus={{ scale: 1.03, borderColor: '#0ea5e9' }}
                 ></motion.textarea>
               </div>
