@@ -28,6 +28,7 @@ const Footer = () => {
   { name: 'Home', to: '/' },
   { name: 'Services', to: '/services' },
   { name: 'Projects', to: '/portfolio' },
+  { name: 'Courses', to: '/courses' },
   { name: 'About', to: '/about' },
   { name: 'Contact', to: '/contact' }
   ]

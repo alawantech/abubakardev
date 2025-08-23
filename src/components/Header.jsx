@@ -35,9 +35,9 @@ const Header = () => {
           <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''}`}>
             <ul className="nav-list">
               <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link></li>
-              <li><Link to="/services" onClick={() => setIsMobileMenuOpen(false)}>Services</Link></li>
+               <li><Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link></li>
+                <li><Link to="/services" onClick={() => setIsMobileMenuOpen(false)}>Services</Link></li>
               <li><Link to="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Projects</Link></li>
-              <li><Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link></li>
               <li><Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link></li>
             </ul>
           </nav>

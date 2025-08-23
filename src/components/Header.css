@@ -93,7 +93,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: white;
+    background: linear-gradient(90deg, #101c2c 0%, #1a365d 100%);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
     transform: translateY(-100%);
     opacity: 0;
@@ -120,7 +120,8 @@
   .nav-list a {
     display: block;
     padding: 1rem 2rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #274472;
+    color: #fff !important;
   }
 
   .mobile-menu-btn {
