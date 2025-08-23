@@ -10,6 +10,7 @@ import About from './components/About';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import Links from './components/Links';
+import Pricing from './components/Pricing';
 import './App.css';
 
 
@@ -82,6 +83,16 @@ function App() {
           }
         />
         <Route path="/links" element={<Links />} />
+        <Route
+          path="/pricing"
+          element={
+            <div className="App">
+              <Header />
+              <Pricing />
+              <Footer />
+            </div>
+          }
+        />
       </Routes>
     </Router>
   );
