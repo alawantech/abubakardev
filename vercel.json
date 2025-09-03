@@ -1,8 +1,8 @@
 {
   "redirects": [
     {
-      "source": "/something",
-      "destination": "https://anotherurl.com",
+      "source": "/api",
+      "destination": "https://supersimplebackend.dev",
       "permanent": true
     }
   ]
