@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/something",
+      "destination": "https://anotherurl.com",
+      "permanent": true
+    }
+  ]
+}
