@@ -1,9 +1,8 @@
 {
-  "redirects": [
+  "rewrites": [
     {
       "source": "/api",
-      "destination": "https://supersimplebackend.dev",
-      "permanent": true
+      "destination": "https://supersimplebackend.dev"
     }
   ]
 }
