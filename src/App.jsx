@@ -11,6 +11,9 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import Links from './components/Links';
 import Pricing from './components/Pricing';
+import Login from './components/Login';
+import Register from './components/Register';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
 
@@ -93,6 +96,9 @@ function App() {
             </div>
           }
         />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );
