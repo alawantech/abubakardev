@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Courses from './components/Courses';
+import CoursePage from './components/CoursePage';
 import Hero from './components/Hero';
 import Services from './components/Services';
 import Portfolio from './components/Portfolio';
@@ -61,6 +62,16 @@ function App() {
             <div className="App">
               <Header />
               <Courses />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/course/:courseId"
+          element={
+            <div className="App">
+              <Header />
+              <CoursePage />
               <Footer />
             </div>
           }

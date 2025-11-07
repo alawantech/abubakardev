@@ -53,21 +53,26 @@ const CourseManagement = () => {
         return;
       }
 
+      // Filter out empty lines before saving
+      const cleanedData = {
+        title: courseData.title,
+        description: courseData.description,
+        visibility: courseData.visibility,
+        featuredImage: courseData.featuredImage,
+        introVideoUrl: courseData.introVideoUrl,
+        pricingModel: courseData.pricingModel,
+        price: courseData.price,
+        whatYouWillLearn: courseData.whatYouWillLearn.filter(item => item.trim() !== ''),
+        targetAudience: courseData.targetAudience.filter(item => item.trim() !== ''),
+        courseDurationMonths: courseData.courseDurationMonths,
+        materialsIncluded: courseData.materialsIncluded.filter(item => item.trim() !== ''),
+        requirements: courseData.requirements.filter(item => item.trim() !== '')
+      };
+
       if (currentCourse) {
         // Update existing course
         await updateDoc(doc(db, 'courses', currentCourse.id), {
-          title: courseData.title,
-          description: courseData.description,
-          visibility: courseData.visibility,
-          featuredImage: courseData.featuredImage,
-          introVideoUrl: courseData.introVideoUrl,
-          pricingModel: courseData.pricingModel,
-          price: courseData.price,
-          whatYouWillLearn: courseData.whatYouWillLearn,
-          targetAudience: courseData.targetAudience,
-          courseDurationMonths: courseData.courseDurationMonths,
-          materialsIncluded: courseData.materialsIncluded,
-          requirements: courseData.requirements,
+          ...cleanedData,
           updatedAt: serverTimestamp()
         });
         alert('Course updated successfully!');
@@ -75,18 +80,7 @@ const CourseManagement = () => {
       } else {
         // Add new course
         const docRef = await addDoc(collection(db, 'courses'), {
-          title: courseData.title,
-          description: courseData.description,
-          visibility: courseData.visibility,
-          featuredImage: courseData.featuredImage,
-          introVideoUrl: courseData.introVideoUrl,
-          pricingModel: courseData.pricingModel,
-          price: courseData.price,
-          whatYouWillLearn: courseData.whatYouWillLearn,
-          targetAudience: courseData.targetAudience,
-          courseDurationMonths: courseData.courseDurationMonths,
-          materialsIncluded: courseData.materialsIncluded,
-          requirements: courseData.requirements,
+          ...cleanedData,
           topics: [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -499,7 +493,7 @@ const CourseManagement = () => {
                   value={courseData.whatYouWillLearn.join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
-                    whatYouWillLearn: e.target.value.split('\n').filter(item => item.trim() !== '')
+                    whatYouWillLearn: e.target.value.split('\n')
                   })}
                   placeholder="Master React fundamentals&#10;Build real-world applications&#10;Learn modern JavaScript ES6+&#10;Understand state management"
                   rows="6"
@@ -513,7 +507,7 @@ const CourseManagement = () => {
                   value={courseData.targetAudience.join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
-                    targetAudience: e.target.value.split('\n').filter(item => item.trim() !== '')
+                    targetAudience: e.target.value.split('\n')
                   })}
                   placeholder="Beginner developers wanting to learn React&#10;Students with basic JavaScript knowledge&#10;Web developers looking to modernize their skills"
                   rows="5"
@@ -540,7 +534,7 @@ const CourseManagement = () => {
                   value={courseData.materialsIncluded.join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
-                    materialsIncluded: e.target.value.split('\n').filter(item => item.trim() !== '')
+                    materialsIncluded: e.target.value.split('\n')
                   })}
                   placeholder="Downloadable code files&#10;Certificate of completion&#10;Lifetime access to course updates&#10;Project source code"
                   rows="5"
@@ -554,7 +548,7 @@ const CourseManagement = () => {
                   value={courseData.requirements.join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
-                    requirements: e.target.value.split('\n').filter(item => item.trim() !== '')
+                    requirements: e.target.value.split('\n')
                   })}
                   placeholder="Basic understanding of HTML and CSS&#10;A computer with internet connection&#10;Text editor installed (VS Code recommended)"
                   rows="5"

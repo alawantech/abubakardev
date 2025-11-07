@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const Courses = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [playingVideo, setPlayingVideo] = useState(null);
 
   useEffect(() => {
     fetchCourses();
@@ -28,19 +28,8 @@ const Courses = () => {
     }
   };
 
-  const getYouTubeVideoId = (url) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  const handlePlayVideo = (courseId) => {
-    setPlayingVideo(playingVideo === courseId ? null : courseId);
-  };
-
-  const handleViewDetails = (course) => {
-    setSelectedCourse(selectedCourse?.id === course.id ? null : course);
+  const handleViewCourse = (courseId) => {
+    navigate(`/course/${courseId}`);
   };
 
   if (loading) {
