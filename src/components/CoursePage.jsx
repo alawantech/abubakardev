@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
 
 const CoursePage = () => {
   const { courseId } = useParams();
@@ -9,6 +10,10 @@ const CoursePage = () => {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     fetchCourse();
@@ -37,6 +42,89 @@ const CoursePage = () => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Flutterwave Payment Configuration
+  const config = {
+    public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+    tx_ref: `COURSE-${courseId}-${Date.now()}`,
+    amount: course?.price || 0,
+    currency: 'NGN',
+    payment_options: 'card,mobilemoney,ussd',
+    customer: {
+      email: customerEmail,
+      phone_number: customerPhone,
+      name: customerName,
+    },
+    customizations: {
+      title: course?.title || 'Course Enrollment',
+      description: `Enrollment for ${course?.title}`,
+      logo: 'https://your-logo-url.com/logo.png', // Add your logo URL
+    },
+  };
+
+  const handleFlutterPayment = useFlutterwave(config);
+
+  const handleEnrollClick = () => {
+    // Redirect to pricing page
+    navigate(`/course/${courseId}/pricing`);
+  };
+
+  const initiatePayment = () => {
+    if (!customerEmail || !customerName || !customerPhone) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    handleFlutterPayment({
+      callback: async (response) => {
+        console.log('Payment response:', response);
+        closePaymentModal();
+        
+        if (response.status === 'successful') {
+          // Verify payment with Firebase Cloud Function
+          try {
+            const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 
+                               `https://us-central1-${import.meta.env.VITE_FIREBASE_PROJECT_ID}.cloudfunctions.net/verifyPayment`;
+            
+            const verificationResponse = await fetch(functionUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                transaction_id: response.transaction_id,
+                expected_amount: course.price,
+                courseId: courseId,
+                courseName: course.title,
+                customerEmail: customerEmail,
+                customerName: customerName,
+                customerPhone: customerPhone,
+              }),
+            });
+
+            const verificationData = await verificationResponse.json();
+
+            if (verificationData.success) {
+              alert('🎉 Payment successful! You are now enrolled in the course.');
+              setShowPaymentModal(false);
+              // Redirect to course content
+              // navigate(`/my-courses`);
+            } else {
+              alert('Payment verification failed. Please contact support with reference: ' + response.transaction_id);
+            }
+          } catch (error) {
+            console.error('Error verifying payment:', error);
+            alert('Payment was successful, but there was an error. Please contact support with reference: ' + response.transaction_id);
+          }
+        } else {
+          alert('Payment was not successful. Please try again.');
+        }
+      },
+      onClose: () => {
+        console.log('Payment modal closed');
+      },
+    });
   };
 
   if (loading) {
@@ -421,7 +509,10 @@ const CoursePage = () => {
 
               {/* Action Buttons */}
               <div className="space-y-4 mb-8">
-                <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                <button 
+                  onClick={handleEnrollClick}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 text-lg"
+                >
                   <span>Enroll Now</span>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -503,6 +594,88 @@ const CoursePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Details Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-fadeIn">
+            <button 
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Complete Your Enrollment</h3>
+              <p className="text-gray-600">Enter your details to proceed with payment</p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name *</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address *</label>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="+234 800 000 0000"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border-2 border-indigo-100">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-semibold">Amount to Pay:</span>
+                <span className="text-2xl font-bold text-indigo-600">
+                  ₦{course.price?.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={initiatePayment}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span>Proceed to Payment</span>
+            </button>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              🔒 Secure payment powered by Flutterwave
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

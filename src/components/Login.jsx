@@ -48,11 +48,12 @@ const Login = () => {
         if (userData.role === 'admin') {
           navigate('/admin');
         } else {
-          navigate('/');
+          // Students go to their dashboard
+          navigate('/dashboard');
         }
       } else {
-        // If no user data found, redirect to home
-        navigate('/');
+        // If no user data found, redirect to dashboard anyway
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error logging in:', error);
@@ -135,7 +136,7 @@ const Login = () => {
 
         <div className="login-footer">
           <p>
-            Don't have an account? <Link to="/register">Register here</Link>
+            Don't have an account? <Link to="/courses">Register here</Link>
           </p>
         </div>
       </div>

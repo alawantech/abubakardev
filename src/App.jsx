@@ -1,9 +1,15 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
 import Courses from './components/Courses';
 import CoursePage from './components/CoursePage';
+import CoursePricing from './components/CoursePricing';
+import CourseSignUp from './components/CourseSignUp';
+import CoursePayment from './components/CoursePayment';
+import CourseDashboard from './components/CourseDashboard';
+import Dashboard from './components/Dashboard';
 import Hero from './components/Hero';
 import Services from './components/Services';
 import Portfolio from './components/Portfolio';
@@ -20,8 +26,9 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <AuthProvider>
+      <Router>
+        <Routes>
         <Route
           path="/"
           element={
@@ -77,6 +84,46 @@ function App() {
           }
         />
         <Route
+          path="/course/:courseId/pricing"
+          element={
+            <div className="App">
+              <Header />
+              <CoursePricing />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/course/:courseId/signup"
+          element={
+            <div className="App">
+              <Header />
+              <CourseSignUp />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/course/:courseId/payment"
+          element={
+            <div className="App">
+              <Header />
+              <CoursePayment />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/course/:courseId/dashboard"
+          element={
+            <div className="App">
+              <Header />
+              <CourseDashboard />
+              <Footer />
+            </div>
+          }
+        />
+        <Route
           path="/about"
           element={
             <div className="App">
@@ -110,8 +157,19 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <div className="App">
+              <Header />
+              <Dashboard />
+              <Footer />
+            </div>
+          } 
+        />
       </Routes>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 
