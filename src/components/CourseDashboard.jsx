@@ -6,7 +6,7 @@ const CourseDashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 pt-32 pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Success Header */}
         <div className="text-center mb-12">

@@ -313,6 +313,23 @@
   color: #333;
 }
 
+.section-header button {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+  background: #6c757d !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.section-header button:hover {
+  background: #5a6268 !important;
+}
+
 .topic-card {
   background: #f8f9fa;
   border: 2px solid #e9ecef;

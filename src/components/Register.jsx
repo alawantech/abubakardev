@@ -102,7 +102,7 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
+    <div className="register-container pt-32">
       <div className="register-card">
         <h2>Create Account</h2>
         <p className="register-subtitle">Join us today! Fill in your details to get started.</p>

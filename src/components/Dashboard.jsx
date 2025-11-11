@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
@@ -11,6 +12,17 @@ const Dashboard = () => {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileData, setProfileData] = useState({
+    fullName: '',
+    whatsappNumber: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [updateError, setUpdateError] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     // Check if redirected after successful payment
@@ -27,10 +39,23 @@ const Dashboard = () => {
 
     if (currentUser) {
       fetchEnrollments();
+      loadProfileData();
     } else {
       navigate('/login', { state: { from: '/dashboard' } });
     }
   }, [currentUser, navigate, location.state]);
+
+  const loadProfileData = async () => {
+    if (userData) {
+      setProfileData({
+        fullName: userData.fullName || '',
+        whatsappNumber: userData.whatsappNumber || '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    }
+  };
 
   const fetchEnrollments = async () => {
     try {
@@ -50,15 +75,21 @@ const Dashboard = () => {
           const courseDoc = await getDoc(doc(db, 'courses', enrollmentData.courseId));
           const courseData = courseDoc.exists() ? courseDoc.data() : null;
           
+          // Fetch enrollment plan details
+          const planDoc = await getDoc(doc(db, 'enrollmentPlans', currentUser.uid));
+          const planData = planDoc.exists() ? planDoc.data() : null;
+          
           return {
             id: enrollmentDoc.id,
             ...enrollmentData,
             course: courseData,
+            enrollmentPlan: planData,
           };
         })
       );
       
       setEnrollments(enrollmentsData);
+      console.log('Enrollments with plan data:', enrollmentsData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
@@ -82,6 +113,92 @@ const Dashboard = () => {
     };
   };
 
+  const calculateNextPayment = (enrolledAt, planType) => {
+    if (planType !== 'monthly' || !enrolledAt) return null;
+    
+    const enrollmentDate = enrolledAt.toDate();
+    const nextPaymentDate = new Date(enrollmentDate);
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    
+    const today = new Date();
+    const daysUntilPayment = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
+    
+    return {
+      date: nextPaymentDate.toLocaleDateString(),
+      daysRemaining: daysUntilPayment > 0 ? daysUntilPayment : 0,
+    };
+  };
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setUpdateError('');
+    setUpdateMessage('');
+    setUpdating(true);
+
+    try {
+      // Update name and WhatsApp in Firestore
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        fullName: profileData.fullName,
+        whatsappNumber: profileData.whatsappNumber,
+      });
+
+      // Update Firebase Auth display name
+      await updateProfile(currentUser, {
+        displayName: profileData.fullName,
+      });
+
+      // Update password if provided
+      if (profileData.newPassword) {
+        if (profileData.newPassword !== profileData.confirmPassword) {
+          setUpdateError('New passwords do not match');
+          setUpdating(false);
+          return;
+        }
+
+        if (profileData.newPassword.length < 6) {
+          setUpdateError('Password must be at least 6 characters');
+          setUpdating(false);
+          return;
+        }
+
+        // Re-authenticate before changing password
+        const credential = EmailAuthProvider.credential(
+          currentUser.email,
+          profileData.currentPassword
+        );
+        
+        await reauthenticateWithCredential(currentUser, credential);
+        await updatePassword(currentUser, profileData.newPassword);
+        
+        // Clear password fields
+        setProfileData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        }));
+      }
+
+      setUpdateMessage('Profile updated successfully!');
+      setTimeout(() => {
+        setShowProfileEdit(false);
+        setUpdateMessage('');
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      if (error.code === 'auth/wrong-password') {
+        setUpdateError('Current password is incorrect');
+      } else if (error.code === 'auth/requires-recent-login') {
+        setUpdateError('Please log out and log in again before changing password');
+      } else {
+        setUpdateError('Failed to update profile: ' + error.message);
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (!currentUser) {
     return null; // Will redirect in useEffect
   }
@@ -98,7 +215,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Success Message */}
         {showSuccessMessage && location.state?.message && (
@@ -137,12 +254,251 @@ const Dashboard = () => {
         )}
 
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome back, {userData?.fullName || currentUser.email}! 👋
-          </h1>
-          <p className="text-gray-600 text-lg">Track your progress and continue learning</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Welcome back, {userData?.fullName || currentUser.email}! 👋
+            </h1>
+            <p className="text-gray-600 text-lg">Track your progress and continue learning</p>
+          </div>
+          <button
+            onClick={() => setShowProfileEdit(!showProfileEdit)}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            {showProfileEdit ? 'Close Profile' : 'Edit Profile'}
+          </button>
         </div>
+
+        {/* Profile Edit Section */}
+        {showProfileEdit && (
+          <div className="mb-8 bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h2>
+            
+            {/* Profile Info Display */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8 p-6 bg-gray-50 rounded-xl">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">Full Name</label>
+                <p className="text-lg text-gray-900">{userData?.fullName || 'Not set'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">Email (Cannot be changed)</label>
+                <p className="text-lg text-gray-900">{currentUser.email}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">WhatsApp Number</label>
+                <p className="text-lg text-gray-900">{userData?.whatsappNumber || 'Not set'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">Account Created</label>
+                <p className="text-lg text-gray-900">
+                  {userData?.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* Edit Form */}
+            <form onSubmit={handleProfileUpdate} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.fullName}
+                    onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    WhatsApp Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={profileData.whatsappNumber}
+                    onChange={(e) => setProfileData({...profileData, whatsappNumber: e.target.value})}
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t-2 border-gray-200 pt-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Change Password (Optional)</h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={profileData.currentPassword}
+                      onChange={(e) => setProfileData({...profileData, currentPassword: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={profileData.newPassword}
+                      onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Min 6 characters"
+                      minLength={6}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={profileData.confirmPassword}
+                      onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Re-enter new password"
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Leave password fields empty if you don't want to change your password
+                </p>
+              </div>
+
+              {updateError && (
+                <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 rounded-xl">
+                  {updateError}
+                </div>
+              )}
+
+              {updateMessage && (
+                <div className="bg-green-50 border-2 border-green-200 text-green-800 px-4 py-3 rounded-xl">
+                  {updateMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={updating}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? 'Updating...' : 'Update Profile'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Enrollment Plan Details */}
+        {enrollments.length > 0 && enrollments[0].enrollmentPlan && (
+          <div className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8 border-2 border-indigo-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">📋 Subscription Details</h2>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Plan Type */}
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-2xl">💼</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-600">Plan Type</h3>
+                </div>
+                <p className="text-2xl font-bold text-indigo-600 capitalize">
+                  {enrollments[0].enrollmentPlan.planType}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {enrollments[0].enrollmentPlan.planType === 'monthly' ? 'Billed Monthly' : 'One-time Payment'}
+                </p>
+              </div>
+
+              {/* Amount Paid */}
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-600">Amount Paid</h3>
+                </div>
+                <p className="text-2xl font-bold text-green-600">
+                  ₦{enrollments[0].enrollmentPlan.planAmount?.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Payment Status: <span className="text-green-600 font-semibold capitalize">
+                    {enrollments[0].enrollmentPlan.paymentStatus}
+                  </span>
+                </p>
+              </div>
+
+              {/* Next Payment / Expiry */}
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-2xl">📅</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-600">
+                    {enrollments[0].enrollmentPlan.planType === 'monthly' ? 'Next Payment' : 'Valid Until'}
+                  </h3>
+                </div>
+                {enrollments[0].enrollmentPlan.planType === 'monthly' ? (
+                  (() => {
+                    const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+                    return nextPayment ? (
+                      <>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {nextPayment.date}
+                        </p>
+                        <p className={`text-sm mt-1 font-semibold ${nextPayment.daysRemaining <= 7 ? 'text-red-500' : 'text-gray-500'}`}>
+                          {nextPayment.daysRemaining > 0 
+                            ? `${nextPayment.daysRemaining} days remaining`
+                            : 'Payment overdue'
+                          }
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-500">Not available</p>
+                    );
+                  })()
+                ) : (
+                  (() => {
+                    const expiryDate = enrollments[0].enrolledAt?.toDate();
+                    if (expiryDate) {
+                      const expiry = new Date(expiryDate);
+                      expiry.setFullYear(expiry.getFullYear() + 1);
+                      return (
+                        <>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {expiry.toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            12 months from enrollment
+                          </p>
+                        </>
+                      );
+                    }
+                    return <p className="text-sm text-gray-500">Not available</p>;
+                  })()
+                )}
+              </div>
+            </div>
+
+            {/* Enrollment Date */}
+            <div className="mt-6 pt-6 border-t border-indigo-200">
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold">Enrolled on:</span> {' '}
+                {enrollments[0].enrolledAt?.toDate().toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-10">
@@ -263,7 +619,7 @@ const Dashboard = () => {
                       </div>
                       
                       <button
-                        onClick={() => navigate(`/course/${enrollment.courseId}`)}
+                        onClick={() => navigate(`/course/${enrollment.courseId}/learn`)}
                         disabled={isExpired}
                         className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
                           isExpired

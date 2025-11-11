@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
 import Courses from './components/Courses';
 import CoursePage from './components/CoursePage';
+import CourseLearning from './components/CourseLearning';
 import CoursePricing from './components/CoursePricing';
 import CourseSignUp from './components/CourseSignUp';
 import CoursePayment from './components/CoursePayment';
@@ -80,6 +81,14 @@ function App() {
               <Header />
               <CoursePage />
               <Footer />
+            </div>
+          }
+        />
+        <Route
+          path="/course/:courseId/learn"
+          element={
+            <div className="App">
+              <CourseLearning />
             </div>
           }
         />

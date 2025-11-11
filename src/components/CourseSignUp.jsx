@@ -127,7 +127,7 @@ const CourseSignUp = () => {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32">
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">No Plan Selected</h2>
           <p className="text-gray-600 mb-6">Please select a pricing plan first</p>
@@ -143,7 +143,7 @@ const CourseSignUp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-64 pb-16">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">

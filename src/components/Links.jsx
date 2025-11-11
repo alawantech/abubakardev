@@ -10,11 +10,6 @@ const links = [
     url: "/"
   },
   {
-    label: "Join Software development class (web & app developem)",
-    icon: <FaLaptopCode />, 
-    url: "/courses"
-  },
-  {
     label: "View our services.",
     icon: <FaServicestack />,
     url: "/services"
@@ -22,7 +17,7 @@ const links = [
   {
     label: "Chat on Whatsapp",
     icon: <FaWhatsapp />,
-    url: "https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services."
+    url: "https://wa.me/2348155885678"
   },
   {
     label: "I need a website.",

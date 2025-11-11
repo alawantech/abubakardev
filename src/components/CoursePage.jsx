@@ -4,6 +4,33 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
 
+// Helper function to convert URLs in text to clickable links
+const linkifyText = (text) => {
+  if (!text) return null;
+  
+  // Regular expression to detect URLs
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 underline font-medium"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 const CoursePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -129,7 +156,7 @@ const CoursePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32">
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
           <p className="mt-6 text-lg text-gray-600 font-medium">Loading course details...</p>
@@ -140,7 +167,7 @@ const CoursePage = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32">
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Course Not Found</h2>
           <button 
@@ -157,9 +184,9 @@ const CoursePage = () => {
   const totalLessons = course.topics?.reduce((acc, topic) => acc + (topic.lessons?.length || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50 pt-64">
       {/* Breadcrumb Navigation */}
-      <div className="bg-white shadow-sm border-b border-gray-100 pt-20">
+      <div className="bg-white shadow-sm border-b border-gray-100 pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm">
             <button 
@@ -453,7 +480,9 @@ const CoursePage = () => {
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-gray-900 mb-1">{lesson.name}</div>
                                   {lesson.description && (
-                                    <p className="text-sm text-gray-600 leading-relaxed">{lesson.description}</p>
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                      {linkifyText(lesson.description)}
+                                    </p>
                                   )}
                                 </div>
                                 {lesson.videoUrl && (

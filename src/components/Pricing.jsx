@@ -64,7 +64,7 @@ const pricingOptions = [
 
 const Pricing = () => {
   return (
-    <div className="pricing-page">
+    <div className="pricing-page pt-32">
       <h1 className="pricing-title">Website Development Pricing</h1>
       <p className="pricing-subtitle">Choose the perfect package for your business. All plans include free domain, hosting, and expert support.</p>
       <div className="pricing-grid">

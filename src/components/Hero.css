@@ -5,7 +5,7 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(120deg, #101c2c 0%, #1a365d 50%, #ed8936 100%);
-  padding-top: 80px;
+  padding-top: 120px;
 }
 
 .hero-background {
@@ -220,7 +220,7 @@
 @media (max-width: 768px) {
   .hero {
     min-height: 90vh;
-    padding-top: 80px; /* Increase padding for mobile header */
+    padding-top: 100px; /* Increase padding for mobile header */
   }
   
   .hero-content {
@@ -267,6 +267,6 @@
     text-align: center;
   }
   .hero {
-    padding-top: 90px; /* Extra padding for small screens */
+    padding-top: 110px; /* Extra padding for small screens */
   }
 }
