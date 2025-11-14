@@ -20,6 +20,10 @@ const CoursePayment = () => {
     }
   }, [courseId]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
   const fetchCourse = async () => {
     try {
       const courseDoc = await getDoc(doc(db, 'courses', courseId));

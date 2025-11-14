@@ -25,6 +25,10 @@ const CourseLearning = () => {
     }
   }, [currentUser, courseId]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
   const fetchCourseAndEnrollment = async () => {
     try {
       // Fetch course data

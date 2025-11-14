@@ -56,6 +56,7 @@ const CoursePage = () => {
       } else {
         console.error('Course not found');
         navigate('/courses');
+        window.scrollTo(0, 0);
       }
       setLoading(false);
     } catch (error) {
@@ -95,6 +96,8 @@ const CoursePage = () => {
   const handleEnrollClick = () => {
     // Redirect to pricing page
     navigate(`/course/${courseId}/pricing`);
+    // Scroll to top of the page after navigation
+    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
   };
 
   const initiatePayment = () => {
@@ -171,7 +174,10 @@ const CoursePage = () => {
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Course Not Found</h2>
           <button 
-            onClick={() => navigate('/courses')}
+            onClick={() => {
+              navigate('/courses');
+              setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
+            }}
             className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
           >
             Back to Courses
@@ -190,7 +196,10 @@ const CoursePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm">
             <button 
-              onClick={() => navigate('/courses')}
+              onClick={() => {
+                navigate('/courses');
+                setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
+              }}
               className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-medium transition-colors group"
             >
               <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -574,7 +583,7 @@ const CoursePage = () => {
                   <div className="space-y-4">
                     <button
                       onClick={handleEnrollClick}
-                      className="group relative w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-8 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-indigo-500/25 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+                      className="cursor-pointer group relative w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-8 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-indigo-500/25 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
                     >
                       {/* Button Glow Effect */}
                       <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
@@ -586,7 +595,7 @@ const CoursePage = () => {
                       </div>
                     </button>
 
-                    <button className="group w-full bg-white/80 hover:bg-white/90 backdrop-blur-sm text-gray-800 font-semibold py-4 px-6 rounded-2xl transition-all duration-300 border-2 border-gray-200/50 hover:border-gray-300/70 shadow-lg hover:shadow-xl transform hover:scale-102 flex items-center justify-center gap-3">
+                    <button className="cursor-pointer group w-full bg-white/80 hover:bg-white/90 backdrop-blur-sm text-gray-800 font-semibold py-4 px-6 rounded-2xl transition-all duration-300 border-2 border-gray-200/50 hover:border-gray-300/70 shadow-lg hover:shadow-xl transform hover:scale-102 flex items-center justify-center gap-3">
                       <svg className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/>
                       </svg>

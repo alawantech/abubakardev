@@ -10,6 +10,8 @@ const Courses = () => {
 
   useEffect(() => {
     fetchCourses();
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
   const fetchCourses = async () => {
@@ -104,9 +106,16 @@ const Courses = () => {
                         {/* Price Badge */}
                         <div className="absolute top-4 right-4">
                           {course.pricingModel === 'paid' ? (
-                            <span className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg">
-                              ₦{course.price}
-                            </span>
+                            <div className="relative">
+                              {/* Price Background Glow */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 rounded-2xl blur-xl transform scale-110"></div>
+                              <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 rounded-2xl font-bold text-sm shadow-xl border-2 border-white/20">
+                                <div className="text-center">
+                                  <div className="text-lg leading-none">₦6,500</div>
+                                  <div className="text-xs opacity-90 font-medium">per month</div>
+                                </div>
+                              </div>
+                            </div>
                           ) : (
                             <span className="bg-gradient-to-r from-green-400 to-emerald-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg">
                               FREE

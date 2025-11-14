@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -23,6 +23,11 @@ const CourseSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
 
   const handleChange = (e) => {
     setFormData({

@@ -11,6 +11,8 @@ const CoursePricing = () => {
 
   useEffect(() => {
     fetchCourse();
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [courseId]);
 
   const fetchCourse = async () => {

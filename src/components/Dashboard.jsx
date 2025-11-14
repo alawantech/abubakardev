@@ -45,6 +45,10 @@ const Dashboard = () => {
     }
   }, [currentUser, navigate, location.state]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
   const loadProfileData = async () => {
     if (userData) {
       setProfileData({
