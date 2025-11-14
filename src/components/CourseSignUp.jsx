@@ -132,7 +132,9 @@ const CourseSignUp = () => {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Spacer for fixed header */}
+        <div className="h-36"></div>
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">No Plan Selected</h2>
           <p className="text-gray-600 mb-6">Please select a pricing plan first</p>
@@ -148,8 +150,11 @@ const CourseSignUp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-64 pb-16">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Spacer for fixed header */}
+      <div className="h-36"></div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Your Account</h1>
@@ -160,16 +165,19 @@ const CourseSignUp = () => {
         </div>
 
         {/* Sign Up Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-12 border border-gray-100">
           {error && (
-            <div className="mb-6 bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 rounded-xl">
-              {error}
+            <div className="mb-8 bg-red-50 border-2 border-red-300 text-red-800 px-6 py-5 rounded-2xl font-semibold shadow-sm flex items-start gap-3">
+              <svg className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Full Name *
               </label>
               <input
@@ -178,13 +186,13 @@ const CourseSignUp = () => {
                 value={formData.fullName}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 text-gray-900 placeholder-gray-400"
                 placeholder="John Doe"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Email Address *
               </label>
               <input
@@ -193,13 +201,13 @@ const CourseSignUp = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 text-gray-900 placeholder-gray-400"
                 placeholder="john@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 WhatsApp Number *
               </label>
               <input
@@ -208,13 +216,13 @@ const CourseSignUp = () => {
                 value={formData.whatsappNumber}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 text-gray-900 placeholder-gray-400"
                 placeholder="+234 800 000 0000"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Password *
               </label>
               <div className="relative">
@@ -225,13 +233,13 @@ const CourseSignUp = () => {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors pr-12"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 text-gray-900 placeholder-gray-400 pr-14"
                   placeholder="Minimum 6 characters"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition-colors p-1"
                 >
                   {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                 </button>
@@ -239,7 +247,7 @@ const CourseSignUp = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-800 mb-3">
                 Confirm Password *
               </label>
               <div className="relative">
@@ -249,13 +257,13 @@ const CourseSignUp = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors pr-12"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all duration-200 text-gray-900 placeholder-gray-400 pr-14"
                   placeholder="Re-enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition-colors p-1"
                 >
                   {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                 </button>
@@ -289,17 +297,17 @@ const CourseSignUp = () => {
             <button
               type="submit"
               disabled={loading || !agreedToTerms}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-5 px-8 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 text-lg"
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Creating Account...</span>
                 </>
               ) : (
                 <>
                   <span>Create Account & Proceed to Payment</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </>

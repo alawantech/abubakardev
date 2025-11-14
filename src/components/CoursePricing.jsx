@@ -43,7 +43,9 @@ const CoursePricing = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Spacer for fixed header */}
+        <div className="h-36"></div>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
           <p className="mt-6 text-lg text-gray-600 font-medium">Loading pricing...</p>
@@ -54,8 +56,10 @@ const CoursePricing = () => {
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
-        <div className="max-w-4xl mx-auto px-4 text-center py-20">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* Spacer for fixed header */}
+        <div className="h-36"></div>
+        <div className="max-w-5xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Course Not Found</h2>
           <button 
             onClick={() => navigate('/courses')}
@@ -69,8 +73,11 @@ const CoursePricing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-32 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Spacer for fixed header */}
+      <div className="h-36"></div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -145,7 +152,7 @@ const CoursePricing = () => {
 
               <button
                 onClick={() => handleSelectPlan('monthly', 6500)}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 cursor-pointer"
               >
                 Select Monthly Plan
               </button>
@@ -231,7 +238,7 @@ const CoursePricing = () => {
 
               <button
                 onClick={() => handleSelectPlan('onetime', 30000)}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 cursor-pointer"
               >
                 Select One-Time Plan
               </button>
