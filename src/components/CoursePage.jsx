@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import './CoursePage.css';
 
 // Helper function to convert URLs in text to clickable links
 const linkifyText = (text) => {
@@ -36,7 +37,6 @@ const CoursePage = () => {
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -184,9 +184,9 @@ const CoursePage = () => {
   const totalLessons = course.topics?.reduce((acc, topic) => acc + (topic.lessons?.length || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50 pt-64">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50" style={{ paddingTop: '120px' }}>
       {/* Breadcrumb Navigation */}
-      <div className="bg-white shadow-sm border-b border-gray-100 pt-24">
+      <div className="bg-gradient-to-r from-white to-gray-50 shadow-lg border-b-2 border-indigo-100 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-2 text-sm">
             <button 
@@ -206,91 +206,88 @@ const CoursePage = () => {
         </div>
       </div>
 
-      {/* Intro Video Section - Clean & Professional */}
+      {/* Professional Video Section */}
       {course.introVideoUrl && (
-        <div className="bg-gradient-to-b from-gray-900 to-gray-800 py-16">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            {/* Video Container */}
-            <div className="relative">
-              {/* Subtle Glow */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl"></div>
-              
-              {/* Main Video Card */}
-              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-3 shadow-2xl">
-                {/* Video Player */}
-                <div className="relative w-full bg-black rounded-xl overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-                  {!isVideoPlaying ? (
-                    // Thumbnail View with Play Button
-                    <div 
-                      className="absolute inset-0 cursor-pointer group"
-                      onClick={() => setIsVideoPlaying(true)}
-                    >
-                      {/* Thumbnail Image */}
-                      <img 
-                        src={`https://img.youtube.com/vi/${getYouTubeVideoId(course.introVideoUrl)}/maxresdefault.jpg`}
-                        alt="Course Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = `https://img.youtube.com/vi/${getYouTubeVideoId(course.introVideoUrl)}/hqdefault.jpg`;
-                        }}
-                      />
-                      
-                      {/* Dark Overlay */}
-                      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors duration-300"></div>
-                      
-                      {/* Play Button - Centered */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        {/* Outer Pulse Ring */}
-                        <div className="absolute w-32 h-32 bg-red-600/30 rounded-full animate-ping"></div>
-                        
-                        {/* Play Button */}
-                        <button className="relative w-24 h-24 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300">
-                          <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+        <div className="relative pt-20 pb-32 bg-gradient-to-br from-slate-900 via-gray-900 to-black overflow-hidden">
+          {/* Background Effects */}
+          <div className="absolute inset-0">
+            <div className="absolute top-10 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-10 right-10 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse animation-delay-400"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-blue-500/5 to-transparent rounded-full"></div>
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20 mb-6">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-white font-semibold">Course Preview</span>
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">
+                See What You'll Learn
+              </h2>
+              <p className="text-xl text-gray-300 w-full mx-auto text-center">
+                Watch our comprehensive course preview to understand the learning journey ahead
+              </p>
+            </div>
+
+            {/* Video Player Container - Centered */}
+            <div className="flex justify-center w-full">
+              <div className="relative w-full max-w-5xl">
+                {/* Glow Effect */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl opacity-75"></div>
+
+                {/* Main Video Card */}
+                <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-700">
+                  {/* Video Aspect Ratio Container */}
+                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                    {/* Embedded YouTube Player */}
+                    <div className="absolute inset-0 bg-black rounded-t-3xl overflow-hidden shadow-2xl">
+                      <iframe
+                        className="absolute inset-0 w-full h-full rounded-t-3xl"
+                        src={`https://www.youtube.com/embed/${getYouTubeVideoId(course.introVideoUrl)}?rel=0&modestbranding=1&showinfo=0&iv_load_policy=3`}
+                        title={`${course.title} - Course Preview`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  </div>
+
+                  {/* Video Info Bar */}
+                  <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-8 py-6 border-t border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
                           </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Info Badge - Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-8">
-                        <div className="text-center">
-                          <p className="text-white text-xl font-bold mb-2">Watch Course Preview</p>
-                          <p className="text-gray-300 text-sm flex items-center justify-center gap-2">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd"/>
-                            </svg>
-                            Click to play with sound
-                          </p>
+                          <span className="font-medium">Video Preview</span>
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {totalLessons} lessons • {course.topics?.length || 0} modules
                         </div>
                       </div>
+                      <div className="bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg">
+                        <span className="text-sm font-medium">HD Preview</span>
+                      </div>
                     </div>
-                  ) : (
-                    // YouTube Player
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${getYouTubeVideoId(course.introVideoUrl)}?autoplay=1&mute=0&rel=0&modestbranding=1&controls=1`}
-                      title={course.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       )}
 
       {/* Course Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2">
+            <div className="max-w-4xl mx-auto space-y-8">
             {/* Course Title and Stats */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100">
+            <div className="bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl p-8 lg:p-10 border border-indigo-200">
               <h1 className="text-3xl lg:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">{course.title}</h1>
               
               {/* Stats Badges */}
@@ -443,7 +440,7 @@ const CoursePage = () => {
             </div>
 
             {/* Course Curriculum */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-2xl p-8 lg:p-10 border border-indigo-200">
               <div className="flex items-center gap-4 mb-8">
                 <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-3 rounded-2xl shadow-lg">
                   <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -513,10 +510,11 @@ const CoursePage = () => {
               )}
             </div>
           </div>
+        </div>
 
           {/* Sidebar - Enrollment Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-3xl shadow-2xl p-8 border-2 border-indigo-100 hover:border-indigo-200 transition-all duration-300">
+            <div className="sticky top-24 bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl p-8 border-2 border-indigo-200 hover:border-indigo-300 transition-all duration-300">
               {/* Price Section */}
               <div className="text-center mb-8 pb-8 border-b-2 border-gray-100">
                 {course.pricingModel === 'paid' ? (
