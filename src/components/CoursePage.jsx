@@ -476,7 +476,7 @@ const CoursePage = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-gray-900 mb-1">{lesson.name}</div>
-                                  {lesson.description && (
+                                  {lesson.description && !lesson.description.includes('<p>htmlkjfjkf</p><p>rady.ng</p>') && (
                                     <p className="text-sm text-gray-600 leading-relaxed">
                                       {linkifyText(lesson.description)}
                                     </p>
@@ -512,107 +512,104 @@ const CoursePage = () => {
           </div>
         </div>
 
-          {/* Sidebar - Enrollment Card */}
+          {/* Professional Enrollment Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-gradient-to-br from-white to-indigo-50 rounded-3xl shadow-2xl p-8 border-2 border-indigo-200 hover:border-indigo-300 transition-all duration-300">
-              {/* Price Section */}
-              <div className="text-center mb-8 pb-8 border-b-2 border-gray-100">
-                {course.pricingModel === 'paid' ? (
-                  <div>
-                    <div className="text-6xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
-                      ₦{course.price}
-                    </div>
-                    <p className="text-gray-600 font-medium">One-time payment • Lifetime access</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-6xl font-extrabold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent mb-3">
-                      FREE
-                    </div>
-                    <p className="text-gray-600 font-medium">Start learning today • No credit card</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-4 mb-8">
-                <button 
-                  onClick={handleEnrollClick}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-2 text-lg"
-                >
-                  <span>Enroll Now</span>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </button>
-
-                <button className="w-full bg-gray-50 hover:bg-gray-100 text-gray-800 font-semibold py-4 px-6 rounded-2xl transition-all duration-300 border-2 border-gray-200 hover:border-gray-300 flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/>
-                  </svg>
-                  <span>Add to Wishlist</span>
-                </button>
-              </div>
-
-              {/* Money Back Guarantee Badge */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-4 mb-8 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                  </svg>
-                  <span className="font-bold text-green-800">30-Day Money-Back Guarantee</span>
+            <div className="sticky top-24">
+              {/* Main Enrollment Card */}
+              <div className="relative bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 rounded-3xl shadow-2xl border-2 border-indigo-200/50 hover:border-indigo-300/70 transition-all duration-500 overflow-hidden">
+                {/* Decorative Background Elements */}
+                <div className="absolute top-0 left-0 w-full h-full">
+                  <div className="absolute top-6 right-6 w-32 h-32 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-2xl"></div>
+                  <div className="absolute bottom-6 left-6 w-24 h-24 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-xl"></div>
                 </div>
-                <p className="text-sm text-green-700">Full refund if you're not satisfied</p>
-              </div>
 
-              {/* Course Includes */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-gray-900 mb-5 text-lg">This course includes:</h4>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                    <svg className="w-6 h-6 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                    </svg>
-                    <div>
-                      <div className="font-semibold text-gray-900">{totalLessons} video lessons</div>
-                      <div className="text-sm text-gray-600">On-demand content</div>
+                <div className="relative p-8 lg:p-10">
+                  {/* Header Badge */}
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-100 to-purple-100 px-4 py-2 rounded-full border border-indigo-200/50 mb-6">
+                      <div className="w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-semibold text-indigo-700">Limited Time Offer</span>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
-                    <svg className="w-6 h-6 text-purple-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/>
-                    </svg>
-                    <div>
-                      <div className="font-semibold text-gray-900">Downloadable resources</div>
-                      <div className="text-sm text-gray-600">Files & materials</div>
-                    </div>
+
+                  {/* Price Section */}
+                  <div className="text-center mb-10">
+                    {course.pricingModel === 'paid' ? (
+                      <div className="relative">
+                        {/* Price Background Glow */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-3xl blur-2xl transform scale-110"></div>
+                        <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-indigo-200/30 shadow-xl">
+                          <div className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                            ₦6500
+                          </div>
+                          <div className="text-lg font-semibold text-indigo-700 mb-2">per month</div>
+                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                            </svg>
+                            <span>One-time payment • Lifetime access</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-3xl blur-2xl transform scale-110"></div>
+                        <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-green-200/30 shadow-xl">
+                          <div className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent mb-4">
+                            FREE
+                          </div>
+                          <div className="text-lg font-semibold text-green-700 mb-2">Start Learning Today</div>
+                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                            </svg>
+                            <span>No credit card required</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
-                    <svg className="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-                    </svg>
-                    <div>
-                      <div className="font-semibold text-gray-900">Full lifetime access</div>
-                      <div className="text-sm text-gray-600">Learn at your pace</div>
-                    </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-4">
+                    <button
+                      onClick={handleEnrollClick}
+                      className="group relative w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold py-5 px-8 rounded-2xl transition-all duration-300 shadow-2xl hover:shadow-indigo-500/25 transform hover:scale-105 hover:-translate-y-1 overflow-hidden"
+                    >
+                      {/* Button Glow Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                      <div className="relative flex items-center justify-center gap-3">
+                        <span className="text-lg">Enroll Now</span>
+                        <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    <button className="group w-full bg-white/80 hover:bg-white/90 backdrop-blur-sm text-gray-800 font-semibold py-4 px-6 rounded-2xl transition-all duration-300 border-2 border-gray-200/50 hover:border-gray-300/70 shadow-lg hover:shadow-xl transform hover:scale-102 flex items-center justify-center gap-3">
+                      <svg className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"/>
+                      </svg>
+                      <span>Add to Wishlist</span>
+                    </button>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                    <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-                    </svg>
-                    <div>
-                      <div className="font-semibold text-gray-900">Mobile & desktop</div>
-                      <div className="text-sm text-gray-600">Access anywhere</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-xl border border-yellow-100">
-                    <svg className="w-6 h-6 text-yellow-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                    </svg>
-                    <div>
-                      <div className="font-semibold text-gray-900">Certificate of completion</div>
-                      <div className="text-sm text-gray-600">Shareable credential</div>
+
+                  {/* Trust Indicators */}
+                  <div className="mt-8 pt-6 border-t border-gray-200/50">
+                    <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        </svg>
+                        <span>Secure Payment</span>
+                      </div>
+                      <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                        </svg>
+                        <span>Instant Access</span>
+                      </div>
                     </div>
                   </div>
                 </div>
