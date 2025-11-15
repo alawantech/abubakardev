@@ -166,8 +166,13 @@ const CourseManagement = () => {
       featuredImage: '',
       introVideoUrl: '',
       pricingModel: 'free',
-      price: 0,
-      topics: []
+      price: '',
+      topics: [],
+      whatYouWillLearn: [],
+      targetAudience: [],
+      courseDurationMonths: 0,
+      materialsIncluded: [],
+      requirements: []
     });
     setView('list');
   };
@@ -240,7 +245,7 @@ const CourseManagement = () => {
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       ['link'],
       ['clean']
-    ],
+    ]
   };
 
   const getYouTubeVideoId = (url) => {
@@ -490,7 +495,7 @@ const CourseManagement = () => {
                 <label>What Will Students Learn? *</label>
                 <small className="field-hint">Enter one benefit per line. Students will see key takeaways before enrolling.</small>
                 <textarea
-                  value={courseData.whatYouWillLearn.join('\n')}
+                  value={(courseData.whatYouWillLearn || []).join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
                     whatYouWillLearn: e.target.value.split('\n')
@@ -504,7 +509,7 @@ const CourseManagement = () => {
                 <label>Target Audience *</label>
                 <small className="field-hint">One line per target audience. Who will benefit most from this course?</small>
                 <textarea
-                  value={courseData.targetAudience.join('\n')}
+                  value={(courseData.targetAudience || []).join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
                     targetAudience: e.target.value.split('\n')
@@ -531,7 +536,7 @@ const CourseManagement = () => {
                 <label>Materials Included</label>
                 <small className="field-hint">List assets provided to students (one per line). E.g., downloadable resources, certificates, etc.</small>
                 <textarea
-                  value={courseData.materialsIncluded.join('\n')}
+                  value={(courseData.materialsIncluded || []).join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
                     materialsIncluded: e.target.value.split('\n')
@@ -545,7 +550,7 @@ const CourseManagement = () => {
                 <label>Requirements/Instructions</label>
                 <small className="field-hint">Additional requirements or instructions for students (one per line).</small>
                 <textarea
-                  value={courseData.requirements.join('\n')}
+                  value={(courseData.requirements || []).join('\n')}
                   onChange={(e) => setCourseData({ 
                     ...courseData, 
                     requirements: e.target.value.split('\n')

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import linkifyHtml from 'linkify-html';
+import { formatDescription } from '../utils/formatDescription';
 import './CoursePage.css';
 
 // Helper function to convert URLs in text to clickable links
@@ -483,13 +485,9 @@ const CoursePage = () => {
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
                                   </svg>
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1">
                                   <div className="font-semibold text-gray-900 mb-1">{lesson.name}</div>
-                                  {lesson.description && !lesson.description.includes('<p>htmlkjfjkf</p><p>rady.ng</p>') && (
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                      {linkifyText(lesson.description)}
-                                    </p>
-                                  )}
+                                  {lesson.description && <div style={{ background: 'yellow', padding: '10px', border: '2px solid red' }}>{console.log('Lesson description:', lesson.description)}{lesson.description}</div>}
                                 </div>
                                 {lesson.videoUrl && (
                                   <div className="flex-shrink-0 flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDescription } from '../utils/formatDescription';
 import './CourseLearning.css';
 
 const CourseLearning = () => {
@@ -426,9 +427,7 @@ const CourseLearning = () => {
               {currentLesson.description && (
                 <div className="lesson-description">
                   <h3>Lesson Description</h3>
-                  <div className="description-content">
-                    {linkifyText(currentLesson.description)}
-                  </div>
+                  <div className="description-content" dangerouslySetInnerHTML={{ __html: formatDescription(currentLesson.description) }} />
                 </div>
               )}
 
