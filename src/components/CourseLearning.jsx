@@ -71,6 +71,26 @@ const CourseLearning = () => {
         const enrollmentData = enrollmentsSnapshot.docs[0].data();
         setEnrollment({ id: enrollmentsSnapshot.docs[0].id, ...enrollmentData });
         setCompletedLessons(enrollmentData.completedLessons || []);
+        
+        // Check if user is blocked
+        const planQuery = query(
+          collection(db, 'enrollmentPlans'),
+          where('userId', '==', currentUser.uid),
+          where('courseId', '==', courseId)
+        );
+        const planSnapshot = await getDocs(planQuery);
+        if (!planSnapshot.empty) {
+          const planData = planSnapshot.docs[0].data();
+          if (planData.blocked) {
+            navigate('/dashboard', { 
+              state: { 
+                message: 'Your access to this course has been blocked due to payment issues. Please renew your subscription.',
+                paymentSuccess: false 
+              } 
+            });
+            return;
+          }
+        }
       }
 
       setLoading(false);

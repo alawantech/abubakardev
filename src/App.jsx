@@ -11,6 +11,7 @@ import CourseSignUp from './components/CourseSignUp';
 import CoursePayment from './components/CoursePayment';
 import CourseDashboard from './components/CourseDashboard';
 import Dashboard from './components/Dashboard';
+import RenewPayment from './components/RenewPayment';
 import Hero from './components/Hero';
 import Services from './components/Services';
 import Portfolio from './components/Portfolio';
@@ -22,6 +23,7 @@ import Pricing from './components/Pricing';
 import Login from './components/Login';
 import Register from './components/Register';
 import AdminDashboard from './components/AdminDashboard';
+import ExtendSubscription from './components/ExtendSubscription';
 import './App.css';
 
 
@@ -172,6 +174,26 @@ function App() {
             <div className="App">
               <Header />
               <Dashboard />
+              <Footer />
+            </div>
+          } 
+        />
+        <Route 
+          path="/renew-payment" 
+          element={
+            <div className="App">
+              <Header />
+              <RenewPayment />
+              <Footer />
+            </div>
+          } 
+        />
+        <Route 
+          path="/extend-subscription" 
+          element={
+            <div className="App">
+              <Header />
+              <ExtendSubscription />
               <Footer />
             </div>
           } 

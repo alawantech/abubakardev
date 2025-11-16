@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, orderBy } from 'firebase/firestore';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, auth, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
@@ -20,9 +21,24 @@ const Dashboard = () => {
     newPassword: '',
     confirmPassword: '',
   });
-  const [updateMessage, setUpdateMessage] = useState('');
+  const [bankDetails, setBankDetails] = useState(null);
+  const [paymentReceipt, setPaymentReceipt] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
+  const [uploadingRenewal, setUploadingRenewal] = useState(false);
   const [updateError, setUpdateError] = useState('');
-  const [updating, setUpdating] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [paymentCountdown, setPaymentCountdown] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [visibleSections, setVisibleSections] = useState({
+    subscriptionDetails: true,
+    extendSubscription: true,
+    statsCards: true,
+    enrolledCourses: true,
+    browseMore: true,
+    paymentHistory: true,
+  });
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
     // Check if redirected after successful payment
@@ -39,7 +55,9 @@ const Dashboard = () => {
 
     if (currentUser) {
       fetchEnrollments();
+      fetchPaymentHistory();
       loadProfileData();
+      fetchBankDetails();
     } else {
       navigate('/login', { state: { from: '/dashboard' } });
     }
@@ -48,6 +66,38 @@ const Dashboard = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-container')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMobileMenuOpen]);
+
+  // Countdown timer for next payment
+  useEffect(() => {
+    if (enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly') {
+      const updateCountdown = () => {
+        const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+        if (nextPayment) {
+          setPaymentCountdown(nextPayment.daysRemaining);
+        }
+      };
+
+      // Update immediately
+      updateCountdown();
+
+      // Update every second
+      const interval = setInterval(updateCountdown, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [enrollments]);
 
   const loadProfileData = async () => {
     if (userData) {
@@ -58,6 +108,89 @@ const Dashboard = () => {
         newPassword: '',
         confirmPassword: '',
       });
+    }
+  };
+
+  const fetchBankDetails = async () => {
+    try {
+      const bankDoc = await getDoc(doc(db, 'admin', 'bankDetails'));
+      if (bankDoc.exists()) {
+        setBankDetails(bankDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching bank details:', error);
+    }
+  };
+
+  const handleRenewalFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File size must be less than 5MB');
+        return;
+      }
+      setPaymentReceipt(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setReceiptPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRenewalSubmit = async () => {
+    if (!paymentReceipt) return;
+
+    setUploadingRenewal(true);
+    try {
+      // Upload receipt to Firebase Storage
+      const storageRef = ref(storage, `renewal-payments/${currentUser.uid}_${Date.now()}_${paymentReceipt.name}`);
+      await uploadBytes(storageRef, paymentReceipt);
+      const receiptURL = await getDownloadURL(storageRef);
+
+      // Create renewal payment record
+      const renewalData = {
+        userId: currentUser.uid,
+        userEmail: currentUser.email,
+        courseId: enrollment.courseId,
+        receiptURL,
+        amount: 6500,
+        status: 'pending',
+        submittedAt: new Date(),
+        type: 'renewal'
+      };
+
+      await addDoc(collection(db, 'payments'), renewalData);
+
+      // Update enrollment plans to unblock user
+      const enrollmentPlansQuery = query(
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', currentUser.uid)
+      );
+      const plansSnapshot = await getDocs(enrollmentPlansQuery);
+      
+      const updatePromises = plansSnapshot.docs.map(async (planDoc) => {
+        const planData = planDoc.data();
+        const newExpiryDate = new Date(planData.expiryDate?.toDate() || new Date());
+        newExpiryDate.setMonth(newExpiryDate.getMonth() + 1); // Extend by 1 month
+        
+        await updateDoc(doc(db, 'enrollmentPlans', planDoc.id), {
+          blocked: false,
+          expiryDate: newExpiryDate,
+          lastRenewalDate: new Date()
+        });
+      });
+
+      await Promise.all(updatePromises);
+
+      alert('Renewal payment submitted successfully! Your access will be restored once payment is verified.');
+      setPaymentReceipt(null);
+      setReceiptPreview(null);
+      // Refresh enrollments
+      fetchEnrollments();
+    } catch (error) {
+      console.error('Error submitting renewal:', error);
+      alert('Failed to submit renewal payment. Please try again.');
+    } finally {
+      setUploadingRenewal(false);
     }
   };
 
@@ -93,6 +226,7 @@ const Dashboard = () => {
             ...enrollmentData,
             course: courseData,
             enrollmentPlan: planData,
+            blocked: planData?.blocked || false
           };
         })
       );
@@ -104,6 +238,266 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  const fetchPaymentHistory = async () => {
+    if (!currentUser) return;
+
+    setLoadingPayments(true);
+    try {
+      // Fetch payments from 'payments' collection (renewals, extensions)
+      // Query by both userId (for existing payments) and userEmail (for consistency)
+      const paymentsQuery1 = query(
+        collection(db, 'payments'),
+        where('userId', '==', currentUser.uid),
+        orderBy('submittedAt', 'desc')
+      );
+
+      const paymentsQuery2 = query(
+        collection(db, 'payments'),
+        where('userEmail', '==', currentUser.email),
+        orderBy('submittedAt', 'desc')
+      );
+
+      const [paymentsSnapshot1, paymentsSnapshot2] = await Promise.all([
+        getDocs(paymentsQuery1),
+        getDocs(paymentsQuery2)
+      ]);
+
+      const paymentsData1 = paymentsSnapshot1.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        submittedAt: doc.data().submittedAt?.toDate(),
+        source: 'payments_uid'
+      }));
+
+      const paymentsData2 = paymentsSnapshot2.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        submittedAt: doc.data().submittedAt?.toDate(),
+        source: 'payments_email'
+      }));
+
+      // Combine and deduplicate payments
+      const paymentsData = [...paymentsData1, ...paymentsData2].filter(
+        (payment, index, self) => 
+          index === self.findIndex(p => p.id === payment.id)
+      );
+
+      // Fetch enrollment payments from 'enrollments' collection (initial payments)
+      const enrollmentsQuery = query(
+        collection(db, 'enrollments'),
+        where('customerEmail', '==', currentUser.email)
+      );
+
+      const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+      const enrollmentPaymentsData = enrollmentsSnapshot.docs
+        .filter(doc => doc.data().amount && doc.data().enrolledAt) // Only include paid enrollments
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+            amount: data.amount,
+            status: data.paymentStatus || 'approved',
+            submittedAt: data.enrolledAt?.toDate(),
+            type: 'enrollment',
+            receiptURL: null, // Enrollments don't have receipt URLs in this format
+            source: 'enrollments', // Mark source for debugging
+            transactionId: data.transactionId,
+            paymentReference: data.paymentReference,
+            courseId: data.courseId
+          };
+        });
+
+      // Combine and sort all payments by date (newest first)
+      const allPayments = [...paymentsData, ...enrollmentPaymentsData]
+        .sort((a, b) => {
+          if (!a.submittedAt && !b.submittedAt) return 0;
+          if (!a.submittedAt) return 1;
+          if (!b.submittedAt) return -1;
+          return b.submittedAt - a.submittedAt;
+        });
+
+      setPaymentHistory(allPayments);
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const isUserBlocked = enrollments.some(enrollment => enrollment.blocked);
+
+  // Show renewal screen if user is blocked
+  if (isUserBlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50">
+        {/* Spacer for fixed header */}
+        <div className="h-36"></div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+          {/* Blocked Message */}
+          <div className="text-center mb-8">
+            <div className="inline-block p-6 bg-red-100 rounded-full mb-6">
+              <svg className="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Subscription Expired</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Your subscription has expired. Please renew your payment to continue accessing your courses.
+            </p>
+          </div>
+
+          {/* Renewal Card */}
+          <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Renew Your Subscription</h2>
+            
+            <div className="space-y-6">
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Bank Transfer Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Bank Name</p>
+                    <p className="font-semibold text-gray-900">{bankDetails?.bankName || 'Access Bank'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Account Name</p>
+                    <p className="font-semibold text-gray-900">{bankDetails?.accountName || 'Abubakar Dev'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Account Number</p>
+                    <p className="font-semibold text-gray-900">{bankDetails?.accountNumber || '1234567890'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Amount</p>
+                    <p className="font-semibold text-gray-900">₦6,500</p>
+                  </div>
+                  {bankDetails?.branch && (
+                    <div>
+                      <p className="text-sm text-gray-600">Branch</p>
+                      <p className="font-semibold text-gray-900">{bankDetails.branch}</p>
+                    </div>
+                  )}
+                  {bankDetails?.swiftCode && (
+                    <div>
+                      <p className="text-sm text-gray-600">SWIFT Code</p>
+                      <p className="font-semibold text-gray-900">{bankDetails.swiftCode}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-blue-900 mb-4">Payment Instructions</h3>
+                <ol className="space-y-2 text-blue-800">
+                  <li>1. Transfer ₦6,500 to the account details above</li>
+                  <li>2. Take a screenshot of your payment receipt</li>
+                  <li>3. Upload your receipt below for verification</li>
+                  <li>4. Your access will be restored once payment is verified</li>
+                </ol>
+              </div>
+
+              {/* Payment Receipt Upload */}
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-green-900 mb-4">Upload Payment Receipt</h3>
+                <p className="text-sm text-green-800 mb-6">
+                  After making the bank transfer, please upload a screenshot or photo of your payment receipt.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Upload Area */}
+                  <div
+                    onClick={() => document.getElementById('renewal-receipt-upload').click()}
+                    className="border-2 border-dashed border-green-300 rounded-xl p-8 bg-white hover:bg-green-25 transition-colors cursor-pointer group"
+                  >
+                    <div className="text-center">
+                      <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-green-200 transition-colors">
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-700 mb-2">Click to upload receipt</p>
+                      <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                    </div>
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    id="renewal-receipt-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleRenewalFileChange}
+                    className="hidden"
+                  />
+
+                  {paymentReceipt && (
+                    <div className="space-y-3">
+                      <div className="text-sm text-green-700 font-medium">
+                        ✓ Selected: {paymentReceipt.name}
+                      </div>
+
+                      {/* Image Preview */}
+                      {receiptPreview && (
+                        <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
+                          <p className="text-sm text-gray-600 mb-2 font-medium">Receipt Preview:</p>
+                          <div className="flex justify-center">
+                            <img
+                              src={receiptPreview}
+                              alt="Payment receipt preview"
+                              className="max-w-full max-h-64 object-contain rounded-lg shadow-md border border-gray-200"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2 text-center">
+                            This is how your receipt will appear to our verification team
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={handleRenewalSubmit}
+                disabled={!paymentReceipt || uploadingRenewal}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-5 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl disabled:shadow-none transform hover:scale-105 disabled:transform-none flex items-center justify-center gap-3 text-lg cursor-pointer disabled:cursor-not-allowed"
+              >
+                {uploadingRenewal ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span>Submit Renewal Payment</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-xs text-gray-500 text-center">
+                🔒 Your payment receipt will be securely stored and reviewed by our team
+              </p>
+            </div>
+          </div>
+
+          {/* Contact Support */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6 text-center">
+            <h3 className="text-lg font-bold text-indigo-900 mb-2">Need Help?</h3>
+            <p className="text-indigo-700 mb-4">
+              Contact our support team if you have any questions about your payment.
+            </p>
+            <p className="text-sm text-indigo-600">
+              Email: support@abubakardev.com | WhatsApp: +234 123 456 7890
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const calculateDaysRemaining = (enrolledAt) => {
     if (!enrolledAt) return null;
@@ -157,6 +551,12 @@ const Dashboard = () => {
 
       // Update password if provided
       if (profileData.newPassword) {
+        if (!profileData.currentPassword) {
+          setUpdateError('Current password is required to change password');
+          setUpdating(false);
+          return;
+        }
+
         if (profileData.newPassword !== profileData.confirmPassword) {
           setUpdateError('New passwords do not match');
           setUpdating(false);
@@ -230,20 +630,20 @@ const Dashboard = () => {
         {/* Success Message */}
         {showSuccessMessage && location.state?.message && (
           <div className="mb-8 animate-fade-in">
-            <div className={`rounded-2xl p-6 shadow-xl ${
+            <div className={`rounded-2xl p-6 shadow-xl border-2 ${
               location.state.paymentSuccess 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300' 
-                : 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300'
-            }`}>
+                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
+                : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300'
+            } transform transition-all duration-500 hover:shadow-2xl`}>
               <div className="flex items-center gap-4">
                 {location.state.paymentSuccess ? (
-                  <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -265,18 +665,166 @@ const Dashboard = () => {
 
         {/* Welcome Header */}
         <div className="mb-8 flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               Welcome back, {userData?.fullName || currentUser.email}! 👋
             </h1>
             <p className="text-gray-600 text-lg">Track your progress and continue learning</p>
           </div>
-          <button
-            onClick={() => setShowProfileEdit(!showProfileEdit)}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-2 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg"
-          >
-            {showProfileEdit ? 'Close Profile' : 'Edit Profile'}
-          </button>
+          
+          {/* Desktop Edit Profile Button */}
+          <div className="hidden md:block">
+            <button
+              onClick={() => setShowProfileEdit(!showProfileEdit)}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 cursor-pointer flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              {showProfileEdit ? 'Close Profile' : 'Edit Profile'}
+            </button>
+          </div>
+
+          {/* Mobile Hamburger Menu */}
+          <div className="md:hidden relative mobile-menu-container">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-3 bg-white rounded-xl shadow-lg border-2 border-gray-100 hover:border-indigo-300 transition-all duration-300"
+              aria-label="Toggle dashboard menu"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
+
+            {/* Mobile Menu Dropdown */}
+            {isMobileMenuOpen && (
+              <div className="absolute right-0 top-14 w-80 bg-white rounded-2xl shadow-2xl border-2 border-gray-100 z-50 overflow-hidden">
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Dashboard Menu</h3>
+                  
+                  {/* Profile Section */}
+                  <div className="mb-6 pb-4 border-b border-gray-200">
+                    <button
+                      onClick={() => {
+                        setShowProfileEdit(!showProfileEdit);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl hover:from-indigo-100 hover:to-purple-100 transition-all duration-300 border border-indigo-200"
+                    >
+                      <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="font-semibold text-gray-900">
+                        {showProfileEdit ? 'Close Profile' : 'Edit Profile'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Section Visibility Toggles */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Show/Hide Sections</h4>
+                    
+                    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="font-medium text-gray-900">Subscription Details</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={visibleSections.subscriptionDetails}
+                        onChange={(e) => setVisibleSections(prev => ({...prev, subscriptionDetails: e.target.checked}))}
+                        className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                      />
+                    </label>
+
+                    {enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly' && !isUserBlocked && (
+                      <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                          <span className="font-medium text-gray-900">Extend Subscription</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={visibleSections.extendSubscription}
+                          onChange={(e) => setVisibleSections(prev => ({...prev, extendSubscription: e.target.checked}))}
+                          className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                        />
+                      </label>
+                    )}
+
+                    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span className="font-medium text-gray-900">Statistics</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={visibleSections.statsCards}
+                        onChange={(e) => setVisibleSections(prev => ({...prev, statsCards: e.target.checked}))}
+                        className="w-5 h-5 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span className="font-medium text-gray-900">My Courses</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={visibleSections.enrolledCourses}
+                        onChange={(e) => setVisibleSections(prev => ({...prev, enrolledCourses: e.target.checked}))}
+                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span className="font-medium text-gray-900">Browse More</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={visibleSections.browseMore}
+                        onChange={(e) => setVisibleSections(prev => ({...prev, browseMore: e.target.checked}))}
+                        className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Quick Actions</h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          navigate('/courses');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 font-semibold"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Browse Courses
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Profile Edit Section */}
@@ -340,12 +888,13 @@ const Dashboard = () => {
                 <div className="grid md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Current Password
+                      Current Password {profileData.newPassword && '*'}
                     </label>
                     <input
                       type="password"
                       value={profileData.currentPassword}
                       onChange={(e) => setProfileData({...profileData, currentPassword: e.target.value})}
+                      required={!!profileData.newPassword}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                       placeholder="Enter current password"
                     />
@@ -377,7 +926,10 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Leave password fields empty if you don't want to change your password
+                  {profileData.newPassword 
+                    ? 'Current password is required to change your password'
+                    : 'Leave password fields empty if you don\'t want to change your password'
+                  }
                 </p>
               </div>
 
@@ -405,11 +957,16 @@ const Dashboard = () => {
         )}
 
         {/* Enrollment Plan Details */}
-        {enrollments.length > 0 && enrollments[0].enrollmentPlan && (
-          <div className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8 border-2 border-indigo-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">📋 Subscription Details</h2>
+        {visibleSections.subscriptionDetails && enrollments.length > 0 && enrollments[0].enrollmentPlan && (
+          <div className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8 border-2 border-indigo-200 transform transition-all duration-500 hover:shadow-2xl animate-fade-in">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                <span className="text-xl">📋</span>
+              </div>
+              Subscription Details
+            </h2>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Plan Type */}
               <div className="bg-white rounded-xl p-6 shadow-md">
                 <div className="flex items-center mb-3">
@@ -426,79 +983,20 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              {/* Amount Paid */}
+              {/* Status */}
               <div className="bg-white rounded-xl p-6 shadow-md">
                 <div className="flex items-center mb-3">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-2xl">💰</span>
+                    <span className="text-2xl">📊</span>
                   </div>
-                  <h3 className="text-sm font-semibold text-gray-600">Amount Paid</h3>
+                  <h3 className="text-sm font-semibold text-gray-600">Status</h3>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  ₦{(() => {
-                    const amount = enrollments[0].enrollmentPlan?.planAmount || 
-                                   enrollments[0].enrollmentPlan?.amount || 
-                                   enrollments[0].planAmount || 
-                                   enrollments[0].amount;
-                    return amount ? amount.toLocaleString() : '0';
-                  })()}
+                  {isUserBlocked ? 'Blocked' : 'Active'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Payment Status: <span className="text-green-600 font-semibold capitalize">
-                    {enrollments[0].enrollmentPlan.paymentStatus}
-                  </span>
+                  {isUserBlocked ? 'Payment required' : 'Access granted'}
                 </p>
-              </div>
-
-              {/* Next Payment / Expiry */}
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <div className="flex items-center mb-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-2xl">📅</span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-600">
-                    {enrollments[0].enrollmentPlan.planType === 'monthly' ? 'Next Payment' : 'Valid Until'}
-                  </h3>
-                </div>
-                {enrollments[0].enrollmentPlan.planType === 'monthly' ? (
-                  (() => {
-                    const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
-                    return nextPayment ? (
-                      <>
-                        <p className="text-2xl font-bold text-purple-600">
-                          {nextPayment.date}
-                        </p>
-                        <p className={`text-sm mt-1 font-semibold ${nextPayment.daysRemaining <= 7 ? 'text-red-500' : 'text-gray-500'}`}>
-                          {nextPayment.daysRemaining > 0 
-                            ? `${nextPayment.daysRemaining} days remaining`
-                            : 'Payment overdue'
-                          }
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-gray-500">Not available</p>
-                    );
-                  })()
-                ) : (
-                  (() => {
-                    const expiryDate = enrollments[0].enrolledAt?.toDate();
-                    if (expiryDate) {
-                      const expiry = new Date(expiryDate);
-                      expiry.setFullYear(expiry.getFullYear() + 1);
-                      return (
-                        <>
-                          <p className="text-2xl font-bold text-purple-600">
-                            {expiry.toLocaleDateString()}
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            12 months from enrollment
-                          </p>
-                        </>
-                      );
-                    }
-                    return <p className="text-sm text-gray-500">Not available</p>;
-                  })()
-                )}
               </div>
             </div>
 
@@ -516,58 +1014,112 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Pay Ahead / Extend Subscription */}
+        {visibleSections.extendSubscription && enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly' && !isUserBlocked && (
+          <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              Extend Your Subscription
+            </h2>
+            
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <p className="text-gray-700 mb-4">
+                Pay ahead to extend your subscription and ensure uninterrupted access to your courses. 
+                Your current subscription will automatically continue when it expires.
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
+                  <p className="text-sm text-gray-600">
+                    {(() => {
+                      const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+                      return nextPayment ? 
+                        `Next payment due: ${nextPayment.date} (${nextPayment.daysRemaining} days)` : 
+                        'Payment information not available';
+                    })()}
+                  </p>
+                </div>
+                
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="font-semibold text-green-900 mb-2">Pay Ahead Benefits</h3>
+                  <ul className="text-sm text-green-800 space-y-1">
+                    <li>• No interruption in learning</li>
+                    <li>• Automatic subscription renewal</li>
+                    <li>• Peace of mind</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => navigate('/extend-subscription')}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl transform hover:scale-105 focus:scale-105 cursor-pointer focus:ring-4 focus:ring-green-300 focus:outline-none flex items-center justify-center gap-3"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                Pay Ahead & Extend Subscription
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-indigo-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-semibold mb-1">Total Courses</p>
-                <p className="text-3xl font-bold text-gray-900">{enrollments.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
-                </svg>
+        {visibleSections.statsCards && (
+          <div className="grid md:grid-cols-3 gap-6 mb-10">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-indigo-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-semibold mb-1">Total Courses</p>
+                  <p className="text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">{enrollments.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-300">
+                  <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-semibold mb-1">Active</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {enrollments.filter(e => {
-                    const remaining = calculateDaysRemaining(e.enrolledAt);
-                    return remaining && remaining.days > 0;
-                  }).length}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-semibold mb-1">Active</p>
+                  <p className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
+                    {enrollments.filter(e => {
+                      const remaining = calculateDaysRemaining(e.enrolledAt);
+                      return remaining && remaining.days > 0;
+                    }).length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-semibold mb-1">Certificates</p>
-                <p className="text-3xl font-bold text-gray-900">0</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm font-semibold mb-1">Certificates</p>
+                  <p className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">0</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
+                  <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Enrolled Courses */}
-        {enrollments.length === 0 ? (
+        {visibleSections.enrolledCourses && (enrollments.length === 0 ? (
           <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
             <div className="inline-block p-6 bg-gray-100 rounded-full mb-6">
               <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -594,7 +1146,7 @@ const Dashboard = () => {
                 return (
                   <div
                     key={enrollment.id}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-xl"
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-indigo-300 transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-1 group"
                   >
                     {enrollment.course?.featuredImage && (
                       <div className="h-48 overflow-hidden">
@@ -651,19 +1203,127 @@ const Dashboard = () => {
               })}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Browse More Courses */}
-        <div className="mt-12 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 text-center border-2 border-indigo-200">
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Want to Learn More?</h3>
-          <p className="text-gray-600 mb-6">Explore our catalog and enroll in more courses</p>
-          <button
-            onClick={() => navigate('/courses')}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            Browse All Courses
-          </button>
-        </div>
+        {visibleSections.browseMore && (
+          <div className="mt-12 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 text-center border-2 border-indigo-200">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Want to Learn More?</h3>
+            <p className="text-gray-600 mb-6">Explore our catalog and enroll in more courses</p>
+            <button
+              onClick={() => navigate('/courses')}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Browse All Courses
+            </button>
+          </div>
+        )}
+
+        {/* Payment History */}
+        {visibleSections.paymentHistory && (
+          <div className="mt-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl shadow-xl p-8 border-2 border-blue-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-xl">💳</span>
+              </div>
+              Payment History
+            </h2>
+
+            {loadingPayments ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="ml-3 text-gray-600">Loading payment history...</span>
+              </div>
+            ) : paymentHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="inline-block p-6 bg-gray-100 rounded-full mb-6">
+                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-6 0l6 6m2-10h-1a2 2 0 00-2 2v10a2 2 0 002 2h1m-6-4h4" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Payment History</h3>
+                <p className="text-gray-600">Your payment transactions will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {paymentHistory.map((payment) => (
+                  <div
+                    key={payment.id}
+                    className="bg-white rounded-xl p-6 shadow-md border-2 border-gray-100 hover:border-blue-300 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            payment.status === 'approved' ? 'bg-green-100' :
+                            payment.status === 'pending' ? 'bg-yellow-100' :
+                            payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
+                          }`}>
+                            <span className="text-lg">
+                              {payment.type === 'renewal' ? '🔄' :
+                               payment.type === 'extension' ? '⏰' : '💰'}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 capitalize">
+                              {payment.type || 'Payment'} - ₦{payment.amount?.toLocaleString() || '0'}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {payment.submittedAt?.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm text-gray-600">Status</p>
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                              payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {payment.status || 'Unknown'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <p className="text-sm text-gray-600">Type</p>
+                            <span className="text-sm font-medium text-gray-900 capitalize">
+                              {payment.type || 'Regular Payment'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {payment.receiptURL && (
+                          <div className="mt-4">
+                            <p className="text-sm text-gray-600 mb-2">Receipt</p>
+                            <button
+                              onClick={() => window.open(payment.receiptURL, '_blank')}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              View Receipt
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
