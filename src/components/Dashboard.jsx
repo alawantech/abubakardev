@@ -79,9 +79,14 @@ const Dashboard = () => {
           const courseDoc = await getDoc(doc(db, 'courses', enrollmentData.courseId));
           const courseData = courseDoc.exists() ? courseDoc.data() : null;
           
-          // Fetch enrollment plan details
-          const planDoc = await getDoc(doc(db, 'enrollmentPlans', currentUser.uid));
-          const planData = planDoc.exists() ? planDoc.data() : null;
+          // Fetch enrollment plan details for this specific enrollment
+          const planQuery = query(
+            collection(db, 'enrollmentPlans'),
+            where('userId', '==', enrollmentData.userId || currentUser.uid),
+            where('courseId', '==', enrollmentData.courseId)
+          );
+          const planSnapshot = await getDocs(planQuery);
+          const planData = planSnapshot.docs.length > 0 ? planSnapshot.docs[0].data() : null;
           
           return {
             id: enrollmentDoc.id,
@@ -93,7 +98,6 @@ const Dashboard = () => {
       );
       
       setEnrollments(enrollmentsData);
-      console.log('Enrollments with plan data:', enrollmentsData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
@@ -431,7 +435,13 @@ const Dashboard = () => {
                   <h3 className="text-sm font-semibold text-gray-600">Amount Paid</h3>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  ₦{enrollments[0].enrollmentPlan.planAmount?.toLocaleString()}
+                  ₦{(() => {
+                    const amount = enrollments[0].enrollmentPlan?.planAmount || 
+                                   enrollments[0].enrollmentPlan?.amount || 
+                                   enrollments[0].planAmount || 
+                                   enrollments[0].amount;
+                    return amount ? amount.toLocaleString() : '0';
+                  })()}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   Payment Status: <span className="text-green-600 font-semibold capitalize">
