@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,7 @@ import './CourseLearning.css';
 const CourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -17,6 +18,7 @@ const CourseLearning = () => {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -25,6 +27,15 @@ const CourseLearning = () => {
       navigate('/login');
     }
   }, [currentUser, courseId]);
+
+  useEffect(() => {
+    // Check for success message from payment
+    if (location.state?.paymentSuccess) {
+      setShowSuccessMessage(true);
+      // Auto-hide after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -249,6 +260,42 @@ const CourseLearning = () => {
 
   return (
     <div className="course-learning-container pt-48">
+      {/* Success Message */}
+      {showSuccessMessage && location.state?.message && (
+        <div className="mb-6 animate-fade-in px-4">
+          <div className={`rounded-2xl p-6 shadow-xl ${
+            location.state.paymentSuccess 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300' 
+              : 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300'
+          }`}>
+            <div className="flex items-center gap-4">
+              {location.state.paymentSuccess ? (
+                <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-gray-900">
+                  {location.state.paymentSuccess ? '🎉 Payment Successful!' : '⚠️ Payment Issue'}
+                </h3>
+                <p className="text-gray-700">{location.state.message}</p>
+                {location.state.reference && (
+                  <p className="text-sm text-gray-600 mt-1">Reference: {location.state.reference}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <div className="learning-header">
         <div className="header-content">

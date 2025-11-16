@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 
 const CoursePayment = () => {
   const location = useLocation();
@@ -10,6 +10,10 @@ const CoursePayment = () => {
   const { courseId } = useParams();
   const { plan, userId, customerName, customerEmail, customerPhone } = location.state || {};
   const [course, setCourse] = useState(null);
+  const [bankDetails, setBankDetails] = useState(null);
+  const [paymentReceipt, setPaymentReceipt] = useState(null);
+  const [receiptPreview, setReceiptPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,131 +28,163 @@ const CoursePayment = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
+  // Clean up object URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+      }
+    };
+  }, [receiptPreview]);
+
   const fetchCourse = async () => {
     try {
       const courseDoc = await getDoc(doc(db, 'courses', courseId));
       if (courseDoc.exists()) {
         setCourse({ id: courseDoc.id, ...courseDoc.data() });
       }
+
+      // Fetch bank details
+      const bankDoc = await getDoc(doc(db, 'admin', 'bankDetails'));
+      if (bankDoc.exists()) {
+        setBankDetails(bankDoc.data());
+      }
+
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching course:', error);
+      console.error('Error fetching data:', error);
       setLoading(false);
     }
   };
 
-  const config = {
-    public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
-    tx_ref: `COURSE-${courseId}-${Date.now()}`,
-    amount: plan?.amount || 0,
-    currency: 'NGN',
-    payment_options: 'card,mobilemoney,ussd',
-    customer: {
-      email: customerEmail,
-      phone_number: customerPhone,
-      name: customerName,
-    },
-    customizations: {
-      title: plan?.courseName || 'Course Enrollment',
-      description: `${plan?.type === 'monthly' ? 'Monthly Payment' : 'One-Time Payment'} for ${plan?.courseName}`,
-      logo: 'https://your-logo-url.com/logo.png',
-    },
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (PNG, JPG, JPEG)');
+        return;
+      }
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      // Clean up previous preview URL
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+      }
+
+      // Create new preview URL
+      const previewURL = URL.createObjectURL(file);
+      setReceiptPreview(previewURL);
+      setPaymentReceipt(file);
+    }
   };
 
-  const handleFlutterPayment = useFlutterwave(config);
+  const handleSubmitPayment = async () => {
+    if (!paymentReceipt) {
+      alert('Please select a payment receipt image');
+      return;
+    }
 
-  const handlePayNow = () => {
-    handleFlutterPayment({
-      callback: async (response) => {
-        console.log('=== FULL PAYMENT RESPONSE ===');
-        console.log('Response object:', response);
-        console.log('Response status:', response.status);
-        console.log('Response transaction_id:', response.transaction_id);
-        console.log('Response amount:', response.amount);
-        console.log('============================');
-        
-        closePaymentModal();
-        
-        // Check if payment was successful (could be "successful", "success", or other variations)
-        const isSuccessful = response.status === 'successful' || 
-                            response.status === 'success' ||
-                            response.status === 'completed';
-        
-        if (isSuccessful) {
-          // Verify payment with Cloud Function
-          try {
-            const functionUrl = import.meta.env.VITE_FIREBASE_FUNCTIONS_URL || 
-                               `https://us-central1-${import.meta.env.VITE_FIREBASE_PROJECT_ID}.cloudfunctions.net/verifyPayment`;
-            
-            console.log('Verifying payment with:', functionUrl);
-            console.log('Payment data:', {
-              transaction_id: response.transaction_id,
-              expected_amount: plan.amount,
-              courseId: courseId,
-            });
+    setUploading(true);
 
-            const verificationResponse = await fetch(functionUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                transaction_id: response.transaction_id,
-                expected_amount: plan.amount,
-                courseId: courseId,
-                courseName: plan.courseName,
-                customerEmail: customerEmail,
-                customerName: customerName,
-                customerPhone: customerPhone,
-              }),
-            });
+    try {
+      let receiptURL = null;
 
-            console.log('Verification response status:', verificationResponse.status);
-            
-            const verificationData = await verificationResponse.json();
-            console.log('Verification data:', verificationData);
+      // Try to upload to Firebase Storage
+      try {
+        const fileName = `payment-receipts/${userId}_${courseId}_${Date.now()}`;
+        console.log('Attempting to upload file:', fileName);
 
-            if (verificationData.success) {
-              // Payment verified successfully - redirect directly to dashboard
-              navigate(`/course/${courseId}/dashboard`, {
-                state: {
-                  paymentSuccess: true,
-                  message: 'Payment successful! You are now enrolled in the course.'
-                }
-              });
-            } else {
-              // Show error in UI instead of alert
-              navigate(`/course/${courseId}/dashboard`, {
-                state: {
-                  paymentSuccess: false,
-                  message: 'Payment verification failed: ' + (verificationData.message || 'Unknown error'),
-                  reference: response.transaction_id
-                }
-              });
-              console.error('Verification failed:', verificationData);
-            }
-          } catch (error) {
-            console.error('Error verifying payment:', error);
-            // Show error in dashboard instead of alert
-            navigate(`/course/${courseId}/dashboard`, {
-              state: {
-                paymentSuccess: false,
-                message: 'Payment successful on Flutterwave, but verification failed. Please contact support.',
-                reference: response.transaction_id,
-                error: error.message
-              }
-            });
-          }
-        } else {
-          console.error('Payment not successful. Full response:', response);
-          // Don't navigate if payment failed - user can retry
-          console.log('Payment failed with status:', response.status);
+        const receiptRef = ref(storage, fileName);
+        const uploadTask = await uploadBytes(receiptRef, paymentReceipt);
+        console.log('Upload successful:', uploadTask);
+
+        receiptURL = await getDownloadURL(receiptRef);
+        console.log('Download URL obtained:', receiptURL);
+      } catch (uploadError) {
+        console.warn('Firebase Storage upload failed (likely CORS), proceeding without receipt:', uploadError.message);
+
+        // Fallback: Continue without receipt URL
+        // Admin can request manual receipt upload later
+        receiptURL = null;
+      }
+
+      // Create payment record in Firestore
+      const paymentData = {
+        userId,
+        courseId,
+        courseName: plan.courseName,
+        customerName,
+        customerEmail,
+        customerPhone,
+        planType: plan.type,
+        amount: plan.amount,
+        receiptURL,
+        status: receiptURL ? 'pending' : 'receipt_pending_upload',
+        submittedAt: new Date(),
+        paymentMethod: 'bank_transfer',
+        receiptFileName: paymentReceipt.name,
+        receiptFileSize: paymentReceipt.size,
+        receiptFileType: paymentReceipt.type
+      };
+
+      const paymentDocRef = await addDoc(collection(db, 'payments'), paymentData);
+      console.log('Payment record created:', paymentDocRef.id);
+
+      // Update enrollment plan (use userId as document ID to match Dashboard query)
+      const enrollmentData = {
+        userId,
+        courseId,
+        planType: plan.type,
+        planAmount: plan.amount,
+        paymentStatus: receiptURL ? 'paid' : 'receipt_required',
+        createdAt: new Date(),
+        nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      };
+
+      await setDoc(doc(db, 'enrollmentPlans', userId), enrollmentData);
+
+      // Create enrollment record for course access
+      const enrollmentAccessData = {
+        customerEmail: customerEmail,
+        courseId,
+        courseName: plan.courseName,
+        enrolledAt: new Date(),
+        completedLessons: [], // Start with empty completed lessons
+        planType: plan.type,
+        planAmount: plan.amount,
+        userId: userId // Add userId for consistency
+      };
+
+      const enrollmentAccessDocRef = await addDoc(collection(db, 'enrollments'), enrollmentAccessData);
+
+      // Success message based on upload success
+      const successMessage = receiptURL
+        ? 'Payment receipt submitted successfully! Your enrollment will be activated once verified.'
+        : 'Payment information submitted! Please contact support to upload your payment receipt for verification.';
+
+      navigate(`/course/${courseId}/learn`, {
+        state: {
+          paymentSuccess: true,
+          message: successMessage
         }
-      },
-      onClose: () => {
-        console.log('Payment modal closed');
-      },
-    });
+      });
+    } catch (error) {
+      console.error('Error submitting payment:', error);
+      alert(`Error submitting payment: ${error.message}. Please try again or contact support.`);
+    } finally {
+      setUploading(false);
+      // Clean up preview URL
+      if (receiptPreview) {
+        URL.revokeObjectURL(receiptPreview);
+        setReceiptPreview(null);
+      }
+    }
   };
 
   if (!plan) {
@@ -226,25 +262,128 @@ const CoursePayment = () => {
             )}
 
             <div className="flex justify-between items-center pt-4">
-              <span className="text-xl font-bold text-gray-900">Amount to Pay Now:</span>
+              <span className="text-xl font-bold text-gray-900">Amount to Pay:</span>
               <span className="text-4xl font-extrabold text-indigo-600">
                 ₦{plan.amount.toLocaleString()}
               </span>
             </div>
           </div>
 
+          {/* Bank Details */}
+          {bankDetails && (
+            <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Bank Transfer Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Bank Name</p>
+                  <p className="font-semibold text-gray-900">{bankDetails.bankName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Account Name</p>
+                  <p className="font-semibold text-gray-900">{bankDetails.accountName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Account Number</p>
+                  <p className="font-semibold text-gray-900">{bankDetails.accountNumber}</p>
+                </div>
+                {bankDetails.branch && (
+                  <div>
+                    <p className="text-sm text-gray-600">Branch</p>
+                    <p className="font-semibold text-gray-900">{bankDetails.branch}</p>
+                  </div>
+                )}
+                {bankDetails.swiftCode && (
+                  <div>
+                    <p className="text-sm text-gray-600">SWIFT Code</p>
+                    <p className="font-semibold text-gray-900">{bankDetails.swiftCode}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Receipt Upload */}
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-bold text-blue-900 mb-4">Upload Payment Receipt</h3>
+            <p className="text-sm text-blue-800 mb-6">
+              After making the bank transfer, please upload a screenshot or photo of your payment receipt.
+            </p>
+
+            <div className="space-y-4">
+              {/* Upload Area */}
+              <div
+                onClick={() => document.getElementById('receipt-upload').click()}
+                className="border-2 border-dashed border-blue-300 rounded-xl p-8 bg-white hover:bg-blue-25 transition-colors cursor-pointer group"
+              >
+                <div className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                  <p className="text-lg font-semibold text-gray-700 mb-2">Click to upload receipt</p>
+                  <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 5MB</p>
+                </div>
+              </div>
+
+              {/* Hidden File Input */}
+              <input
+                id="receipt-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {paymentReceipt && (
+                <div className="space-y-3">
+                  <div className="text-sm text-green-700 font-medium">
+                    ✓ Selected: {paymentReceipt.name}
+                  </div>
+
+                  {/* Image Preview */}
+                  {receiptPreview && (
+                    <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
+                      <p className="text-sm text-gray-600 mb-2 font-medium">Receipt Preview:</p>
+                      <div className="flex justify-center">
+                        <img
+                          src={receiptPreview}
+                          alt="Payment receipt preview"
+                          className="max-w-full max-h-64 object-contain rounded-lg shadow-md border border-gray-200"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        This is how your receipt will appear to our verification team
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           <button
-            onClick={handlePayNow}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-5 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105 flex items-center justify-center gap-3 text-lg"
+            onClick={handleSubmitPayment}
+            disabled={!paymentReceipt || uploading}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-5 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-2xl disabled:shadow-none transform hover:scale-105 disabled:transform-none flex items-center justify-center gap-3 text-lg cursor-pointer disabled:cursor-not-allowed"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <span>Pay Now - ₦{plan.amount.toLocaleString()}</span>
+            {uploading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span>Submit Payment Receipt</span>
+              </>
+            )}
           </button>
 
           <p className="text-xs text-gray-500 text-center mt-4">
-            🔒 Secure payment powered by Flutterwave
+            🔒 Your payment receipt will be securely stored and reviewed by our team
           </p>
         </div>
 
@@ -259,19 +398,23 @@ const CoursePayment = () => {
           <ol className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
-              <span>Click "Pay Now" to proceed to secure payment gateway</span>
+              <span>Transfer the payment amount to the bank account details shown above</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
-              <span>Complete payment using your preferred method (Card, Mobile Money, USSD)</span>
+              <span>Take a screenshot or photo of your payment receipt</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</span>
-              <span>Once payment is verified, you'll be redirected to your course dashboard</span>
+              <span>Upload the payment receipt using the form above</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</span>
-              <span>Start learning immediately - You'll have 12 months total access!</span>
+              <span>Our team will verify your payment and activate your course access within 24 hours</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold">5</span>
+              <span>You'll receive an email confirmation once your enrollment is activated</span>
             </li>
           </ol>
         </div>

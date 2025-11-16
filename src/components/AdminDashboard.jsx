@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import CourseManagement from './CourseManagement';
+import StudentManagement from './StudentManagement';
+import AdminProfile from './AdminProfile';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -30,6 +32,10 @@ const AdminDashboard = () => {
         );
       case 'courses':
         return <CourseManagement />;
+      case 'students':
+        return <StudentManagement />;
+      case 'profile':
+        return <AdminProfile />;
       default:
         return (
           <div className="dashboard-home">
@@ -65,6 +71,20 @@ const AdminDashboard = () => {
           >
             <span className="nav-icon">📚</span>
             {sidebarOpen && <span>Courses</span>}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
+            onClick={() => setActiveTab('students')}
+          >
+            <span className="nav-icon">👥</span>
+            {sidebarOpen && <span>Students</span>}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+            onClick={() => setActiveTab('profile')}
+          >
+            <span className="nav-icon">⚙️</span>
+            {sidebarOpen && <span>Profile</span>}
           </button>
         </nav>
       </div>

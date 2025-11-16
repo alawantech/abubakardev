@@ -340,7 +340,7 @@ const CoursePage = () => {
                   </h2>
                   <div 
                     className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: course.description }}
+                    dangerouslySetInnerHTML={{ __html: formatDescription(course.description) }}
                   />
                 </div>
               )}
@@ -450,72 +450,6 @@ const CoursePage = () => {
               )}
             </div>
 
-            {/* Course Curriculum */}
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-2xl p-8 lg:p-10 border border-indigo-200">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-3 rounded-2xl shadow-lg">
-                  <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900">Course Curriculum</h2>
-              </div>
-              {course.topics && course.topics.length > 0 ? (
-                <div className="space-y-5">
-                  {course.topics.map((topic, topicIdx) => (
-                    <div key={topicIdx} className="group border-2 border-gray-100 rounded-2xl overflow-hidden hover:border-indigo-200 hover:shadow-lg transition-all duration-300">
-                      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-6">
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg group-hover:scale-110 transition-transform">
-                            {topicIdx + 1}
-                          </div>
-                          <h3 className="font-bold text-gray-900 text-xl flex-1">{topic.title}</h3>
-                          <span className="text-sm font-semibold text-indigo-600 bg-white px-4 py-2 rounded-full border border-indigo-200 shadow-sm">
-                            {topic.lessons?.length || 0} {(topic.lessons?.length || 0) === 1 ? 'lesson' : 'lessons'}
-                          </span>
-                        </div>
-                      </div>
-                      {topic.lessons && topic.lessons.length > 0 && (
-                        <div className="bg-white p-6">
-                          <ul className="space-y-3">
-                            {topic.lessons.map((lesson, lessonIdx) => (
-                              <li key={lessonIdx} className="group/lesson flex items-start gap-4 p-4 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 rounded-xl transition-all duration-300 border border-transparent hover:border-indigo-100">
-                                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center shadow-sm group-hover/lesson:scale-110 transition-transform">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                                  </svg>
-                                </div>
-                                <div className="flex-1">
-                                  <div className="font-semibold text-gray-900 mb-1">{lesson.name}</div>
-                                  {lesson.description && <div style={{ background: 'yellow', padding: '10px', border: '2px solid red' }}>{console.log('Lesson description:', lesson.description)}{lesson.description}</div>}
-                                </div>
-                                {lesson.videoUrl && (
-                                  <div className="flex-shrink-0 flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
-                                    <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                                    </svg>
-                                    <span className="text-xs font-semibold text-red-700">Video</span>
-                                  </div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                    <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-lg font-medium italic">Curriculum coming soon...</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
