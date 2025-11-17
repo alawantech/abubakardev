@@ -16,61 +16,124 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
   const fetchPaymentHistory = async () => {
     setLoading(true);
     try {
-      // DEBUG: Query ALL payments and enrollments to see if any data exists
-      const paymentsQuery = query(collection(db, 'payments'));
-      const enrollmentsQuery = query(collection(db, 'enrollments'));
+      
+      // Query payments by userId (if available) or userEmail
+      const paymentsQueries = [];
 
-      const [paymentsSnapshot, enrollmentsSnapshot] = await Promise.all([
-        getDocs(paymentsQuery),
-        getDocs(enrollmentsQuery)
+      // Try to find userId from email if userId is actually an email
+      let actualUserId = userId;
+      if (userId.includes('@')) {
+        // userId is actually an email, find the actual userId
+        const usersQuery = query(collection(db, 'users'), where('email', '==', userId));
+        const usersSnapshot = await getDocs(usersQuery);
+        if (!usersSnapshot.empty) {
+          actualUserId = usersSnapshot.docs[0].id;
+        }
+      }
+
+      // Query payments by userId and courseId
+      const paymentsByUserIdQuery = query(
+        collection(db, 'payments'),
+        where('userId', '==', actualUserId),
+        where('courseId', '==', courseId)
+      );
+
+      // Also query payments by userEmail and courseId (for consistency)
+      const paymentsByEmailQuery = query(
+        collection(db, 'payments'),
+        where('userEmail', '==', userId),
+        where('courseId', '==', courseId)
+      );
+
+      const [paymentsByUserIdSnapshot, paymentsByEmailSnapshot] = await Promise.all([
+        getDocs(paymentsByUserIdQuery),
+        getDocs(paymentsByEmailQuery)
       ]);
 
-      const paymentsData = paymentsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        source: 'all_payments'
-      }));
+      const paymentsData1 = paymentsByUserIdSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          submittedAt: data.submittedAt?.toDate(),
+          type: data.type || 'renewal', // Preserve existing type or default to renewal
+          source: 'payments_userId'
+        };
+      });
 
-      const allEnrollments = enrollmentsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        submittedAt: doc.data().enrolledAt?.toDate(),
-        source: 'all_enrollments'
-      }));
+      const paymentsData2 = paymentsByEmailSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          submittedAt: data.submittedAt?.toDate(),
+          type: data.type || 'renewal', // Preserve existing type or default to renewal
+          source: 'payments_email'
+        };
+      });
 
-      // Filter enrollments that have payment data
-      const enrollmentPaymentsData = allEnrollments
-        .filter(enrollment => enrollment.amount && enrollment.enrolledAt)
-        .map(enrollment => ({
-          id: enrollment.id,
-          userId: enrollment.userId,
-          userEmail: enrollment.customerEmail,
-          amount: enrollment.amount,
-          status: enrollment.paymentStatus || 'approved',
-          submittedAt: enrollment.enrolledAt?.toDate(),
-          type: 'enrollment',
-          receiptURL: null,
-          transactionId: enrollment.transactionId,
-          paymentReference: enrollment.paymentReference,
-          courseId: enrollment.courseId,
-          source: 'enrollments'
-        }));
+      // Combine and deduplicate payments
+      const paymentsData = [...paymentsData1, ...paymentsData2].filter(
+        (payment, index, self) => 
+          index === self.findIndex(p => p.id === payment.id)
+      );
 
-      // Combine all payments
+      // Query enrollments for this specific user and course to get enrollment payments
+      // Try multiple queries to find enrollment records
+      const enrollmentsQuery1 = query(
+        collection(db, 'enrollments'),
+        where('customerEmail', '==', userId),
+        where('courseId', '==', courseId)
+      );
+
+      const enrollmentsQuery2 = query(
+        collection(db, 'enrollments'),
+        where('userId', '==', actualUserId),
+        where('courseId', '==', courseId)
+      );
+
+      const [enrollmentsSnapshot1, enrollmentsSnapshot2] = await Promise.all([
+        getDocs(enrollmentsQuery1),
+        getDocs(enrollmentsQuery2)
+      ]);
+
+      // Combine enrollment snapshots
+      const allEnrollmentDocs = [...enrollmentsSnapshot1.docs, ...enrollmentsSnapshot2.docs]
+        .filter((doc, index, self) => 
+          index === self.findIndex(d => d.id === doc.id)
+        );
+
+      const enrollmentPaymentsData = allEnrollmentDocs
+        .filter(doc => {
+          const data = doc.data();
+          // Include enrollments that have payment info or enrollment date
+          return (data.amount && data.enrolledAt) || data.enrolledAt;
+        })
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userId: actualUserId,
+            userEmail: userId,
+            amount: data.amount || 6500, // Default amount if not present
+            status: data.paymentStatus || 'approved',
+            submittedAt: data.enrolledAt?.toDate() || new Date(), // Use enrollment date
+            type: 'enrollment',
+            receiptURL: null, // Enrollments don't have receipt URLs in this format
+            transactionId: data.transactionId,
+            paymentReference: data.paymentReference,
+            courseId: data.courseId,
+            source: 'enrollments'
+          };
+        });
+
+      // Combine all payments for this specific user and course
       const allPayments = [...paymentsData, ...enrollmentPaymentsData];
 
-      console.log('DEBUG - All payments found:', allPayments);
-      console.log('DEBUG - Payments count:', paymentsData.length);
-      console.log('DEBUG - Enrollments with payments count:', enrollmentPaymentsData.length);
-
-      // For now, show all payments (no filtering)
-      const coursePayments = allPayments;
-
       // Generate monthly payment history
-      const history = generateMonthlyHistory(coursePayments);
+      const history = generateMonthlyHistory(allPayments);
       setPaymentHistory(history);
-      setPayments(coursePayments);
+      setPayments(allPayments);
     } catch (error) {
       console.error('Error fetching payment history:', error);
     } finally {
@@ -79,53 +142,71 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
   };
 
   const generateMonthlyHistory = (payments) => {
-    const history = [];
-    const now = new Date();
-
-    // Find the earliest payment or enrollment date
-    let startDate = now;
-    if (payments.length > 0) {
-      const earliestPayment = payments.reduce((earliest, payment) => {
-        return payment.submittedAt < earliest.submittedAt ? payment : earliest;
-      });
-      startDate = earliestPayment.submittedAt;
-    }
-
-    // Generate months from start date to now + 3 months ahead
-    const months = [];
-    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-
-    while (currentDate <= new Date(now.getFullYear(), now.getMonth() + 3, 1)) {
-      months.push(new Date(currentDate));
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-
-    // For each month, check if there's a payment
-    months.forEach(monthStart => {
-      const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-      const monthName = monthStart.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-
-      // Find payments in this month
-      const monthPayments = payments.filter(payment => {
-        if (!payment.submittedAt) return false;
-        return payment.submittedAt >= monthStart && payment.submittedAt <= monthEnd;
-      });
-
-      const hasPayment = monthPayments.length > 0;
-      const receipt = monthPayments.find(p => p.receiptURL);
-      const status = hasPayment ? 'paid' : 'unpaid';
-
-      history.push({
-        month: monthName,
-        year: monthStart.getFullYear(),
-        status,
-        payments: monthPayments,
-        receipt: receipt?.receiptURL,
-        amount: monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    const monthlyData = {};
+    
+    payments.forEach(payment => {
+      if (!payment.submittedAt) return;
+      
+      let coveredMonths = [];
+      
+      if (payment.type === 'enrollment') {
+        // For enrollment payments, find the enrollment and calculate covered months
+        // Since we're in admin modal, we don't have enrollments array, so use payment date
+        const enrolledDate = payment.submittedAt;
+        const planType = 'monthly'; // Assume monthly for now
+        
+        if (planType === 'monthly') {
+          // Monthly plan: covers current month + future months based on payment
+          const paymentAmount = payment.amount || 0;
+          const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
+          
+          for (let i = 0; i < Math.max(monthsCovered, 1); i++) {
+            const monthDate = new Date(enrolledDate);
+            monthDate.setMonth(enrolledDate.getMonth() + i);
+            coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long' 
+            }));
+          }
+        } else {
+          // One-time payment covers the enrollment month
+          coveredMonths.push(enrolledDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long' 
+          }));
+        }
+      } else if (payment.type === 'renewal' || payment.type === 'extension') {
+        // For renewal/extension payments, calculate which months they cover
+        const paymentAmount = payment.amount || 0;
+        const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
+        
+        // Start from the payment month
+        const paymentDate = payment.submittedAt;
+        const startMonth = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), 1);
+        
+        for (let i = 0; i < Math.max(monthsCovered, 1); i++) {
+          const monthDate = new Date(startMonth);
+          monthDate.setMonth(startMonth.getMonth() + i);
+          coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long' 
+          }));
+        }
+      }
+      
+      // Group by covered months
+      coveredMonths.forEach(month => {
+        if (!monthlyData[month]) {
+          monthlyData[month] = [];
+        }
+        monthlyData[month].push({
+          ...payment,
+          coveredMonth: month
+        });
       });
     });
-
-    return history.reverse(); // Show oldest first
+    
+    return monthlyData;
   };
 
   const getStatusColor = (status) => {
@@ -134,6 +215,8 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
         return 'text-green-600 bg-green-100';
       case 'unpaid':
         return 'text-red-600 bg-red-100';
+      case 'one-time':
+        return 'text-blue-600 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -180,83 +263,94 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
             </div>
           ) : (
             <div className="space-y-4">
-              {paymentHistory.map((month, index) => (
-                <div key={index} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold text-gray-900">{month.month} {month.year}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(month.status)}`}>
-                        {month.status.charAt(0).toUpperCase() + month.status.slice(1)}
-                      </span>
-                    </div>
-                    {month.amount > 0 && (
-                      <span className="text-lg font-bold text-green-600">
-                        {formatCurrency(month.amount)}
-                      </span>
-                    )}
-                  </div>
-
-                  {month.payments.length > 0 && (
-                    <div className="space-y-2">
-                      {month.payments.map((payment, paymentIndex) => (
-                        <div key={paymentIndex} className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center justify-between">
+              {Object.keys(paymentHistory)
+                .sort((a, b) => new Date(a + ' 1') - new Date(b + ' 1'))
+                .reverse() // Most recent first
+                .map(month => (
+                  <div key={month} className="bg-white rounded-xl p-6 shadow-md border-2 border-gray-100">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm">📅</span>
+                      </div>
+                      {month}
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      {paymentHistory[month].map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                        >
+                          <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium text-gray-700">
-                                  {payment.type === 'extension' ? 'Subscription Extension' :
-                                   payment.isRenewal ? 'Renewal Payment' : 'Initial Payment'}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {payment.submittedAt?.toLocaleDateString()}
-                                </span>
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                  payment.status === 'approved' ? 'bg-green-100' :
+                                  payment.status === 'pending' ? 'bg-yellow-100' :
+                                  payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
+                                }`}>
+                                  <span>
+                                    {payment.type === 'renewal' ? '🔄' :
+                                     payment.type === 'extension' ? '⏰' : '💰'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-900 capitalize">
+                                    {payment.type || 'Payment'} - ₦{payment.amount?.toLocaleString() || '0'}
+                                  </h4>
+                                  <p className="text-xs text-gray-600">
+                                    Paid on {payment.submittedAt?.toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                </div>
                               </div>
-                              {payment.amount && (
-                                <span className="text-sm text-green-600 font-medium">
-                                  {formatCurrency(payment.amount)}
+
+                              <div className="flex items-center gap-4 text-xs">
+                                <span className={`px-2 py-1 rounded-full font-medium ${
+                                  payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                  payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {payment.status || 'Unknown'}
                                 </span>
-                              )}
+                                
+                                {payment.receiptURL && (
+                                  <button
+                                    onClick={() => window.open(payment.receiptURL, '_blank')}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors text-xs"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Receipt
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            {payment.receiptURL && (
-                              <a
-                                href={payment.receiptURL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                View Receipt
-                              </a>
-                            )}
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-
-                  {month.status === 'unpaid' && (
-                    <div className="text-sm text-gray-600 italic">
-                      No payment recorded for this month
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {paymentHistory.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
-                  <p className="text-gray-600">No payments have been recorded for this student yet.</p>
-                </div>
-              )}
-            </div>
+                ))}
+                
+                {Object.keys(paymentHistory).length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
+                    <p className="text-gray-600">No payments have been recorded for this student yet.</p>
+                  </div>
+                )}
+              </div>
           )}
         </div>
 
