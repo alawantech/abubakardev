@@ -1,15 +1,77 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow payment receipts to be uploaded and read by anyone (for testing)
-    match /payment-receipts/{allPaths=**} {
-      allow read, write: if true;
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Default rules for other files
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+    function isAdmin() {
+      return isAuthenticated() &&
+             ((request.auth.token.email != null &&
+               (request.auth.token.email == 'admin@abubakardev.com' ||
+                request.auth.token.email == 'alawantech@gmail.com' ||
+                request.auth.token.email == 'admin@abubakar.dev' ||
+                request.auth.token.email == 'support@abubakardev.com')) ||
+              (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+               firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Payment receipts - users can upload their own, authenticated users can read, admins can manage all
+    match /payment-receipts/{userId}/{allPaths=**} {
+      // Allow upload only by the authenticated user
+      allow create: if isAuthenticated() && isOwner(userId);
+      // Allow read by the owner or admins
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Allow update/delete only by the owner or admins
+      allow update, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Extension payments - users can upload their own, authenticated users can read, admins can manage all
+    match /extension-payments/{userId}/{allPaths=**} {
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow update, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Renewal payments - users can upload their own, authenticated users can read, admins can manage all
+    match /renewal-payments/{userId}/{allPaths=**} {
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow update, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Course materials - read access for authenticated users, write only for admins
+    match /course-materials/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write, create, delete: if isAdmin();
+    }
+
+    // Profile images - users can manage their own, admins can manage all
+    match /profile-images/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Admin uploads - only admins can access
+    match /admin/{allPaths=**} {
+      allow read, write, create, delete: if isAdmin();
+    }
+
+    // Public assets - read access for everyone
+    match /public/{allPaths=**} {
       allow read: if true;
+      allow write, create, delete: if isAdmin();
+    }
+
+    // Default deny for any other files
+    match /{allPaths=**} {
+      allow read, write, create, delete: if false;
     }
   }
 }

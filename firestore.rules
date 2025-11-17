@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated(); // Temporarily consider all authenticated users as admins
+    }
+
+    // Users collection - users can read their own profile, admins can manage all
+    match /users/{userId} {
+      allow read: if isAuthenticated() &&
+                  (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() &&
+                   (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow list: if isAuthenticated() && isAdmin(); // Allow listing only for admins
+    }
+
+    // Courses collection - public read access, write only for admins
+    match /courses/{courseId} {
+      allow get, list: if true; // Unconditional public access for reading courses
+      allow write: if isAdmin();
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Enrollments collection - users can read their own, admins can manage all
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated() &&
+                  (resource.data.customerEmail == request.auth.token.email || isAdmin());
+      allow write: if isAuthenticated() &&
+                   (resource.data.customerEmail == request.auth.token.email || isAdmin());
+      allow create: if isAuthenticated();
+    }
+
+    // Enrollment Plans collection - users can read their own, admins can manage all
+    match /enrollmentPlans/{planId} {
+      allow read: if isAuthenticated() &&
+                  (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAuthenticated() &&
+                   (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow list: if isAuthenticated() && isAdmin(); // Allow listing only for admins
+    }
+
+    // Payments collection - users can read their own payments, admins can manage all
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+                  (resource.data.customerEmail == request.auth.token.email || isAdmin());
+      allow write: if isAuthenticated() &&
+                   (resource.data.customerEmail == request.auth.token.email || isAdmin());
+      allow create: if isAuthenticated();
+      allow list: if isAuthenticated() && isAdmin(); // Allow listing only for admins
+    }
+
+    // Admin collection - public read for bank details, admin-only for other settings
+    match /admin/{document} {
+      allow read: if document == 'bankDetails' || isAdmin(); // Public read for bank details
+      allow write: if isAdmin();
+    }
+
+    // Default deny for any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

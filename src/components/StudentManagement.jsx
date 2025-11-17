@@ -154,7 +154,8 @@ const StudentManagement = () => {
         expiryDate: newExpiryDate,
         lastExtendedDate: new Date(),
         extendedBy: 'admin',
-        extensionMonths: extendModal.months
+        extensionMonths: extendModal.months,
+        blocked: false // Unblock the user when extending
       });
 
       // Create a payment record for the extension
@@ -178,7 +179,8 @@ const StudentManagement = () => {
               ...enrollmentItem, 
               expiryDate: newExpiryDate,
               dueDate: newExpiryDate,
-              nextPaymentDate: newExpiryDate
+              nextPaymentDate: newExpiryDate,
+              blocked: false // Update blocked status in local state
             }
           : enrollmentItem
       ));
@@ -195,7 +197,7 @@ const StudentManagement = () => {
     const course = courses.find(c => c.id === selectedCourse);
     setPaymentHistoryModal({
       isOpen: true,
-      userId: enrollment.user.email, // Pass email instead of userId
+      userId: enrollment.userId, // Use the actual userId from enrollmentPlans
       userName: enrollment.user.fullName,
       courseId: selectedCourse,
       courseName: course?.title || 'Unknown Course'
@@ -374,7 +376,11 @@ const StudentManagement = () => {
                 <strong>Current expiry:</strong> {extendModal.enrollment?.dueDate ? formatDate(extendModal.enrollment.dueDate) : 'N/A'}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>New expiry:</strong> {extendModal.enrollment?.dueDate ? formatDate(new Date(extendModal.enrollment.dueDate.getTime() + (extendModal.months * 30 * 24 * 60 * 60 * 1000))) : 'N/A'}
+                <strong>New expiry:</strong> {extendModal.enrollment?.dueDate ? (() => {
+                  const previewDate = new Date(extendModal.enrollment.dueDate);
+                  previewDate.setMonth(previewDate.getMonth() + extendModal.months);
+                  return formatDate(previewDate);
+                })() : 'N/A'}
               </p>
               <p className="text-sm text-gray-600">
                 <strong>Amount:</strong> ₦{(extendModal.months * 6500).toLocaleString()}

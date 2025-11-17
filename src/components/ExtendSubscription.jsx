@@ -98,7 +98,7 @@ const ExtendSubscription = () => {
     setUploading(true);
     try {
       // Upload receipt to Firebase Storage
-      const storageRef = ref(storage, `extension-payments/${currentUser.uid}_${Date.now()}_${paymentReceipt.name}`);
+      const storageRef = ref(storage, `extension-payments/${currentUser.uid}/${Date.now()}_${paymentReceipt.name}`);
       await uploadBytes(storageRef, paymentReceipt);
       const receiptURL = await getDownloadURL(storageRef);
 

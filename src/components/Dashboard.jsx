@@ -40,6 +40,42 @@ const Dashboard = () => {
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
 
+  const calculateDaysRemaining = (enrollment) => {
+    if (!enrollment?.enrolledAt) return null;
+    
+    const enrolledAt = enrollment.enrolledAt;
+    const planType = enrollment.enrollmentPlan?.planType;
+    const months = planType === 'monthly' ? 1 : 12;
+    
+    const enrollmentDate = enrolledAt.toDate();
+    const expiryDate = new Date(enrollmentDate);
+    expiryDate.setMonth(expiryDate.getMonth() + months); // 1 month for monthly, 12 for others
+    
+    const today = new Date();
+    const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    
+    return {
+      days: daysRemaining,
+      expiryDate: expiryDate.toLocaleDateString(),
+    };
+  };
+
+  const calculateNextPayment = (enrolledAt, planType) => {
+    if (planType !== 'monthly' || !enrolledAt) return null;
+    
+    const enrollmentDate = enrolledAt.toDate();
+    const nextPaymentDate = new Date(enrollmentDate);
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    
+    const today = new Date();
+    const daysUntilPayment = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
+    
+    return {
+      date: nextPaymentDate.toLocaleDateString(),
+      daysRemaining: daysUntilPayment > 0 ? daysUntilPayment : 0,
+    };
+  };
+
   useEffect(() => {
     // Check if redirected after successful payment
     if (location.state?.paymentSuccess) {
@@ -142,7 +178,7 @@ const Dashboard = () => {
     setUploadingRenewal(true);
     try {
       // Upload receipt to Firebase Storage
-      const storageRef = ref(storage, `renewal-payments/${currentUser.uid}_${Date.now()}_${paymentReceipt.name}`);
+      const storageRef = ref(storage, `renewal-payments/${currentUser.uid}/${Date.now()}_${paymentReceipt.name}`);
       await uploadBytes(storageRef, paymentReceipt);
       const receiptURL = await getDownloadURL(storageRef);
 
@@ -150,7 +186,7 @@ const Dashboard = () => {
       const renewalData = {
         userId: currentUser.uid,
         userEmail: currentUser.email,
-        courseId: enrollment.courseId,
+        courseId: enrollments[0].courseId,
         receiptURL,
         amount: 6500,
         status: 'pending',
@@ -248,14 +284,12 @@ const Dashboard = () => {
       // Query by both userId (for existing payments) and userEmail (for consistency)
       const paymentsQuery1 = query(
         collection(db, 'payments'),
-        where('userId', '==', currentUser.uid),
-        orderBy('submittedAt', 'desc')
+        where('userId', '==', currentUser.uid)
       );
 
       const paymentsQuery2 = query(
         collection(db, 'payments'),
-        where('userEmail', '==', currentUser.email),
-        orderBy('submittedAt', 'desc')
+        where('userEmail', '==', currentUser.email)
       );
 
       const [paymentsSnapshot1, paymentsSnapshot2] = await Promise.all([
@@ -498,38 +532,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const calculateDaysRemaining = (enrolledAt) => {
-    if (!enrolledAt) return null;
-    
-    const enrollmentDate = enrolledAt.toDate();
-    const expiryDate = new Date(enrollmentDate);
-    expiryDate.setMonth(expiryDate.getMonth() + 12); // 12 months access
-    
-    const today = new Date();
-    const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    
-    return {
-      days: daysRemaining,
-      expiryDate: expiryDate.toLocaleDateString(),
-    };
-  };
-
-  const calculateNextPayment = (enrolledAt, planType) => {
-    if (planType !== 'monthly' || !enrolledAt) return null;
-    
-    const enrollmentDate = enrolledAt.toDate();
-    const nextPaymentDate = new Date(enrollmentDate);
-    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-    
-    const today = new Date();
-    const daysUntilPayment = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
-    
-    return {
-      date: nextPaymentDate.toLocaleDateString(),
-      daysRemaining: daysUntilPayment > 0 ? daysUntilPayment : 0,
-    };
-  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -801,6 +803,21 @@ const Dashboard = () => {
                         className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
                       />
                     </label>
+
+                    <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-6 0l6 6m2-10h-1a2 2 0 00-2 2v10a2 2 0 002 2h1m-6-4h4" />
+                        </svg>
+                        <span className="font-medium text-gray-900">Payment History</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={visibleSections.paymentHistory}
+                        onChange={(e) => setVisibleSections(prev => ({...prev, paymentHistory: e.target.checked}))}
+                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                    </label>
                   </div>
 
                   {/* Quick Actions */}
@@ -966,7 +983,7 @@ const Dashboard = () => {
               Subscription Details
             </h2>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Plan Type */}
               <div className="bg-white rounded-xl p-6 shadow-md">
                 <div className="flex items-center mb-3">
@@ -998,6 +1015,27 @@ const Dashboard = () => {
                   {isUserBlocked ? 'Payment required' : 'Access granted'}
                 </p>
               </div>
+
+              {/* Next Payment - Only for monthly plans */}
+              {enrollments[0].enrollmentPlan.planType === 'monthly' && (
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-2xl">⏰</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-600">Next Payment</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {(() => {
+                      const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+                      return nextPayment ? nextPayment.date : 'N/A';
+                    })()}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {paymentCountdown > 0 ? `${paymentCountdown} days remaining` : 'Due today'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Enrollment Date */}
@@ -1015,7 +1053,10 @@ const Dashboard = () => {
         )}
 
         {/* Pay Ahead / Extend Subscription */}
-        {visibleSections.extendSubscription && enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly' && !isUserBlocked && (
+        {visibleSections.extendSubscription && enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly' && !isUserBlocked && (() => {
+          const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+          return nextPayment && nextPayment.daysRemaining <= 3;
+        })() && (
           <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1089,7 +1130,7 @@ const Dashboard = () => {
                   <p className="text-gray-500 text-sm font-semibold mb-1">Active</p>
                   <p className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
                     {enrollments.filter(e => {
-                      const remaining = calculateDaysRemaining(e.enrolledAt);
+                      const remaining = calculateDaysRemaining(e);
                       return remaining && remaining.days > 0;
                     }).length}
                   </p>
@@ -1140,7 +1181,7 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">My Enrolled Courses</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {enrollments.map((enrollment) => {
-                const remaining = calculateDaysRemaining(enrollment.enrolledAt);
+                const remaining = calculateDaysRemaining(enrollment);
                 const isExpired = remaining && remaining.days <= 0;
                 
                 return (
@@ -1246,80 +1287,166 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {paymentHistory.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="bg-white rounded-xl p-6 shadow-md border-2 border-gray-100 hover:border-blue-300 transition-all duration-300"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            payment.status === 'approved' ? 'bg-green-100' :
-                            payment.status === 'pending' ? 'bg-yellow-100' :
-                            payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
-                          }`}>
-                            <span className="text-lg">
-                              {payment.type === 'renewal' ? '🔄' :
-                               payment.type === 'extension' ? '⏰' : '💰'}
-                            </span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 capitalize">
-                              {payment.type || 'Payment'} - ₦{payment.amount?.toLocaleString() || '0'}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {payment.submittedAt?.toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        </div>
+                {(() => {
+                  // Generate monthly history data similar to PaymentHistoryModal
+                  const generateMonthlyHistory = () => {
+                    const monthlyData = {};
+                    
+                    paymentHistory.forEach(payment => {
+                      if (!payment.submittedAt) return;
+                      
+                      let coveredMonths = [];
+                      
+                      if (payment.type === 'enrollment') {
+                        // For enrollment payments, find the enrollment and calculate covered months
+                        const enrollment = enrollments.find(e => e.customerEmail === payment.userEmail);
+                        if (enrollment && enrollment.enrolledAt) {
+                          const enrolledDate = enrollment.enrolledAt.toDate();
+                          const planType = enrollment.enrollmentPlan?.planType;
+                          
+                          if (planType === 'monthly') {
+                            // Monthly plan: covers current month + future months based on payment
+                            const paymentAmount = payment.amount || 0;
+                            const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
+                            
+                            for (let i = 0; i < monthsCovered; i++) {
+                              const monthDate = new Date(enrolledDate);
+                              monthDate.setMonth(enrolledDate.getMonth() + i);
+                              coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'long' 
+                              }));
+                            }
+                          } else {
+                            // One-time payment covers the enrollment month
+                            coveredMonths.push(enrolledDate.toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long' 
+                            }));
+                          }
+                        }
+                      } else if (payment.type === 'renewal' || payment.type === 'extension') {
+                        // For renewal/extension payments, calculate which months they cover
+                        const enrollment = enrollments.find(e => e.customerEmail === payment.userEmail);
+                        if (enrollment && enrollment.enrolledAt) {
+                          const enrolledDate = enrollment.enrolledAt.toDate();
+                          const paymentAmount = payment.amount || 0;
+                          const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
+                          
+                          // Find the next unpaid month from enrollment date
+                          const paymentDate = payment.submittedAt;
+                          let startMonth = new Date(enrolledDate);
+                          
+                          // Find the month this payment should start covering
+                          while (startMonth <= paymentDate) {
+                            startMonth.setMonth(startMonth.getMonth() + 1);
+                          }
+                          startMonth.setMonth(startMonth.getMonth() - 1); // Go back to the current month
+                          
+                          for (let i = 0; i < monthsCovered; i++) {
+                            const monthDate = new Date(startMonth);
+                            monthDate.setMonth(startMonth.getMonth() + i);
+                            coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long' 
+                            }));
+                          }
+                        }
+                      }
+                      
+                      // Group by covered months
+                      coveredMonths.forEach(month => {
+                        if (!monthlyData[month]) {
+                          monthlyData[month] = [];
+                        }
+                        monthlyData[month].push({
+                          ...payment,
+                          coveredMonth: month
+                        });
+                      });
+                    });
+                    
+                    return monthlyData;
+                  };
 
-                        <div className="grid md:grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p className="text-sm text-gray-600">Status</p>
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                              payment.status === 'approved' ? 'bg-green-100 text-green-800' :
-                              payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {payment.status || 'Unknown'}
-                            </span>
+                  const monthlyHistory = generateMonthlyHistory();
+                  
+                  return Object.keys(monthlyHistory)
+                    .sort((a, b) => new Date(a + ' 1') - new Date(b + ' 1'))
+                    .reverse() // Most recent first
+                    .map(month => (
+                      <div key={month} className="bg-white rounded-xl p-6 shadow-md border-2 border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-sm">📅</span>
                           </div>
-
-                          <div>
-                            <p className="text-sm text-gray-600">Type</p>
-                            <span className="text-sm font-medium text-gray-900 capitalize">
-                              {payment.type || 'Regular Payment'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {payment.receiptURL && (
-                          <div className="mt-4">
-                            <p className="text-sm text-gray-600 mb-2">Receipt</p>
-                            <button
-                              onClick={() => window.open(payment.receiptURL, '_blank')}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+                          {month}
+                        </h3>
+                        
+                        <div className="space-y-3">
+                          {monthlyHistory[month].map((payment) => (
+                            <div
+                              key={payment.id}
+                              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              View Receipt
-                            </button>
-                          </div>
-                        )}
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                      payment.status === 'approved' ? 'bg-green-100' :
+                                      payment.status === 'pending' ? 'bg-yellow-100' :
+                                      payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
+                                    }`}>
+                                      <span>
+                                        {payment.type === 'renewal' ? '🔄' :
+                                         payment.type === 'extension' ? '⏰' : '💰'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900 capitalize">
+                                        {payment.type || 'Payment'} - ₦{payment.amount?.toLocaleString() || '0'}
+                                      </h4>
+                                      <p className="text-xs text-gray-600">
+                                        Paid on {payment.submittedAt?.toLocaleDateString('en-US', {
+                                          year: 'numeric',
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span className={`px-2 py-1 rounded-full font-medium ${
+                                      payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                      payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                      payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {payment.status || 'Unknown'}
+                                    </span>
+                                    
+                                    {payment.receiptURL && (
+                                      <button
+                                        onClick={() => window.open(payment.receiptURL, '_blank')}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors text-xs"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Receipt
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    ));
+                })()}
               </div>
             )}
           </div>
