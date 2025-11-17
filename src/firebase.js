@@ -17,11 +17,38 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error('Missing required Firebase environment variables:', missingVars);
+  // Don't throw error, just log it and continue with empty config
+}
+
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+let app, analytics, auth, db, storage;
+
+try {
+  app = initializeApp(firebaseConfig);
+  analytics = getAnalytics(app);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize Firebase:', error);
+  // Create dummy objects to prevent crashes
+  app = null;
+  analytics = null;
+  auth = null;
+  db = null;
+  storage = null;
+}
 
 export { app, analytics, auth, db, storage };
