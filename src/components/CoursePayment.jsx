@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
 
@@ -135,19 +135,48 @@ const CoursePayment = () => {
       const paymentDocRef = await addDoc(collection(db, 'payments'), paymentData);
       console.log('Payment record created:', paymentDocRef.id);
 
-      // Update enrollment plan (use userId_courseId as document ID to match Dashboard query)
-      const enrollmentData = {
-        userId,
-        courseId,
-        planType: plan.type,
-        planAmount: plan.amount,
-        paymentStatus: receiptURL ? 'paid' : 'receipt_required',
-        createdAt: new Date(),
-        nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      };
+      // Update existing enrollment plan or create new one
+      console.log('Looking for enrollment plan with userId:', userId, 'courseId:', courseId);
+      const enrollmentQuery = query(
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', userId),
+        where('courseId', '==', courseId)
+      );
+      
+      const enrollmentSnapshot = await getDocs(enrollmentQuery);
+      console.log('Found enrollment plans:', enrollmentSnapshot.size);
+      
+      if (!enrollmentSnapshot.empty) {
+        // Update existing enrollment plan
+        const enrollmentDoc = enrollmentSnapshot.docs[0];
+        console.log('Updating enrollment plan:', enrollmentDoc.id, 'with data:', enrollmentDoc.data());
+        const enrollmentData = {
+          planType: plan.type,
+          planAmount: plan.amount,
+          paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
+          nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        };
 
-      await setDoc(doc(db, 'enrollmentPlans', `${userId}_${courseId}`), enrollmentData);
+        await updateDoc(doc(db, 'enrollmentPlans', enrollmentDoc.id), enrollmentData);
+        console.log('Enrollment plan updated successfully:', enrollmentDoc.id);
+      } else {
+        // Create new enrollment plan
+        console.log('No existing enrollment plan found, creating new one');
+        const enrollmentData = {
+          userId,
+          courseId,
+          planType: plan.type,
+          planAmount: plan.amount,
+          paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
+          createdAt: new Date(),
+          nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        };
+
+        await setDoc(doc(db, 'enrollmentPlans', `${userId}_${courseId}`), enrollmentData);
+        console.log('New enrollment plan created');
+      }
 
       // Create enrollment record for course access
       const enrollmentAccessData = {

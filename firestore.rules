@@ -31,12 +31,11 @@ service cloud.firestore {
 
     // Enrollments collection - users can read their own, admins can manage all
     match /enrollments/{enrollmentId} {
-      allow read: if isAuthenticated() &&
-                  (resource.data.customerEmail == request.auth.token.email || isAdmin());
+      allow read: if isAuthenticated() && isAdmin();
       allow write: if isAuthenticated() &&
                    (resource.data.customerEmail == request.auth.token.email || isAdmin());
       allow create: if isAuthenticated();
-      allow list: if isAuthenticated() && isAdmin(); // Allow listing only for admins
+      allow list: if isAuthenticated() && isAdmin();
     }
 
     // Enrollment Plans collection - users can read their own, admins can manage all

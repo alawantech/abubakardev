@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, orderBy, deleteDoc } from 'firebase/firestore';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from '../firebase';
@@ -9,9 +9,9 @@ import { useAuth } from '../contexts/AuthContext';
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, loading } = useAuth();
   const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [uploadingRenewal, setUploadingRenewal] = useState(false);
   const [updateError, setUpdateError] = useState('');
   const [updateMessage, setUpdateMessage] = useState('');
+  const [updating, setUpdating] = useState(false);
   const [paymentCountdown, setPaymentCountdown] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [visibleSections, setVisibleSections] = useState({
@@ -41,10 +42,10 @@ const Dashboard = () => {
   const [loadingPayments, setLoadingPayments] = useState(false);
 
   const calculateDaysRemaining = (enrollment) => {
-    if (!enrollment?.enrolledAt) return null;
+    if (!enrollment?.createdAt) return null;
     
-    const enrolledAt = enrollment.enrolledAt;
-    const planType = enrollment.enrollmentPlan?.planType;
+    const enrolledAt = enrollment.createdAt;
+    const planType = enrollment.planType;
     const months = planType === 'monthly' ? 1 : 12;
     
     const enrollmentDate = enrolledAt.toDate();
@@ -89,15 +90,25 @@ const Dashboard = () => {
       }, 5000);
     }
 
-    if (currentUser) {
+    if (!loading) {
+      if (currentUser) {
+        fetchEnrollments();
+        fetchPaymentHistory();
+        loadProfileData();
+        fetchBankDetails();
+      } else {
+        navigate('/login', { state: { from: '/dashboard' } });
+      }
+    }
+  }, [currentUser, loading, navigate, location.state]);
+
+  // Refetch data when navigating back to dashboard
+  useEffect(() => {
+    if (!loading && currentUser) {
       fetchEnrollments();
       fetchPaymentHistory();
-      loadProfileData();
-      fetchBankDetails();
-    } else {
-      navigate('/login', { state: { from: '/dashboard' } });
     }
-  }, [currentUser, navigate, location.state]);
+  }, [location.pathname]); // Trigger when route changes
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -117,9 +128,17 @@ const Dashboard = () => {
 
   // Countdown timer for next payment
   useEffect(() => {
-    if (enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly') {
+    // Only count paid enrollments for countdown
+    const paidEnrollments = enrollments.filter(enrollment => {
+      const hasPayment = enrollment.payment;
+      const paymentStatus = enrollment.paymentStatus;
+      const paymentApproved = enrollment.payment?.status === 'approved';
+      return hasPayment && (paymentApproved || paymentStatus === 'paid');
+    });
+
+    if (paidEnrollments.length > 0 && paidEnrollments[0].planType === 'monthly') {
       const updateCountdown = () => {
-        const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
+        const nextPayment = calculateNextPayment(paidEnrollments[0].createdAt, 'monthly');
         if (nextPayment) {
           setPaymentCountdown(nextPayment.daysRemaining);
         }
@@ -232,46 +251,111 @@ const Dashboard = () => {
 
   const fetchEnrollments = async () => {
     try {
-      // Fetch enrollments from Firestore
+      // Fetch enrollments from enrollmentPlans collection
       const enrollmentsQuery = query(
-        collection(db, 'enrollments'),
-        where('customerEmail', '==', currentUser.email)
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', currentUser.uid)
       );
       
       const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+      console.log('Dashboard: Found enrollment plans:', enrollmentsSnapshot.size);
       
       const enrollmentsData = await Promise.all(
         enrollmentsSnapshot.docs.map(async (enrollmentDoc) => {
           const enrollmentData = enrollmentDoc.data();
+          console.log('Dashboard: Enrollment data:', enrollmentDoc.id, enrollmentData);
           
           // Fetch course details
           const courseDoc = await getDoc(doc(db, 'courses', enrollmentData.courseId));
           const courseData = courseDoc.exists() ? courseDoc.data() : null;
           
-          // Fetch enrollment plan details for this specific enrollment
-          const planQuery = query(
-            collection(db, 'enrollmentPlans'),
-            where('userId', '==', enrollmentData.userId || currentUser.uid),
+          // Fetch payment data
+          const paymentsQuery = query(
+            collection(db, 'payments'),
+            where('userId', '==', currentUser.uid),
             where('courseId', '==', enrollmentData.courseId)
           );
-          const planSnapshot = await getDocs(planQuery);
-          const planData = planSnapshot.docs.length > 0 ? planSnapshot.docs[0].data() : null;
+          const paymentsSnapshot = await getDocs(paymentsQuery);
+          const paymentData = paymentsSnapshot.docs.length > 0 ? paymentsSnapshot.docs[0].data() : null;
           
           return {
             id: enrollmentDoc.id,
             ...enrollmentData,
             course: courseData,
-            enrollmentPlan: planData,
-            blocked: planData?.blocked || false
+            payment: paymentData,
+            enrolledAt: enrollmentData.createdAt,
+            courseName: courseData?.title || 'Unknown Course',
+            customerEmail: currentUser.email,
+            blocked: enrollmentData.blocked || false
           };
         })
       );
       
-      setEnrollments(enrollmentsData);
-      setLoading(false);
+      // Deduplicate enrollments by courseId, prioritizing paid enrollments
+      const deduplicatedEnrollments = enrollmentsData.reduce((acc, enrollment) => {
+        const existing = acc.find(e => e.courseId === enrollment.courseId);
+        
+        if (!existing) {
+          // No existing enrollment for this course, add it
+          acc.push(enrollment);
+        } else {
+          // Existing enrollment found, decide which one to keep
+          const existingIsPaid = existing.payment && (existing.payment.status === 'approved' || existing.paymentStatus === 'paid');
+          const currentIsPaid = enrollment.payment && (enrollment.payment.status === 'approved' || enrollment.paymentStatus === 'paid');
+          
+          if (currentIsPaid && !existingIsPaid) {
+            // Current is paid, existing is not - replace with current
+            const index = acc.indexOf(existing);
+            acc[index] = enrollment;
+          } else if (!currentIsPaid && !existingIsPaid) {
+            // Both are unpaid, keep the more recent one
+            const existingDate = existing.createdAt?.toDate() || new Date(0);
+            const currentDate = enrollment.createdAt?.toDate() || new Date(0);
+            if (currentDate > existingDate) {
+              const index = acc.indexOf(existing);
+              acc[index] = enrollment;
+            }
+          }
+          // If existing is paid, keep it (don't replace with unpaid)
+        }
+        
+        return acc;
+      }, []);
+      
+      // Clean up duplicate enrollment plans (run in background)
+      const cleanupDuplicates = async () => {
+        try {
+          const keptIds = new Set(deduplicatedEnrollments.map(e => e.id));
+          const duplicates = enrollmentsData.filter(e => !keptIds.has(e.id));
+          
+          if (duplicates.length > 0) {
+            console.log('Dashboard: Cleaning up duplicate enrollment plans:', duplicates.map(d => d.id));
+            
+            const deletePromises = duplicates.map(async (duplicate) => {
+              try {
+                await deleteDoc(doc(db, 'enrollmentPlans', duplicate.id));
+                console.log('Dashboard: Deleted duplicate enrollment plan:', duplicate.id);
+              } catch (error) {
+                console.error('Dashboard: Failed to delete duplicate enrollment plan:', duplicate.id, error);
+              }
+            });
+            
+            await Promise.all(deletePromises);
+          }
+        } catch (error) {
+          console.error('Dashboard: Error during duplicate cleanup:', error);
+        }
+      };
+      
+      // Run cleanup in background (don't await)
+      cleanupDuplicates();
+      
+      console.log('Dashboard: Final enrollments data:', deduplicatedEnrollments);
+      setEnrollments(deduplicatedEnrollments);
+      setDashboardLoading(false);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
-      setLoading(false);
+      setDashboardLoading(false);
     }
   };
 
@@ -361,7 +445,16 @@ const Dashboard = () => {
     }
   };
 
-  const isUserBlocked = enrollments.some(enrollment => enrollment.blocked);
+  const isUserBlocked = (() => {
+    // Only consider paid enrollments for blocking logic
+    const paidEnrollments = enrollments.filter(enrollment => {
+      const hasPayment = enrollment.payment;
+      const paymentStatus = enrollment.paymentStatus;
+      const paymentApproved = enrollment.payment?.status === 'approved';
+      return hasPayment && (paymentApproved || paymentStatus === 'paid');
+    });
+    return paidEnrollments.some(enrollment => enrollment.blocked);
+  })();
 
   // Show renewal screen if user is blocked
   if (isUserBlocked) {
@@ -609,10 +702,6 @@ const Dashboard = () => {
     }
   };
 
-  if (!currentUser) {
-    return null; // Will redirect in useEffect
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
@@ -622,6 +711,10 @@ const Dashboard = () => {
         </div>
       </div>
     );
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect in useEffect
   }
 
   return (
@@ -974,277 +1067,425 @@ const Dashboard = () => {
         )}
 
         {/* Enrollment Plan Details */}
-        {visibleSections.subscriptionDetails && enrollments.length > 0 && enrollments[0].enrollmentPlan && (
-          <div className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8 border-2 border-indigo-200 transform transition-all duration-500 hover:shadow-2xl animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                <span className="text-xl">📋</span>
-              </div>
-              Subscription Details
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Plan Type */}
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <div className="flex items-center mb-3">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-2xl">💼</span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-600">Plan Type</h3>
-                </div>
-                <p className="text-2xl font-bold text-indigo-600 capitalize">
-                  {enrollments[0].enrollmentPlan.planType}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {enrollments[0].enrollmentPlan.planType === 'monthly' ? 'Billed Monthly' : 'One-time Payment'}
-                </p>
-              </div>
+        {visibleSections.subscriptionDetails && (() => {
+          // Only show subscription details for paid enrollments
+          const paidEnrollments = enrollments.filter(enrollment => {
+            const hasPayment = enrollment.payment;
+            const paymentStatus = enrollment.paymentStatus;
+            const paymentApproved = enrollment.payment?.status === 'approved';
+            return hasPayment && (paymentApproved || paymentStatus === 'paid');
+          });
 
-              {/* Status */}
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <div className="flex items-center mb-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-2xl">📊</span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-gray-600">Status</h3>
+          return paidEnrollments.length > 0 && (
+            <div className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8 border-2 border-indigo-200 transform transition-all duration-500 hover:shadow-2xl animate-fade-in">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">📋</span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
-                  {isUserBlocked ? 'Blocked' : 'Active'}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {isUserBlocked ? 'Payment required' : 'Access granted'}
-                </p>
-              </div>
-
-              {/* Next Payment - Only for monthly plans */}
-              {enrollments[0].enrollmentPlan.planType === 'monthly' && (
+                Subscription Details
+              </h2>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Plan Type */}
                 <div className="bg-white rounded-xl p-6 shadow-md">
                   <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                      <span className="text-2xl">⏰</span>
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-2xl">💼</span>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-600">Next Payment</h3>
+                    <h3 className="text-sm font-semibold text-gray-600">Plan Type</h3>
                   </div>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {(() => {
-                      const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
-                      return nextPayment ? nextPayment.date : 'N/A';
-                    })()}
+                  <p className="text-2xl font-bold text-indigo-600 capitalize">
+                    {paidEnrollments[0].planType}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {paymentCountdown > 0 ? `${paymentCountdown} days remaining` : 'Due today'}
+                    {paidEnrollments[0].planType === 'monthly' ? 'Billed Monthly' : 'One-time Payment'}
                   </p>
+                </div>
+
+                {/* Status */}
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-2xl">📊</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-600">Status</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">
+                    {isUserBlocked ? 'Blocked' : 'Active'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {isUserBlocked ? 'Payment required' : 'Access granted'}
+                  </p>
+                </div>
+
+                {/* Next Payment - Only for monthly plans */}
+                {paidEnrollments[0].planType === 'monthly' && (
+                  <div className="bg-white rounded-xl p-6 shadow-md">
+                    <div className="flex items-center mb-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                        <span className="text-2xl">⏰</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-600">Next Payment</h3>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {(() => {
+                        const nextPayment = calculateNextPayment(paidEnrollments[0].createdAt, 'monthly');
+                        return nextPayment ? nextPayment.date : 'N/A';
+                      })()}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {paymentCountdown > 0 ? `${paymentCountdown} days remaining` : 'Due today'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Enrollment Date */}
+              <div className="mt-6 pt-6 border-t border-indigo-200">
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Enrolled on:</span> {' '}
+                  {paidEnrollments[0].createdAt?.toDate().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Pay Ahead / Extend Subscription */}
+        {visibleSections.extendSubscription && (() => {
+          // Only show extend subscription for paid enrollments
+          const paidEnrollments = enrollments.filter(enrollment => {
+            const hasPayment = enrollment.payment;
+            const paymentStatus = enrollment.paymentStatus;
+            const paymentApproved = enrollment.payment?.status === 'approved';
+            return hasPayment && (paymentApproved || paymentStatus === 'paid');
+          });
+
+          return paidEnrollments.length > 0 && paidEnrollments[0].planType === 'monthly' && !isUserBlocked && (() => {
+            const nextPayment = calculateNextPayment(paidEnrollments[0].createdAt, 'monthly');
+            return nextPayment && nextPayment.daysRemaining <= 3;
+          })() && (
+            <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                Extend Your Subscription
+              </h2>
+              
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <p className="text-gray-700 mb-4">
+                  Pay ahead to extend your subscription and ensure uninterrupted access to your courses. 
+                  Your current subscription will automatically continue when it expires.
+                </p>
+                
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
+                    <p className="text-sm text-gray-600">
+                      {(() => {
+                        const nextPayment = calculateNextPayment(paidEnrollments[0].enrolledAt, 'monthly');
+                        return nextPayment ? 
+                          `Next payment due: ${nextPayment.date} (${nextPayment.daysRemaining} days)` : 
+                          'Payment information not available';
+                      })()}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h3 className="font-semibold text-green-900 mb-2">Pay Ahead Benefits</h3>
+                    <ul className="text-sm text-green-800 space-y-1">
+                      <li>• No interruption in learning</li>
+                      <li>• Automatic subscription renewal</li>
+                      <li>• Peace of mind</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => navigate('/extend-subscription')}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl transform hover:scale-105 focus:scale-105 cursor-pointer focus:ring-4 focus:ring-green-300 focus:outline-none flex items-center justify-center gap-3"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                  Pay Ahead & Extend Subscription
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Stats Cards */}
+        {visibleSections.statsCards && (() => {
+          // Only count paid enrollments for stats
+          const paidEnrollments = enrollments.filter(enrollment => {
+            const hasPayment = enrollment.payment;
+            const paymentStatus = enrollment.paymentStatus;
+            const paymentApproved = enrollment.payment?.status === 'approved';
+            return hasPayment && (paymentApproved || paymentStatus === 'paid');
+          });
+
+          return (
+            <div className="grid md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-indigo-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-sm font-semibold mb-1">Total Courses</p>
+                    <p className="text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">{paidEnrollments.length}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-300">
+                    <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-sm font-semibold mb-1">Active</p>
+                    <p className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
+                      {paidEnrollments.filter(e => {
+                        const remaining = calculateDaysRemaining(e);
+                        return remaining && remaining.days > 0;
+                      }).length}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+                    <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 text-sm font-semibold mb-1">Certificates</p>
+                    <p className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">0</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
+                    <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Enrolled Courses */}
+        {visibleSections.enrolledCourses && (() => {
+          // Separate enrollments into paid and unpaid
+          const paidEnrollments = enrollments.filter(enrollment => {
+            // Check if payment is completed (receipt uploaded)
+            const hasPayment = enrollment.payment;
+            const paymentStatus = enrollment.paymentStatus;
+            const paymentApproved = enrollment.payment?.status === 'approved';
+            
+            // Consider paid if: payment exists AND (status is approved OR paymentStatus is 'paid')
+            return hasPayment && (paymentApproved || paymentStatus === 'paid');
+          });
+          
+          const unpaidEnrollments = enrollments.filter(enrollment => {
+            const hasPayment = enrollment.payment;
+            const paymentStatus = enrollment.paymentStatus;
+            const paymentApproved = enrollment.payment?.status === 'approved';
+            
+            // Consider unpaid if: no payment OR payment not approved AND paymentStatus not 'paid'
+            return !hasPayment || (!paymentApproved && paymentStatus !== 'paid');
+          });
+
+          return (
+            <div>
+              {/* Paid Courses */}
+              {paidEnrollments.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">My Active Courses</h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {paidEnrollments.map((enrollment) => {
+                      const remaining = calculateDaysRemaining(enrollment);
+                      const isExpired = remaining && remaining.days <= 0;
+                      
+                      return (
+                        <div
+                          key={enrollment.id}
+                          className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-indigo-300 transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-1 group"
+                        >
+                          {enrollment.course?.featuredImage && (
+                            <div className="h-48 overflow-hidden">
+                              <img
+                                src={enrollment.course.featuredImage}
+                                alt={enrollment.courseName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          
+                          <div className="p-6">
+                            <h3 className="font-bold text-xl text-gray-900 mb-2">
+                              {enrollment.courseName}
+                            </h3>
+                            
+                            <div className="space-y-2 mb-4">
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                                </svg>
+                                <span>Enrolled: {enrollment.createdAt?.toDate().toLocaleDateString()}</span>
+                              </div>
+                              {remaining && (
+                                <div className={`flex items-center gap-2 text-sm ${isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                                  </svg>
+                                  <span>
+                                    {isExpired 
+                                      ? `Expired on ${remaining.expiryDate}` 
+                                      : `${remaining.days} days remaining`
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={() => navigate(`/course/${enrollment.courseId}/learn`)}
+                              disabled={isExpired}
+                              className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+                                isExpired
+                                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg'
+                              }`}
+                            >
+                              {isExpired ? 'Access Expired' : 'Continue Learning →'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Pending Payment Courses */}
+              {unpaidEnrollments.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Pending Payment</h2>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {unpaidEnrollments.map((enrollment) => (
+                      <div
+                        key={enrollment.id}
+                        className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-lg overflow-hidden border-2 border-yellow-300"
+                      >
+                        {enrollment.course?.featuredImage && (
+                          <div className="h-48 overflow-hidden relative">
+                            <img
+                              src={enrollment.course.featuredImage}
+                              alt={enrollment.courseName}
+                              className="w-full h-full object-cover opacity-60"
+                            />
+                            <div className="absolute inset-0 bg-yellow-500 bg-opacity-20 flex items-center justify-center">
+                              <div className="bg-yellow-500 text-white px-4 py-2 rounded-full font-bold text-sm">
+                                Payment Required
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-6">
+                          <h3 className="font-bold text-xl text-gray-900 mb-2">
+                            {enrollment.courseName}
+                          </h3>
+                          
+                          <div className="bg-yellow-100 border border-yellow-300 rounded-xl p-4 mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              <span className="font-semibold text-yellow-800">Payment Required</span>
+                            </div>
+                            <p className="text-sm text-yellow-700 mb-3">
+                              Complete your payment to access this course. Upload your payment receipt below.
+                            </p>
+                            
+                            {/* Bank Details */}
+                            {bankDetails && (
+                              <div className="bg-white rounded-lg p-3 mb-3 border border-yellow-200">
+                                <h4 className="font-semibold text-gray-900 mb-2 text-sm">Bank Transfer Details</h4>
+                                <div className="text-xs text-gray-600 space-y-1">
+                                  <div><strong>Bank:</strong> {bankDetails.bankName || 'Access Bank'}</div>
+                                  <div><strong>Account Name:</strong> {bankDetails.accountName || 'Abubakar Dev'}</div>
+                                  <div><strong>Account Number:</strong> {bankDetails.accountNumber || '1234567890'}</div>
+                                  <div><strong>Amount:</strong> ₦{enrollment.planAmount?.toLocaleString() || '30,000'}</div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Upload Receipt Button */}
+                            <button
+                              onClick={() => navigate(`/course/${enrollment.courseId}/payment`, {
+                                state: {
+                                  plan: {
+                                    type: enrollment.planType,
+                                    amount: enrollment.planAmount,
+                                    courseName: enrollment.courseName,
+                                    courseId: enrollment.courseId
+                                  },
+                                  userId: currentUser.uid,
+                                  customerName: userData?.fullName || currentUser.email,
+                                  customerEmail: currentUser.email,
+                                  customerPhone: userData?.whatsappNumber || ''
+                                }
+                              })}
+                              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                            >
+                              Complete Payment & Upload Receipt
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                            </svg>
+                            <span>Enrolled: {enrollment.createdAt?.toDate().toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No Courses Message */}
+              {enrollments.length === 0 && (
+                <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
+                  <div className="inline-block p-6 bg-gray-100 rounded-full mb-6">
+                    <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                    </svg>
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
+                  <p className="text-gray-600 mb-8 text-lg">Start your learning journey by enrolling in a course!</p>
+                  <button
+                    onClick={() => navigate('/courses')}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    Browse Courses
+                  </button>
                 </div>
               )}
             </div>
-
-            {/* Enrollment Date */}
-            <div className="mt-6 pt-6 border-t border-indigo-200">
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">Enrolled on:</span> {' '}
-                {enrollments[0].enrolledAt?.toDate().toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Pay Ahead / Extend Subscription */}
-        {visibleSections.extendSubscription && enrollments.length > 0 && enrollments[0].enrollmentPlan?.planType === 'monthly' && !isUserBlocked && (() => {
-          const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
-          return nextPayment && nextPayment.daysRemaining <= 3;
-        })() && (
-          <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              Extend Your Subscription
-            </h2>
-            
-            <div className="bg-white rounded-xl p-6 shadow-md">
-              <p className="text-gray-700 mb-4">
-                Pay ahead to extend your subscription and ensure uninterrupted access to your courses. 
-                Your current subscription will automatically continue when it expires.
-              </p>
-              
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
-                  <p className="text-sm text-gray-600">
-                    {(() => {
-                      const nextPayment = calculateNextPayment(enrollments[0].enrolledAt, 'monthly');
-                      return nextPayment ? 
-                        `Next payment due: ${nextPayment.date} (${nextPayment.daysRemaining} days)` : 
-                        'Payment information not available';
-                    })()}
-                  </p>
-                </div>
-                
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h3 className="font-semibold text-green-900 mb-2">Pay Ahead Benefits</h3>
-                  <ul className="text-sm text-green-800 space-y-1">
-                    <li>• No interruption in learning</li>
-                    <li>• Automatic subscription renewal</li>
-                    <li>• Peace of mind</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <button
-                onClick={() => navigate('/extend-subscription')}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl transform hover:scale-105 focus:scale-105 cursor-pointer focus:ring-4 focus:ring-green-300 focus:outline-none flex items-center justify-center gap-3"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-                Pay Ahead & Extend Subscription
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        {visibleSections.statsCards && (
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-indigo-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-sm font-semibold mb-1">Total Courses</p>
-                  <p className="text-3xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors duration-300">{enrollments.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-300">
-                  <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-sm font-semibold mb-1">Active</p>
-                  <p className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors duration-300">
-                    {enrollments.filter(e => {
-                      const remaining = calculateDaysRemaining(e);
-                      return remaining && remaining.days > 0;
-                    }).length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-                  <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500 transform transition-all duration-500 hover:shadow-xl hover:-translate-y-1 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-500 text-sm font-semibold mb-1">Certificates</p>
-                  <p className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">0</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
-                  <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Enrolled Courses */}
-        {visibleSections.enrolledCourses && (enrollments.length === 0 ? (
-          <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
-            <div className="inline-block p-6 bg-gray-100 rounded-full mb-6">
-              <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
-            <p className="text-gray-600 mb-8 text-lg">Start your learning journey by enrolling in a course!</p>
-            <button
-              onClick={() => navigate('/courses')}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Browse Courses
-            </button>
-          </div>
-        ) : (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Enrolled Courses</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrollments.map((enrollment) => {
-                const remaining = calculateDaysRemaining(enrollment);
-                const isExpired = remaining && remaining.days <= 0;
-                
-                return (
-                  <div
-                    key={enrollment.id}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-100 hover:border-indigo-300 transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-1 group"
-                  >
-                    {enrollment.course?.featuredImage && (
-                      <div className="h-48 overflow-hidden">
-                        <img
-                          src={enrollment.course.featuredImage}
-                          alt={enrollment.courseName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="p-6">
-                      <h3 className="font-bold text-xl text-gray-900 mb-2">
-                        {enrollment.courseName}
-                      </h3>
-                      
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                          </svg>
-                          <span>Enrolled: {enrollment.enrolledAt?.toDate().toLocaleDateString()}</span>
-                        </div>
-                        
-                        {remaining && (
-                          <div className={`flex items-center gap-2 text-sm ${isExpired ? 'text-red-600' : 'text-green-600'}`}>
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
-                            </svg>
-                            <span>
-                              {isExpired 
-                                ? `Expired on ${remaining.expiryDate}` 
-                                : `${remaining.days} days remaining`
-                              }
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <button
-                        onClick={() => navigate(`/course/${enrollment.courseId}/learn`)}
-                        disabled={isExpired}
-                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
-                          isExpired
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg'
-                        }`}
-                      >
-                        {isExpired ? 'Access Expired' : 'Continue Learning →'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          );
+        })()}
 
         {/* Browse More Courses */}
         {visibleSections.browseMore && (

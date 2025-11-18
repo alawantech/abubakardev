@@ -87,7 +87,7 @@ const CourseSignUp = () => {
       });
 
       // Save enrollment plan to Firestore
-      await setDoc(doc(db, 'enrollmentPlans', user.uid), {
+      await setDoc(doc(db, 'enrollmentPlans', `${user.uid}_${plan.courseId}`), {
         userId: user.uid,
         courseId: plan.courseId,
         courseName: plan.courseName,

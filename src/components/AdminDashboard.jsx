@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import CourseManagement from './CourseManagement';
 import StudentManagement from './StudentManagement';
 import AdminProfile from './AdminProfile';
@@ -9,8 +10,30 @@ import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      navigate('/login');
+    }
+  }, [currentUser, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="admin-dashboard pt-32">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null; // Will redirect
+  }
 
   const handleLogout = async () => {
     try {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
@@ -82,7 +82,7 @@ const StudentManagement = () => {
           where('isRenewal', '==', true)
         );
         const renewalPaymentsSnapshot = await getDocs(renewalPaymentsQuery);
-        const latestRenewalPayment = renewalPaymentsSnapshot.docs.length > 0 
+        const latestRenewalPayment = renewalPaymentsSnapshot.docs.length > 0
           ? renewalPaymentsSnapshot.docs
               .map(doc => ({ id: doc.id, ...doc.data() }))
               .sort((a, b) => b.submittedAt.toDate() - a.submittedAt.toDate())[0]
@@ -106,7 +106,66 @@ const StudentManagement = () => {
         });
       }
 
-      setEnrollments(enrollmentsData);
+      // Deduplicate enrollments by userId (each user should only have one enrollment per course)
+      const deduplicatedEnrollments = enrollmentsData.reduce((acc, enrollment) => {
+        const existing = acc.find(e => e.userId === enrollment.userId);
+
+        if (!existing) {
+          // No existing enrollment for this user, add it
+          acc.push(enrollment);
+        } else {
+          // Existing enrollment found for this user, decide which one to keep
+          const existingIsPaid = existing.payment && (existing.payment.status === 'approved' || existing.paymentStatus === 'paid');
+          const currentIsPaid = enrollment.payment && (enrollment.payment.status === 'approved' || enrollment.paymentStatus === 'paid');
+
+          if (currentIsPaid && !existingIsPaid) {
+            // Current is paid, existing is not - replace with current
+            const index = acc.indexOf(existing);
+            acc[index] = enrollment;
+          } else if (!currentIsPaid && !existingIsPaid) {
+            // Both are unpaid, keep the more recent one
+            const existingDate = existing.createdAt?.toDate() || new Date(0);
+            const currentDate = enrollment.createdAt?.toDate() || new Date(0);
+            if (currentDate > existingDate) {
+              const index = acc.indexOf(existing);
+              acc[index] = enrollment;
+            }
+          }
+          // If existing is paid, keep it (don't replace with unpaid)
+        }
+
+        return acc;
+      }, []);
+
+      // Clean up duplicate enrollment plans (run in background)
+      const cleanupDuplicates = async () => {
+        try {
+          const keptIds = new Set(deduplicatedEnrollments.map(e => e.id));
+          const duplicates = enrollmentsData.filter(e => !keptIds.has(e.id));
+
+          if (duplicates.length > 0) {
+            console.log('StudentManagement: Cleaning up duplicate enrollment plans:', duplicates.map(d => d.id));
+
+            const deletePromises = duplicates.map(async (duplicate) => {
+              try {
+                await deleteDoc(doc(db, 'enrollmentPlans', duplicate.id));
+                console.log('StudentManagement: Deleted duplicate enrollment plan:', duplicate.id);
+              } catch (error) {
+                console.error('StudentManagement: Failed to delete duplicate enrollment plan:', duplicate.id, error);
+              }
+            });
+
+            await Promise.all(deletePromises);
+          }
+        } catch (error) {
+          console.error('StudentManagement: Error during duplicate cleanup:', error);
+        }
+      };
+
+      // Run cleanup in background (don't await)
+      cleanupDuplicates();
+
+      setEnrollments(deduplicatedEnrollments);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
