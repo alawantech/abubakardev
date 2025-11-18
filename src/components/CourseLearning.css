@@ -290,12 +290,13 @@
   font-weight: 600;
 }
 
-/* Main Lesson Content */
-.lesson-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-  background: #f8f9fa;
+/* Main Content Layout */
+.learning-content {
+  display: flex;
+  min-height: calc(100vh - 80px); /* Account for header */
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .lesson-header {

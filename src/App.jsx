@@ -70,8 +70,10 @@ function App() {
           path="/courses"
           element={
             <div className="App">
-              <Header />
-              <Courses />
+              <div className="course-content">
+                <Header />
+                <Courses />
+              </div>
               <Footer />
             </div>
           }
@@ -80,8 +82,10 @@ function App() {
           path="/course/:courseId"
           element={
             <div className="App">
-              <Header />
-              <CoursePage />
+              <div className="course-content">
+                <Header />
+                <CoursePage />
+              </div>
               <Footer />
             </div>
           }
@@ -90,7 +94,9 @@ function App() {
           path="/course/:courseId/learn"
           element={
             <div className="App">
-              <CourseLearning />
+              <div className="course-content">
+                <CourseLearning />
+              </div>
             </div>
           }
         />
@@ -98,8 +104,10 @@ function App() {
           path="/course/:courseId/pricing"
           element={
             <div className="App">
-              <Header />
-              <CoursePricing />
+              <div className="course-content">
+                <Header />
+                <CoursePricing />
+              </div>
               <Footer />
             </div>
           }
@@ -108,8 +116,10 @@ function App() {
           path="/course/:courseId/signup"
           element={
             <div className="App">
-              <Header />
-              <CourseSignUp />
+              <div className="course-content">
+                <Header />
+                <CourseSignUp />
+              </div>
               <Footer />
             </div>
           }
@@ -118,8 +128,10 @@ function App() {
           path="/course/:courseId/payment"
           element={
             <div className="App">
-              <Header />
-              <CoursePayment />
+              <div className="course-content">
+                <Header />
+                <CoursePayment />
+              </div>
               <Footer />
             </div>
           }
@@ -128,8 +140,10 @@ function App() {
           path="/course/:courseId/dashboard"
           element={
             <div className="App">
-              <Header />
-              <CourseDashboard />
+              <div className="course-content">
+                <Header />
+                <CourseDashboard />
+              </div>
               <Footer />
             </div>
           }

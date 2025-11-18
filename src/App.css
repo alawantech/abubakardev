@@ -21,6 +21,19 @@ body {
   flex-direction: column;
 }
 
+/* Course pages layout - centered content */
+.course-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ensure footer stays full width on course pages */
+.App > *:not(.course-content) {
+  width: 100%;
+}
+
 /* Global Utilities */
 .container {
   max-width: 1200px;
