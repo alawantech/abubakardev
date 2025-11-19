@@ -184,8 +184,10 @@ function App() {
           path="/dashboard" 
           element={
             <div className="App">
-              <Header />
-              <Dashboard />
+              <div className="course-content">
+                <Header />
+                <Dashboard />
+              </div>
               <Footer />
             </div>
           } 
