@@ -94,9 +94,7 @@ function App() {
           path="/course/:courseId/learn"
           element={
             <div className="App">
-              <div className="course-content">
-                <CourseLearning />
-              </div>
+              <CourseLearning />
             </div>
           }
         />

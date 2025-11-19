@@ -131,7 +131,7 @@
 
 /* Sidebar - Curriculum */
 .curriculum-sidebar {
-  width: 380px;
+  width: 320px;
   background: white;
   border-right: 2px solid #e9ecef;
   overflow-y: auto;
@@ -294,16 +294,22 @@
 .learning-content {
   display: flex;
   min-height: calc(100vh - 80px); /* Account for header */
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
+}
+
+/* Main Lesson Content */
+.lesson-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background: #f8f9fa;
 }
 
 .lesson-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   gap: 1rem;
 }
 
@@ -370,7 +376,7 @@
 /* Lesson Description */
 .lesson-description {
   background: white;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
