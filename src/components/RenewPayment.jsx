@@ -117,20 +117,34 @@ const RenewPayment = () => {
 
       let receiptURL = null;
 
-      // Try to upload to Firebase Storage
-      try {
-        const fileName = `renewal-receipts/${currentUser.uid}_${selectedCourse}_${Date.now()}`;
-        console.log('Attempting to upload file:', fileName);
+      // Try to upload to Firebase Storage with multiple attempts
+      let uploadAttempts = 0;
+      const maxAttempts = 3;
+      
+      while (uploadAttempts < maxAttempts && !receiptURL) {
+        try {
+          uploadAttempts++;
+          const fileName = `renewal-receipts/${currentUser.uid}_${selectedCourse}_${Date.now()}_${uploadAttempts}`;
+          console.log(`Upload attempt ${uploadAttempts}/${maxAttempts}:`, fileName);
 
-        const receiptRef = ref(storage, fileName);
-        const uploadTask = await uploadBytes(receiptRef, paymentReceipt);
-        console.log('Upload successful:', uploadTask);
+          const receiptRef = ref(storage, fileName);
+          const uploadTask = await uploadBytes(receiptRef, paymentReceipt);
+          console.log('Upload successful:', uploadTask);
 
-        receiptURL = await getDownloadURL(receiptRef);
-        console.log('Download URL obtained:', receiptURL);
-      } catch (uploadError) {
-        console.warn('Firebase Storage upload failed (likely CORS), proceeding without receipt:', uploadError.message);
-        receiptURL = null;
+          receiptURL = await getDownloadURL(receiptRef);
+          console.log('Download URL obtained:', receiptURL);
+          break; // Success, exit loop
+        } catch (uploadError) {
+          console.warn(`Upload attempt ${uploadAttempts} failed:`, uploadError.message);
+          
+          if (uploadAttempts >= maxAttempts) {
+            console.error('All upload attempts failed');
+            receiptURL = null;
+          } else {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempts));
+          }
+        }
       }
 
       // Create renewal payment record
@@ -149,7 +163,9 @@ const RenewPayment = () => {
         receiptFileName: paymentReceipt.name,
         receiptFileSize: paymentReceipt.size,
         receiptFileType: paymentReceipt.type,
-        isRenewal: true
+        isRenewal: true,
+        uploadAttempted: true,
+        uploadSuccessful: !!receiptURL
       };
 
       const paymentDocRef = await addDoc(collection(db, 'payments'), paymentData);

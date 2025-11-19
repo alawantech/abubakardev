@@ -96,8 +96,17 @@ const CoursePage = () => {
   const handleFlutterPayment = useFlutterwave(config);
 
   const handleEnrollClick = () => {
-    // Redirect to pricing page
-    navigate(`/course/${courseId}/pricing`);
+    // Navigate directly to signup with one-time plan
+    navigate(`/course/${courseId}/signup`, {
+      state: {
+        plan: {
+          type: 'onetime',
+          amount: 49000,
+          courseId: courseId,
+          courseName: course.title
+        }
+      }
+    });
     // Scroll to top of the page after navigation
     setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }), 0);
   };
@@ -478,17 +487,20 @@ const CoursePage = () => {
                     {course.pricingModel === 'paid' ? (
                       <div className="relative">
                         {/* Price Background Glow */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-3xl blur-2xl transform scale-110"></div>
-                        <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-indigo-200/30 shadow-xl">
-                          <div className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-                            ₦6500
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl transform scale-110"></div>
+                        <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-emerald-200/30 shadow-xl">
+                          <div className="mb-4">
+                            <div className="text-2xl text-gray-500 line-through mb-2">₦75,000</div>
+                            <div className="text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                              ₦49,000
+                            </div>
                           </div>
-                          <div className="text-lg font-semibold text-indigo-700 mb-2">per month</div>
+                          <div className="text-lg font-semibold text-emerald-700 mb-2">One-time Payment</div>
                           <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                             <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                             </svg>
-                            <span>One-time payment • Lifetime access</span>
+                            <span>Lifetime Access</span>
                           </div>
                         </div>
                       </div>

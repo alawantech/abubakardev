@@ -6,7 +6,6 @@ import Header from './components/Header';
 import Courses from './components/Courses';
 import CoursePage from './components/CoursePage';
 import CourseLearning from './components/CourseLearning';
-import CoursePricing from './components/CoursePricing';
 import CourseSignUp from './components/CourseSignUp';
 import CoursePayment from './components/CoursePayment';
 import CourseDashboard from './components/CourseDashboard';
@@ -95,18 +94,6 @@ function App() {
           element={
             <div className="App">
               <CourseLearning />
-            </div>
-          }
-        />
-        <Route
-          path="/course/:courseId/pricing"
-          element={
-            <div className="App">
-              <div className="course-content">
-                <Header />
-                <CoursePricing />
-              </div>
-              <Footer />
             </div>
           }
         />
