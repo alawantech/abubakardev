@@ -35,13 +35,23 @@ const Header = () => {
 
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="container">
-        <div className="header-content">
+      <div className="header-content">
+        <div className="left-group">
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
           <div className="logo">
             <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <img src="/logo2.png" alt="AbubakarDev Logo" style={{height: '40px'}} />
+              <img src="/logo2.png" alt="AbubakarDev Logo" style={{height: '32px'}} />
             </Link>
           </div>
+        </div>
           
           <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''}`}>
             <ul className="nav-list">
@@ -49,7 +59,31 @@ const Header = () => {
               <li><Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link></li>
               <li><Link to="/services" onClick={() => setIsMobileMenuOpen(false)}>Services</Link></li>
               <li><Link to="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Projects</Link></li>
-              <li><Link to="/courses" onClick={() => setIsMobileMenuOpen(false)}>Courses</Link></li>
+              <li className="courses-li">
+                <Link 
+                  to="/courses" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span className="all-courses-btn" style={{
+                    width: '146px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '32px',
+                    padding: '0',
+                    background: '#118aef',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    position: 'relative',
+                    margin: '8px 0'
+                  }}>
+                    <span>All courses</span>
+                  </span>
+                </Link>
+              </li>
               <li><Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)}>Pricing</Link></li>
               <li><Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link></li>
               
@@ -70,11 +104,11 @@ const Header = () => {
                       onClick={handleSignOut}
                       className="logout-btn"
                       style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: '#118aef',
                         color: 'white',
                         border: 'none',
                         padding: '8px 20px',
-                        borderRadius: '25px',
+                        borderRadius: '6px',
                         cursor: 'pointer',
                         fontWeight: '600',
                         transition: 'all 0.3s ease'
@@ -85,38 +119,55 @@ const Header = () => {
                   </li>
                 </>
               ) : (
-                <li>
-                  <Link 
-                    to="/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      padding: '8px 20px',
-                      borderRadius: '25px',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block'
-                    }}
-                  >
-                    Login
-                  </Link>
-                </li>
+                  <li>
+                    <Link 
+                      to="/login" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      style={{
+                        background: '#118aef',
+                        color: 'white',
+                        padding: '8px 20px',
+                        borderRadius: '6px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <i className="fas fa-user" style={{marginRight: '8px'}}></i>
+                      Login
+                    </Link>
+                  </li>
               )}
             </ul>
           </nav>
-
-          <button 
-            className="mobile-menu-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle mobile menu"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+          <div className="right-group">
+            <Link 
+              to="/courses" 
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <span className="all-courses-btn" style={{
+                width: '146px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '32px',
+                padding: '0',
+                background: '#118aef',
+                color: '#fff',
+                borderRadius: '6px',
+                fontSize: '15px',
+                fontWeight: '500',
+                position: 'relative',
+                margin: '8px 0'
+              }}>
+                <span>All courses</span>
+              </span>
+            </Link>
+          </div>
         </div>
-      </div>
     </header>
   )
 }
