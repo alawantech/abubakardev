@@ -94,23 +94,34 @@ const CoursePayment = () => {
     try {
       let receiptURL = null;
 
-      // Try to upload to Firebase Storage
-      try {
-        const fileName = `payment-receipts/${userId}_${courseId}_${Date.now()}`;
-        console.log('Attempting to upload file:', fileName);
+      // Try to upload to Firebase Storage with multiple attempts
+      let uploadAttempts = 0;
+      const maxAttempts = 3;
+      
+      while (uploadAttempts < maxAttempts && !receiptURL) {
+        try {
+          uploadAttempts++;
+          const fileName = `payment-receipts/${userId}/${courseId}_${Date.now()}_${uploadAttempts}`;
+          console.log(`Upload attempt ${uploadAttempts}/${maxAttempts}:`, fileName);
 
-        const receiptRef = ref(storage, fileName);
-        const uploadTask = await uploadBytes(receiptRef, paymentReceipt);
-        console.log('Upload successful:', uploadTask);
+          const receiptRef = ref(storage, fileName);
+          const uploadTask = await uploadBytes(receiptRef, paymentReceipt);
+          console.log('Upload successful:', uploadTask);
 
-        receiptURL = await getDownloadURL(receiptRef);
-        console.log('Download URL obtained:', receiptURL);
-      } catch (uploadError) {
-        console.warn('Firebase Storage upload failed (likely CORS), proceeding without receipt:', uploadError.message);
-
-        // Fallback: Continue without receipt URL
-        // Admin can request manual receipt upload later
-        receiptURL = null;
+          receiptURL = await getDownloadURL(receiptRef);
+          console.log('Download URL obtained:', receiptURL);
+          break; // Success, exit loop
+        } catch (uploadError) {
+          console.warn(`Upload attempt ${uploadAttempts} failed:`, uploadError.message);
+          
+          if (uploadAttempts >= maxAttempts) {
+            console.error('All upload attempts failed');
+            receiptURL = null;
+          } else {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * uploadAttempts));
+          }
+        }
       }
 
       // Create payment record in Firestore
@@ -124,85 +135,102 @@ const CoursePayment = () => {
         planType: plan.type,
         amount: plan.amount,
         receiptURL,
-        status: receiptURL ? 'pending' : 'receipt_pending_upload',
+        status: receiptURL ? 'approved' : 'receipt_pending_upload', // Set to approved if receipt uploaded successfully
         submittedAt: new Date(),
         paymentMethod: 'bank_transfer',
         receiptFileName: paymentReceipt.name,
         receiptFileSize: paymentReceipt.size,
-        receiptFileType: paymentReceipt.type
+        receiptFileType: paymentReceipt.type,
+        isRenewal: false, // Explicitly mark as registration payment
+        uploadAttempted: true, // Mark that upload was attempted
+        uploadSuccessful: !!receiptURL // Track if upload succeeded
       };
 
       const paymentDocRef = await addDoc(collection(db, 'payments'), paymentData);
       console.log('Payment record created:', paymentDocRef.id);
 
-      // Update existing enrollment plan or create new one
-      console.log('Looking for enrollment plan with userId:', userId, 'courseId:', courseId);
-      const enrollmentQuery = query(
-        collection(db, 'enrollmentPlans'),
-        where('userId', '==', userId),
-        where('courseId', '==', courseId)
-      );
-      
-      const enrollmentSnapshot = await getDocs(enrollmentQuery);
-      console.log('Found enrollment plans:', enrollmentSnapshot.size);
-      
-      if (!enrollmentSnapshot.empty) {
-        // Update existing enrollment plan
-        const enrollmentDoc = enrollmentSnapshot.docs[0];
-        console.log('Updating enrollment plan:', enrollmentDoc.id, 'with data:', enrollmentDoc.data());
-        const enrollmentData = {
-          planType: plan.type,
-          planAmount: plan.amount,
-          paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
-          nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        };
+      // Only create enrollment if receipt upload was successful
+      if (receiptURL) {
+        // Update existing enrollment plan or create new one
+        console.log('Looking for enrollment plan with userId:', userId, 'courseId:', courseId);
+        const enrollmentQuery = query(
+          collection(db, 'enrollmentPlans'),
+          where('userId', '==', userId),
+          where('courseId', '==', courseId)
+        );
+        
+        const enrollmentSnapshot = await getDocs(enrollmentQuery);
+        console.log('Found enrollment plans:', enrollmentSnapshot.size);
+        
+        if (!enrollmentSnapshot.empty) {
+          // Update existing enrollment plan
+          const enrollmentDoc = enrollmentSnapshot.docs[0];
+          console.log('Updating enrollment plan:', enrollmentDoc.id, 'with data:', enrollmentDoc.data());
+          const enrollmentData = {
+            planType: plan.type,
+            planAmount: plan.amount,
+            paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
+            nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          };
 
-        await updateDoc(doc(db, 'enrollmentPlans', enrollmentDoc.id), enrollmentData);
-        console.log('Enrollment plan updated successfully:', enrollmentDoc.id);
-      } else {
-        // Create new enrollment plan
-        console.log('No existing enrollment plan found, creating new one');
-        const enrollmentData = {
-          userId,
-          courseId,
-          planType: plan.type,
-          planAmount: plan.amount,
-          paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
-          createdAt: new Date(),
-          nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        };
+          await updateDoc(doc(db, 'enrollmentPlans', enrollmentDoc.id), enrollmentData);
+          console.log('Enrollment plan updated successfully:', enrollmentDoc.id);
+        } else {
+          // Create new enrollment plan
+          console.log('No existing enrollment plan found, creating new one');
+          const enrollmentData = {
+            userId,
+            courseId,
+            planType: plan.type,
+            planAmount: plan.amount,
+            paymentStatus: 'paid', // Always set to 'paid' when receipt is uploaded
+            createdAt: new Date(),
+            nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          };
 
-        await setDoc(doc(db, 'enrollmentPlans', `${userId}_${courseId}`), enrollmentData);
-        console.log('New enrollment plan created');
-      }
-
-      // Create enrollment record for course access
-      const enrollmentAccessData = {
-        customerEmail: customerEmail,
-        courseId,
-        courseName: plan.courseName,
-        enrolledAt: new Date(),
-        completedLessons: [], // Start with empty completed lessons
-        planType: plan.type,
-        planAmount: plan.amount,
-        userId: userId // Add userId for consistency
-      };
-
-      const enrollmentAccessDocRef = await addDoc(collection(db, 'enrollments'), enrollmentAccessData);
-
-      // Success message based on upload success
-      const successMessage = receiptURL
-        ? 'Payment receipt submitted successfully! Your enrollment will be activated once verified.'
-        : 'Payment information submitted! Please contact support to upload your payment receipt for verification.';
-
-      navigate(`/course/${courseId}/learn`, {
-        state: {
-          paymentSuccess: true,
-          message: successMessage
+          await setDoc(doc(db, 'enrollmentPlans', `${userId}_${courseId}`), enrollmentData);
+          console.log('New enrollment plan created');
         }
-      });
+
+        // Create enrollment record for course access
+        const enrollmentAccessData = {
+          customerEmail: customerEmail,
+          courseId,
+          courseName: plan.courseName,
+          enrolledAt: new Date(),
+          completedLessons: [], // Start with empty completed lessons
+          planType: plan.type,
+          planAmount: plan.amount,
+          userId: userId, // Add userId for consistency
+          receiptURL: receiptURL // Store receipt URL in enrollment for easy access
+        };
+
+        const enrollmentAccessDocRef = await addDoc(collection(db, 'enrollments'), enrollmentAccessData);
+        console.log('Enrollment access record created:', enrollmentAccessDocRef.id);
+
+        // Success message
+        const successMessage = 'Payment receipt submitted successfully! Your enrollment has been activated.';
+
+        navigate(`/course/${courseId}/learn`, {
+          state: {
+            paymentSuccess: true,
+            message: successMessage
+          }
+        });
+      } else {
+        // Receipt upload failed - don't create enrollment, inform user to contact support
+        const successMessage = 'Payment information submitted, but there was an issue saving your receipt. Please contact support to complete your enrollment manually.';
+
+        navigate('/dashboard', {
+          state: {
+            paymentSuccess: false,
+            message: successMessage,
+            receiptUploadFailed: true
+          }
+        });
+      }
     } catch (error) {
       console.error('Error submitting payment:', error);
       alert(`Error submitting payment: ${error.message}. Please try again or contact support.`);
