@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './CourseManagement.css';
@@ -28,6 +29,9 @@ const CourseManagement = () => {
     materialsIncluded: [],
     requirements: []
   });
+
+  const [imageFile, setImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -139,6 +143,8 @@ const CourseManagement = () => {
       materialsIncluded: course.materialsIncluded || [],
       requirements: course.requirements || []
     });
+    setImageFile(null);
+    setUploadingImage(false);
     setView('edit-course');
   };
 
@@ -174,6 +180,8 @@ const CourseManagement = () => {
       materialsIncluded: [],
       requirements: []
     });
+    setImageFile(null);
+    setUploadingImage(false);
     setView('list');
   };
 
@@ -257,6 +265,54 @@ const CourseManagement = () => {
 
   const handlePlayVideo = (courseId) => {
     setPlayingVideo(playingVideo === courseId ? null : courseId);
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      // Create a unique filename
+      const timestamp = Date.now();
+      const fileName = `course-images/${timestamp}_${file.name}`;
+      const storageRef = ref(storage, fileName);
+
+      // Upload the file
+      await uploadBytes(storageRef, file);
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update the course data with the new image URL
+      setCourseData({ ...courseData, featuredImage: downloadURL });
+      setImageFile(null);
+      alert('Image uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      handleImageUpload(file);
+    }
   };
 
   return (
@@ -464,18 +520,55 @@ const CourseManagement = () => {
               </div>
 
               <div className="form-group">
-                <label>Featured Image URL</label>
-                <input
-                  type="url"
-                  value={courseData.featuredImage}
-                  onChange={(e) => setCourseData({ ...courseData, featuredImage: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {courseData.featuredImage && (
-                  <div className="image-preview">
-                    <img src={courseData.featuredImage} alt="Featured" />
+                <label>Featured Image</label>
+                <div className="image-upload-section">
+                  <div className="upload-options">
+                    <div className="upload-option">
+                      <label className="upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          disabled={uploadingImage}
+                          style={{ display: 'none' }}
+                        />
+                        <div className="upload-button">
+                          {uploadingImage ? (
+                            <>
+                              <div className="upload-spinner"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              📁 Choose File
+                            </>
+                          )}
+                        </div>
+                      </label>
+                      <small className="field-hint">Upload from your device (max 5MB)</small>
+                    </div>
+                    
+                    <div className="upload-option">
+                      <span className="option-or">OR</span>
+                    </div>
+                    
+                    <div className="upload-option">
+                      <input
+                        type="url"
+                        value={courseData.featuredImage}
+                        onChange={(e) => setCourseData({ ...courseData, featuredImage: e.target.value })}
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      <small className="field-hint">Enter image URL directly</small>
+                    </div>
                   </div>
-                )}
+                  
+                  {courseData.featuredImage && (
+                    <div className="image-preview">
+                      <img src={courseData.featuredImage} alt="Featured" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="form-group">

@@ -63,8 +63,8 @@ service firebase.storage {
       allow read, write, create, delete: if isAdmin();
     }
 
-    // Public assets - read access for everyone
-    match /public/{allPaths=**} {
+    // Course images - read access for everyone, write only for admins
+    match /course-images/{allPaths=**} {
       allow read: if true;
       allow write, create, delete: if isAdmin();
     }
