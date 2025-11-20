@@ -131,14 +131,18 @@ const Courses = () => {
                     {/* Course Content */}
                     <div className="p-7">
                       {/* Course Title */}
-                      <h3 className="text-2xl font-extrabold text-gray-900 mb-4 line-clamp-2 group-hover:text-indigo-700 transition-all duration-300 leading-tight bg-gradient-to-r from-gray-900 to-gray-700 group-hover:from-indigo-700 group-hover:to-purple-700 bg-clip-text group-hover:text-transparent">
+                      <h3 
+                        className="text-2xl font-extrabold text-gray-900 mb-4 line-clamp-2 group-hover:text-indigo-700 transition-all duration-300 leading-tight bg-gradient-to-r from-gray-900 to-gray-700 group-hover:from-indigo-700 group-hover:to-purple-700 bg-clip-text group-hover:text-transparent cursor-pointer"
+                        onClick={() => handleViewCourse(course.id)}
+                      >
                         {course.title}
                       </h3>
 
                       {/* Course Description */}
                       {course.description && (
                         <div
-                          className="text-gray-700 text-base mb-6 line-clamp-3 leading-relaxed font-medium"
+                          className="text-gray-700 text-base mb-6 line-clamp-3 leading-relaxed font-medium cursor-pointer"
+                          onClick={() => handleViewCourse(course.id)}
                           dangerouslySetInnerHTML={{
                             __html: course.description.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
                           }}
