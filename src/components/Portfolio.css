@@ -111,20 +111,30 @@
 }
 
 .portfolio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .portfolio-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(237, 137, 54, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(237, 137, 54, 0.4);
+}
+
+.portfolio-btn .btn-icon {
+  font-size: 1rem;
 }
 
 .portfolio-btn-secondary {

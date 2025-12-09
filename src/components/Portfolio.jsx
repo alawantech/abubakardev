@@ -1,51 +1,32 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { FaExternalLinkAlt, FaArrowRight } from "react-icons/fa";
 import './Portfolio.css'
 
 const Portfolio = () => {
   const projects = [
     {
-      title: "E-Commerce Platform",
-      description: "A full-featured online store with payment integration, inventory management, and admin dashboard. Built with React and Node.js.",
-      image: "https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg?auto=compress&cs=tinysrgb&w=800",
-      tech: ["React", "Node.js", "MongoDB", "Stripe"],
-      category: "Web Development"
+      title: "Rady.ng - E-Commerce Platform",
+      description: "Empower your business with our intuitive website builder. Create a professional e-commerce store in minutes, complete with a custom domain. Our all-in-one platform helps you manage inventory, process sales, and grow your online presence effortlessly.",
+      image: "/rady.ng.PNG",
+      tech: ["React", "Firebase", "Tailwind", "Flutterwave"],
+      category: "Web Development",
+      liveLink: "https://www.rady.ng/"
     },
     {
       title: "Task Management App",
       description: "Cross-platform mobile app for team collaboration and project management. Features real-time updates and offline sync.",
-      image: "https://images.pexels.com/photos/3184357/pexels-photo-3184357.jpeg?auto=compress&cs=tinysrgb&w=800",
+      image: "/brightorion.PNG",
       tech: ["React Native", "Firebase", "Redux", "TypeScript"],
       category: "Mobile App"
     },
     {
       title: "Business Analytics Dashboard",
       description: "Custom analytics platform with real-time data visualization, reporting tools, and automated insights for business intelligence.",
-      image: "https://images.pexels.com/photos/590020/pexels-photo-590020.jpeg?auto=compress&cs=tinysrgb&w=800",
+      image: "/djenepocouture.PNG",
       tech: ["React", "Python", "PostgreSQL", "Chart.js"],
       category: "Custom Software"
-    },
-    {
-      title: "Restaurant POS System",
-      description: "Point-of-sale system for restaurants with order management, kitchen display, and payment processing integration.",
-      image: "https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=800",
-      tech: ["Vue.js", "Express", "MySQL", "Socket.io"],
-      category: "Custom Software"
-    },
-    {
-      title: "Fitness Tracking App",
-      description: "Mobile app for tracking workouts, nutrition, and progress with social features and personal trainer integration.",
-      image: "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=800",
-      tech: ["Flutter", "Firebase", "GraphQL", "AWS"],
-      category: "Mobile App"
-    },
-    {
-      title: "Corporate Website",
-      description: "Professional corporate website with CMS integration, SEO optimization, and multilingual support for global reach.",
-      image: "https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=800",
-      tech: ["Next.js", "Strapi", "TailwindCSS", "Vercel"],
-      category: "Web Development"
     }
   ]
 
@@ -124,12 +105,12 @@ const Portfolio = () => {
                 </div>
 
                 <div className="portfolio-actions">
-                  <motion.button className="portfolio-btn" whileHover={{ scale: 1.08, backgroundColor: '#0ea5e9', color: '#fff' }} whileTap={{ scale: 0.96 }}>
-                    View Project
-                  </motion.button>
-                  <motion.button className="portfolio-btn-secondary" whileHover={{ scale: 1.08, backgroundColor: '#0ea5e9', color: '#fff' }} whileTap={{ scale: 0.96 }}>
-                    Live Demo
-                  </motion.button>
+                  {project.liveLink && (
+                    <motion.a href={project.liveLink} target="_blank" rel="noopener noreferrer" className="portfolio-btn live-demo-btn" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }}>
+                      <span>Live Demo</span>
+                      <FaArrowRight className="btn-icon" />
+                    </motion.a>
+                  )}
                 </div>
               </div>
             </motion.div>
