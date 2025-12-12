@@ -8,25 +8,27 @@ const Portfolio = () => {
   const projects = [
     {
       title: "Rady.ng - E-Commerce Platform",
-      description: "Empower your business with our intuitive website builder. Create a professional e-commerce store in minutes, complete with a custom domain. Our all-in-one platform helps you manage inventory, process sales, and grow your online presence effortlessly.",
+      description: "An intuitive e-commerce platform with website builder, custom domains, inventory management, and payment processing. Build and grow your online store effortlessly.",
       image: "/rady.ng.PNG",
       tech: ["React", "Firebase", "Tailwind", "Flutterwave"],
       category: "Web Development",
       liveLink: "https://www.rady.ng/"
     },
     {
-      title: "Task Management App",
-      description: "Cross-platform mobile app for team collaboration and project management. Features real-time updates and offline sync.",
+      title: "Bright Orion Global",
+      description: "A multi-level referral platform featuring user onboarding, authentication, wallet management, earnings tracking, and comprehensive dashboard functionality.",
       image: "/brightorion.PNG",
-      tech: ["React Native", "Firebase", "Redux", "TypeScript"],
-      category: "Mobile App"
+      tech: ["Next.js", "TypeScript", "Tailwind CSS", "Firebase"],
+      category: "Web Development",
+      liveLink: "https://brightorionglobal.com"
     },
     {
-      title: "Business Analytics Dashboard",
-      description: "Custom analytics platform with real-time data visualization, reporting tools, and automated insights for business intelligence.",
+      title: "Djenepo Couture",
+      description: "Premium African fashion brand showcasing custom-made Abacosts, Tuniques, and Vestes with WhatsApp ordering and 7+ years of expert craftsmanship.",
       image: "/djenepocouture.PNG",
-      tech: ["React", "Python", "PostgreSQL", "Chart.js"],
-      category: "Custom Software"
+      tech: ["React", "Tailwind CSS", "Firebase"],
+      category: "Web Development",
+      liveLink: "https://djenepocouture.com"
     }
   ]
 
