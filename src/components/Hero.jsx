@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { FaArrowRight, FaRocket, FaCode, FaMobileAlt, FaDatabase } from 'react-icons/fa'
+import video1 from '../assets/video1.mp4'
+import video2 from '../assets/video2.mp4'
 import './Hero.css'
 
 const Hero = () => {
@@ -57,7 +59,7 @@ const Hero = () => {
             transition={{ duration: 1.5 }}
             className="hero-video"
           >
-            <source src={`/video${currentVideo}.mp4`} type="video/mp4" />
+            <source src={currentVideo === 1 ? video1 : video2} type="video/mp4" />
           </motion.video>
         </AnimatePresence>
         <div className="hero-overlay"></div>
