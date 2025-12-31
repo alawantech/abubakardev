@@ -1,173 +1,148 @@
 import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Link, useLocation } from 'react-router-dom'
+import { FaUser, FaSignOutAlt, FaThLarge, FaBars, FaTimes } from 'react-icons/fa'
+import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut } = useAuth()
+  const location = useLocation()
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
+      setIsScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+  const handleSignOut = async () => {
+    try {
+      await signOut()
       setIsMobileMenuOpen(false)
+    } catch (error) {
+      console.error('Error signing out:', error)
     }
   }
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      setIsMobileMenuOpen(false);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
+    { name: 'Services', path: '/services' },
+    { name: 'Projects', path: '/portfolio' },
+    { name: 'Pricing', path: '/pricing' },
+    { name: 'Contact', path: '/contact' },
+  ]
 
   return (
-    <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="header-content">
-        <div className="left-group">
-          <button 
-            className="mobile-menu-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle mobile menu"
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <div className="logo">
-            <Link to="/" onClick={() => setIsMobileMenuOpen(false)}>
-              <img src="/logo2.png" alt="AbubakarDev Logo" style={{height: '32px'}} />
-            </Link>
-          </div>
+    <header className={`header ${isScrolled ? 'scrolled' : 'transparent'}`}>
+      <div className="header-container">
+        <div className="header-left">
+          <Link to="/" className="logo-link" onClick={() => setIsMobileMenuOpen(false)}>
+            <img src="/logo2.png" alt="AbubakarDev Logo" className="header-logo" />
+          </Link>
         </div>
-          
-          <nav className={`nav ${isMobileMenuOpen ? 'nav-open' : ''}`}>
-            <ul className="nav-list">
-              <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)}>Home</Link></li>
-              <li><Link to="/about" onClick={() => setIsMobileMenuOpen(false)}>About</Link></li>
-              <li><Link to="/services" onClick={() => setIsMobileMenuOpen(false)}>Services</Link></li>
-              <li><Link to="/portfolio" onClick={() => setIsMobileMenuOpen(false)}>Projects</Link></li>
-              <li className="courses-li">
-                <Link 
-                  to="/courses" 
-                  onClick={() => setIsMobileMenuOpen(false)}
+
+        <nav className="desktop-nav">
+          <ul className="nav-list">
+            {navLinks.map((link) => (
+              <li key={link.path}>
+                <Link
+                  to={link.path}
+                  className={location.pathname === link.path ? 'active' : ''}
                 >
-                  <span className="all-courses-btn" style={{
-                    width: '146px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '32px',
-                    padding: '0',
-                    background: '#118aef',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    position: 'relative',
-                    margin: '8px 0'
-                  }}>
-                    <span>All courses</span>
-                  </span>
+                  {link.name}
                 </Link>
               </li>
-              <li><Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)}>Pricing</Link></li>
-              <li><Link to="/contact" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link></li>
-              
-              {/* Auth-based navigation */}
+            ))}
+          </ul>
+        </nav>
+
+        <div className="header-right">
+          <Link to="/courses" className="courses-button">
+            <FaThLarge className="btn-icon" />
+            <span>All Courses</span>
+          </Link>
+
+          {currentUser ? (
+            <div className="auth-group">
+              <Link to="/dashboard" className="dashboard-pill">
+                <FaUser className="btn-icon" />
+                <span>Dashboard</span>
+              </Link>
+              <button onClick={handleSignOut} className="icon-btn logout-btn" title="Logout">
+                <FaSignOutAlt />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="login-pill">
+              <FaUser className="btn-icon" />
+              <span>Login</span>
+            </Link>
+          )}
+
+          <button
+            className="mobile-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.nav
+            className="mobile-nav"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ul className="mobile-nav-list">
+              {navLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={location.pathname === link.path ? 'active' : ''}
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link to="/courses" onClick={() => setIsMobileMenuOpen(false)}>
+                  Courses
+                </Link>
+              </li>
               {currentUser ? (
                 <>
                   <li>
-                    <Link 
-                      to="/dashboard" 
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="dashboard-link"
-                    >
-                      📚 My Dashboard
+                    <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      Dashboard
                     </Link>
                   </li>
                   <li>
-                    <button 
-                      onClick={handleSignOut}
-                      className="logout-btn"
-                      style={{
-                        background: '#118aef',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 20px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
+                    <button onClick={handleSignOut} className="mobile-logout">
                       Logout
                     </button>
                   </li>
                 </>
               ) : (
-                  <li>
-                    <Link 
-                      to="/login" 
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      style={{
-                        background: '#118aef',
-                        color: 'white',
-                        padding: '8px 20px',
-                        borderRadius: '6px',
-                        fontWeight: '600',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <i className="fas fa-user" style={{marginRight: '8px'}}></i>
-                      Login
-                    </Link>
-                  </li>
+                <li>
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    Login
+                  </Link>
+                </li>
               )}
             </ul>
-          </nav>
-          <div className="right-group">
-            <Link 
-              to="/courses" 
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <span className="all-courses-btn" style={{
-                width: '146px',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '32px',
-                padding: '0',
-                background: '#118aef',
-                color: '#fff',
-                borderRadius: '6px',
-                fontSize: '15px',
-                fontWeight: '500',
-                position: 'relative',
-                margin: '8px 0'
-              }}>
-                <span>All courses</span>
-              </span>
-            </Link>
-          </div>
-        </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   )
 }

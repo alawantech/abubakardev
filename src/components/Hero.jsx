@@ -1,130 +1,165 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
+import { FaArrowRight, FaRocket, FaCode, FaMobileAlt, FaDatabase } from 'react-icons/fa'
 import './Hero.css'
 
-
 const Hero = () => {
-  const scrollToContact = () => {
-    const element = document.getElementById('contact')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+  const [currentVideo, setCurrentVideo] = useState(1)
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 })
+  const videoRef = React.useRef(null)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentVideo((prev) => (prev === 1 ? 2 : 1))
+    }, 10000) // Increased to 10s to allow for loading
+    return () => clearInterval(interval)
+  }, [])
+
+  // Force play on video change
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => console.log("Autoplay prevented:", err))
+    }
+  }, [currentVideo])
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.5
+      }
     }
   }
 
-  // Animation variants
-  const fadeUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
   }
-  const fadeLeft = {
-    hidden: { opacity: 0, x: -40 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
-  }
-  const fadeRight = {
-    hidden: { opacity: 0, x: 40 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
-  }
-
-  // Intersection Observer for scroll animation
-  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.2 })
 
   return (
-    <section id="home" className="hero">
-      <div className="hero-background">
-        <div className="hero-pattern"></div>
+    <section id="home" className="hero-section">
+      <div className="video-background-container">
+        <AnimatePresence mode="wait">
+          <motion.video
+            ref={videoRef}
+            key={currentVideo}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.6 }} // Increased opacity for better visibility
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            className="hero-video"
+          >
+            <source src={`/video${currentVideo}.mp4`} type="video/mp4" />
+          </motion.video>
+        </AnimatePresence>
+        <div className="hero-overlay"></div>
+        <div className="glass-morphism-bg"></div>
       </div>
+
       <div className="container">
         <motion.div
           className="hero-content"
           ref={ref}
+          variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
-          variants={fadeUp}
         >
-          <motion.div
-            className="hero-text"
-            initial="hidden"
-            animate={inView ? "visible" : "hidden"}
-            variants={fadeLeft}
-          >
-            <motion.h1 className="hero-title" whileHover={{ scale: 1.04 }}>
-              <span className="hero-title-white">We Build Websites, Mobile Apps, and </span><span className="hero-title-gradient">Custom Software for Businesses</span>
-            </motion.h1>
-            <motion.p className="hero-description" variants={fadeUp}>
-              Transform your business with cutting-edge technology solutions. 
-              We create custom software that drives growth and delivers exceptional user experiences.
-            </motion.p>
-            <div className="hero-buttons">
-              <motion.button
-                className="btn-primary hero-cta"
-                onClick={scrollToContact}
-                whileHover={{ scale: 1.08, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
-                whileTap={{ scale: 0.96 }}
-              >
-                Get Started
-              </motion.button>
-              <motion.a
-                href="#services"
-                className="btn-secondary"
-                onClick={(e) => {
-                  e.preventDefault()
-                  document.getElementById('services').scrollIntoView({ behavior: 'smooth' })
-                }}
-                whileHover={{ scale: 1.08, color: '#0ea5e9' }}
-                whileTap={{ scale: 0.96 }}
-              >
-                View Services
-              </motion.a>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="hero-visual"
-            initial="hidden"
-            animate={inView ? "visible" : "hidden"}
-            variants={fadeRight}
-          >
-            <motion.div className="hero-image" whileHover={{ scale: 1.03, rotate: 2 }}>
-              <img 
-                src="https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=800" 
-                alt="Modern Software Development Workspace"
-              />
+          <div className="hero-text-content">
+            <motion.div className="hero-badge" variants={itemVariants}>
+              <FaRocket className="badge-icon" />
+              <span>Innovating the Digital Future</span>
             </motion.div>
-            <div className="floating-elements">
-              <motion.div
-                className="floating-card card-1"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.7 }}
-                whileHover={{ scale: 1.1, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-              >
-                <span>Web Development</span>
+
+            <motion.h1 className="hero-title" variants={itemVariants}>
+              Crafting <span className="text-gradient">Premium</span> Digital Experiences
+            </motion.h1>
+
+            <motion.p className="hero-subtitle" variants={itemVariants}>
+              We transform complex business challenges into elegant software solutions.
+              From high-end web platforms to intuitive mobile apps, we build technology that scales.
+            </motion.p>
+
+            <motion.div className="hero-actions" variants={itemVariants}>
+              <Link to="/contact" className="cta-primary">
+                Launch Project <FaArrowRight />
+              </Link>
+              <Link to="/portfolio" className="cta-secondary">
+                View Showcase
+              </Link>
+            </motion.div>
+          </div>
+
+          <div className="hero-visual-content">
+            <motion.div
+              className="featured-glass-card"
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -10 }}
+            >
+              <div className="card-top">
+                <div className="tech-stack">
+                  <span className="tech-pill">React</span>
+                  <span className="tech-pill">Flutter</span>
+                  <span className="tech-pill">Node.js</span>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="metric">
+                  <span className="metric-value">99%</span>
+                  <span className="metric-label">Client Satisfaction</span>
+                </div>
+                <div className="status-indicator">
+                  <div className="pulse-dot"></div>
+                  <span>Available for New Projects</span>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="tech-icons-float">
+              <motion.div className="floating-icon icon-1" animate={{ y: [0, -20, 0] }} transition={{ duration: 4, repeat: Infinity }}>
+                <FaCode />
               </motion.div>
-              <motion.div
-                className="floating-card card-2"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.7 }}
-                whileHover={{ scale: 1.1, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-              >
-                <span>Mobile Apps</span>
+              <motion.div className="floating-icon icon-2" animate={{ y: [0, 20, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }}>
+                <FaMobileAlt />
               </motion.div>
-              <motion.div
-                className="floating-card card-3"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.7 }}
-                whileHover={{ scale: 1.1, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-              >
-                <span>Custom Software</span>
+              <motion.div className="floating-icon icon-3" animate={{ y: [0, -15, 0] }} transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}>
+                <FaDatabase />
               </motion.div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
+
+      <motion.div
+        className="scroll-indicator"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <div className="mouse">
+          <div className="wheel"></div>
+        </div>
+      </motion.div>
     </section>
   )
 }
+
+// Small helper for Link if not imported globally in App.js or similar
+const Link = ({ to, children, className }) => (
+  <a href={to} className={className} onClick={(e) => {
+    if (to.startsWith('#')) {
+      e.preventDefault();
+      document.querySelector(to)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }}>
+    {children}
+  </a>
+);
 
 export default Hero
