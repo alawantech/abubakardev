@@ -210,9 +210,24 @@
     display: block;
   }
 
-  .header-right .courses-button,
+  /* Keep courses button visible, hide auth buttons */
   .header-right .login-pill,
-  .header-right .dashboard-pill {
+  .header-right .dashboard-pill,
+  .header-right .auth-group {
     display: none;
+  }
+
+  /* Make courses button more compact for mobile */
+  .header-right .courses-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    margin-right: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .header-right .courses-button span {
+    display: inline;
+    /* Keep text visible */
   }
 }
