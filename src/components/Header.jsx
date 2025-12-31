@@ -50,7 +50,7 @@ const Header = () => {
       <div className="header-container">
         <div className="header-left">
           <Link to="/" className="logo-link" onClick={() => setIsMobileMenuOpen(false)}>
-            <img src="/logo2.png" alt="AbubakarDev Logo" className="header-logo" />
+            <img src="/logo2.png" alt="ZedroTech Logo" className="header-logo" />
           </Link>
         </div>
 
