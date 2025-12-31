@@ -40,9 +40,9 @@ const Contact = () => {
   const contactMethods = [
     {
       title: "Email Us",
-      value: "info@abubakardev.com",
+      value: "info@zedrotech.com",
       icon: <FaEnvelope />,
-      link: "mailto:info@abubakardev.com",
+      link: "mailto:info@zedrotech.com",
       color: "#3b82f6"
     },
     {

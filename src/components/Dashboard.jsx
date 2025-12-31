@@ -43,18 +43,18 @@ const Dashboard = () => {
 
   const calculateDaysRemaining = (enrollment) => {
     if (!enrollment?.createdAt) return null;
-    
+
     const enrolledAt = enrollment.createdAt;
     const planType = enrollment.planType;
     const months = planType === 'monthly' ? 1 : 12;
-    
+
     const enrollmentDate = enrolledAt.toDate();
     const expiryDate = new Date(enrollmentDate);
     expiryDate.setMonth(expiryDate.getMonth() + months); // 1 month for monthly, 12 for others
-    
+
     const today = new Date();
     const daysRemaining = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    
+
     return {
       days: daysRemaining,
       expiryDate: expiryDate.toLocaleDateString(),
@@ -63,14 +63,14 @@ const Dashboard = () => {
 
   const calculateNextPayment = (enrolledAt, planType) => {
     if (planType !== 'monthly' || !enrolledAt) return null;
-    
+
     const enrollmentDate = enrolledAt.toDate();
     const nextPaymentDate = new Date(enrollmentDate);
     nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-    
+
     const today = new Date();
     const daysUntilPayment = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
-    
+
     return {
       date: nextPaymentDate.toLocaleDateString(),
       daysRemaining: daysUntilPayment > 0 ? daysUntilPayment : 0,
@@ -83,7 +83,7 @@ const Dashboard = () => {
       setShowSuccessMessage(true);
       // Clear the state
       window.history.replaceState({}, document.title);
-      
+
       // Hide success message after 5 seconds
       setTimeout(() => {
         setShowSuccessMessage(false);
@@ -221,12 +221,12 @@ const Dashboard = () => {
         where('userId', '==', currentUser.uid)
       );
       const plansSnapshot = await getDocs(enrollmentPlansQuery);
-      
+
       const updatePromises = plansSnapshot.docs.map(async (planDoc) => {
         const planData = planDoc.data();
         const newExpiryDate = new Date(planData.expiryDate?.toDate() || new Date());
         newExpiryDate.setMonth(newExpiryDate.getMonth() + 1); // Extend by 1 month
-        
+
         await updateDoc(doc(db, 'enrollmentPlans', planDoc.id), {
           blocked: false,
           expiryDate: newExpiryDate,
@@ -256,19 +256,19 @@ const Dashboard = () => {
         collection(db, 'enrollmentPlans'),
         where('userId', '==', currentUser.uid)
       );
-      
+
       const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
       console.log('Dashboard: Found enrollment plans:', enrollmentsSnapshot.size);
-      
+
       const enrollmentsData = await Promise.all(
         enrollmentsSnapshot.docs.map(async (enrollmentDoc) => {
           const enrollmentData = enrollmentDoc.data();
           console.log('Dashboard: Enrollment data:', enrollmentDoc.id, enrollmentData);
-          
+
           // Fetch course details
           const courseDoc = await getDoc(doc(db, 'courses', enrollmentData.courseId));
           const courseData = courseDoc.exists() ? courseDoc.data() : null;
-          
+
           // Fetch payment data
           const paymentsQuery = query(
             collection(db, 'payments'),
@@ -277,7 +277,7 @@ const Dashboard = () => {
           );
           const paymentsSnapshot = await getDocs(paymentsQuery);
           const paymentData = paymentsSnapshot.docs.length > 0 ? paymentsSnapshot.docs[0].data() : null;
-          
+
           return {
             id: enrollmentDoc.id,
             ...enrollmentData,
@@ -290,11 +290,11 @@ const Dashboard = () => {
           };
         })
       );
-      
+
       // Deduplicate enrollments by courseId, prioritizing paid enrollments
       const deduplicatedEnrollments = enrollmentsData.reduce((acc, enrollment) => {
         const existing = acc.find(e => e.courseId === enrollment.courseId);
-        
+
         if (!existing) {
           // No existing enrollment for this course, add it
           acc.push(enrollment);
@@ -302,7 +302,7 @@ const Dashboard = () => {
           // Existing enrollment found, decide which one to keep
           const existingIsPaid = existing.payment && (existing.payment.status === 'approved' || existing.paymentStatus === 'paid');
           const currentIsPaid = enrollment.payment && (enrollment.payment.status === 'approved' || enrollment.paymentStatus === 'paid');
-          
+
           if (currentIsPaid && !existingIsPaid) {
             // Current is paid, existing is not - replace with current
             const index = acc.indexOf(existing);
@@ -318,19 +318,19 @@ const Dashboard = () => {
           }
           // If existing is paid, keep it (don't replace with unpaid)
         }
-        
+
         return acc;
       }, []);
-      
+
       // Clean up duplicate enrollment plans (run in background)
       const cleanupDuplicates = async () => {
         try {
           const keptIds = new Set(deduplicatedEnrollments.map(e => e.id));
           const duplicates = enrollmentsData.filter(e => !keptIds.has(e.id));
-          
+
           if (duplicates.length > 0) {
             console.log('Dashboard: Cleaning up duplicate enrollment plans:', duplicates.map(d => d.id));
-            
+
             const deletePromises = duplicates.map(async (duplicate) => {
               try {
                 await deleteDoc(doc(db, 'enrollmentPlans', duplicate.id));
@@ -339,17 +339,17 @@ const Dashboard = () => {
                 console.error('Dashboard: Failed to delete duplicate enrollment plan:', duplicate.id, error);
               }
             });
-            
+
             await Promise.all(deletePromises);
           }
         } catch (error) {
           console.error('Dashboard: Error during duplicate cleanup:', error);
         }
       };
-      
+
       // Run cleanup in background (don't await)
       cleanupDuplicates();
-      
+
       console.log('Dashboard: Final enrollments data:', deduplicatedEnrollments);
       setEnrollments(deduplicatedEnrollments);
       setDashboardLoading(false);
@@ -397,7 +397,7 @@ const Dashboard = () => {
 
       // Combine and deduplicate payments
       const paymentsData = [...paymentsData1, ...paymentsData2].filter(
-        (payment, index, self) => 
+        (payment, index, self) =>
           index === self.findIndex(p => p.id === payment.id)
       );
 
@@ -479,7 +479,7 @@ const Dashboard = () => {
           {/* Renewal Card */}
           <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Renew Your Subscription</h2>
-            
+
             <div className="space-y-6">
               <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Bank Transfer Details</h3>
@@ -490,7 +490,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Account Name</p>
-                    <p className="font-semibold text-gray-900">{bankDetails?.accountName || 'Abubakar Dev'}</p>
+                    <p className="font-semibold text-gray-900">{bankDetails?.accountName || 'ZedroTech'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Account Number</p>
@@ -618,7 +618,7 @@ const Dashboard = () => {
               Contact our support team if you have any questions about your payment.
             </p>
             <p className="text-sm text-indigo-600">
-              Email: support@abubakardev.com | WhatsApp: +234 123 456 7890
+              Email: support@zedrotech.com | WhatsApp: +234 123 456 7890
             </p>
           </div>
         </div>
@@ -669,10 +669,10 @@ const Dashboard = () => {
           currentUser.email,
           profileData.currentPassword
         );
-        
+
         await reauthenticateWithCredential(currentUser, credential);
         await updatePassword(currentUser, profileData.newPassword);
-        
+
         // Clear password fields
         setProfileData(prev => ({
           ...prev,
@@ -725,11 +725,10 @@ const Dashboard = () => {
         {/* Success Message */}
         {showSuccessMessage && location.state?.message && (
           <div className="mb-8 animate-fade-in">
-            <div className={`rounded-2xl p-6 shadow-xl border-2 ${
-              location.state.paymentSuccess 
-                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
-                : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300'
-            } transform transition-all duration-500 hover:shadow-2xl`}>
+            <div className={`rounded-2xl p-6 shadow-xl border-2 ${location.state.paymentSuccess
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
+              : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300'
+              } transform transition-all duration-500 hover:shadow-2xl`}>
               <div className="flex items-center gap-4">
                 {location.state.paymentSuccess ? (
                   <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
@@ -766,7 +765,7 @@ const Dashboard = () => {
             </h1>
             <p className="text-gray-600 text-lg">Track your progress and continue learning</p>
           </div>
-          
+
           {/* Desktop Edit Profile Button */}
           <div className="hidden md:block">
             <button
@@ -797,7 +796,7 @@ const Dashboard = () => {
               <div className="absolute right-0 top-14 w-80 bg-white rounded-2xl shadow-2xl border-2 border-gray-100 z-50 overflow-hidden">
                 <div className="p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Dashboard Menu</h3>
-                  
+
                   {/* Profile Section */}
                   <div className="mb-6 pb-4 border-b border-gray-200">
                     <button
@@ -819,7 +818,7 @@ const Dashboard = () => {
                   {/* Section Visibility Toggles */}
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Show/Hide Sections</h4>
-                    
+
                     <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
                         <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -830,7 +829,7 @@ const Dashboard = () => {
                       <input
                         type="checkbox"
                         checked={visibleSections.subscriptionDetails}
-                        onChange={(e) => setVisibleSections(prev => ({...prev, subscriptionDetails: e.target.checked}))}
+                        onChange={(e) => setVisibleSections(prev => ({ ...prev, subscriptionDetails: e.target.checked }))}
                         className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
                       />
                     </label>
@@ -846,7 +845,7 @@ const Dashboard = () => {
                         <input
                           type="checkbox"
                           checked={visibleSections.extendSubscription}
-                          onChange={(e) => setVisibleSections(prev => ({...prev, extendSubscription: e.target.checked}))}
+                          onChange={(e) => setVisibleSections(prev => ({ ...prev, extendSubscription: e.target.checked }))}
                           className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
                         />
                       </label>
@@ -862,7 +861,7 @@ const Dashboard = () => {
                       <input
                         type="checkbox"
                         checked={visibleSections.statsCards}
-                        onChange={(e) => setVisibleSections(prev => ({...prev, statsCards: e.target.checked}))}
+                        onChange={(e) => setVisibleSections(prev => ({ ...prev, statsCards: e.target.checked }))}
                         className="w-5 h-5 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                       />
                     </label>
@@ -877,7 +876,7 @@ const Dashboard = () => {
                       <input
                         type="checkbox"
                         checked={visibleSections.enrolledCourses}
-                        onChange={(e) => setVisibleSections(prev => ({...prev, enrolledCourses: e.target.checked}))}
+                        onChange={(e) => setVisibleSections(prev => ({ ...prev, enrolledCourses: e.target.checked }))}
                         className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                       />
                     </label>
@@ -892,7 +891,7 @@ const Dashboard = () => {
                       <input
                         type="checkbox"
                         checked={visibleSections.browseMore}
-                        onChange={(e) => setVisibleSections(prev => ({...prev, browseMore: e.target.checked}))}
+                        onChange={(e) => setVisibleSections(prev => ({ ...prev, browseMore: e.target.checked }))}
                         className="w-5 h-5 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
                       />
                     </label>
@@ -907,7 +906,7 @@ const Dashboard = () => {
                       <input
                         type="checkbox"
                         checked={visibleSections.paymentHistory}
-                        onChange={(e) => setVisibleSections(prev => ({...prev, paymentHistory: e.target.checked}))}
+                        onChange={(e) => setVisibleSections(prev => ({ ...prev, paymentHistory: e.target.checked }))}
                         className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                       />
                     </label>
@@ -941,7 +940,7 @@ const Dashboard = () => {
         {showProfileEdit && (
           <div className="mb-8 bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h2>
-            
+
             {/* Profile Info Display */}
             <div className="grid md:grid-cols-2 gap-6 mb-8 p-6 bg-gray-50 rounded-xl">
               <div>
@@ -974,7 +973,7 @@ const Dashboard = () => {
                   <input
                     type="text"
                     value={profileData.fullName}
-                    onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                     required
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                   />
@@ -986,7 +985,7 @@ const Dashboard = () => {
                   <input
                     type="tel"
                     value={profileData.whatsappNumber}
-                    onChange={(e) => setProfileData({...profileData, whatsappNumber: e.target.value})}
+                    onChange={(e) => setProfileData({ ...profileData, whatsappNumber: e.target.value })}
                     required
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                   />
@@ -1003,7 +1002,7 @@ const Dashboard = () => {
                     <input
                       type="password"
                       value={profileData.currentPassword}
-                      onChange={(e) => setProfileData({...profileData, currentPassword: e.target.value})}
+                      onChange={(e) => setProfileData({ ...profileData, currentPassword: e.target.value })}
                       required={!!profileData.newPassword}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                       placeholder="Enter current password"
@@ -1016,7 +1015,7 @@ const Dashboard = () => {
                     <input
                       type="password"
                       value={profileData.newPassword}
-                      onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})}
+                      onChange={(e) => setProfileData({ ...profileData, newPassword: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                       placeholder="Min 6 characters"
                       minLength={6}
@@ -1029,14 +1028,14 @@ const Dashboard = () => {
                     <input
                       type="password"
                       value={profileData.confirmPassword}
-                      onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})}
+                      onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                       placeholder="Re-enter new password"
                     />
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  {profileData.newPassword 
+                  {profileData.newPassword
                     ? 'Current password is required to change your password'
                     : 'Leave password fields empty if you don\'t want to change your password'
                   }
@@ -1084,7 +1083,7 @@ const Dashboard = () => {
                 </div>
                 Subscription Details
               </h2>
-              
+
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Plan Type */}
                 <div className="bg-white rounded-xl p-6 shadow-md">
@@ -1169,55 +1168,55 @@ const Dashboard = () => {
             const nextPayment = calculateNextPayment(paidEnrollments[0].createdAt, 'monthly');
             return nextPayment && nextPayment.daysRemaining <= 3;
           })() && (
-            <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-                Extend Your Subscription
-              </h2>
-              
-              <div className="bg-white rounded-xl p-6 shadow-md">
-                <p className="text-gray-700 mb-4">
-                  Pay ahead to extend your subscription and ensure uninterrupted access to your courses. 
-                  Your current subscription will automatically continue when it expires.
-                </p>
-                
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
-                    <p className="text-sm text-gray-600">
-                      {(() => {
-                        const nextPayment = calculateNextPayment(paidEnrollments[0].enrolledAt, 'monthly');
-                        return nextPayment ? 
-                          `Next payment due: ${nextPayment.date} (${nextPayment.daysRemaining} days)` : 
-                          'Payment information not available';
-                      })()}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <h3 className="font-semibold text-green-900 mb-2">Pay Ahead Benefits</h3>
-                    <ul className="text-sm text-green-800 space-y-1">
-                      <li>• No interruption in learning</li>
-                      <li>• Automatic subscription renewal</li>
-                      <li>• Peace of mind</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => navigate('/extend-subscription')}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl transform hover:scale-105 focus:scale-105 cursor-pointer focus:ring-4 focus:ring-green-300 focus:outline-none flex items-center justify-center gap-3"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl shadow-xl p-8 border-2 border-green-200">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
-                  Pay Ahead & Extend Subscription
-                </button>
+                  Extend Your Subscription
+                </h2>
+
+                <div className="bg-white rounded-xl p-6 shadow-md">
+                  <p className="text-gray-700 mb-4">
+                    Pay ahead to extend your subscription and ensure uninterrupted access to your courses.
+                    Your current subscription will automatically continue when it expires.
+                  </p>
+
+                  <div className="grid md:grid-cols-2 gap-6 mb-6">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-900 mb-2">Current Status</h3>
+                      <p className="text-sm text-gray-600">
+                        {(() => {
+                          const nextPayment = calculateNextPayment(paidEnrollments[0].enrolledAt, 'monthly');
+                          return nextPayment ?
+                            `Next payment due: ${nextPayment.date} (${nextPayment.daysRemaining} days)` :
+                            'Payment information not available';
+                        })()}
+                      </p>
+                    </div>
+
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                      <h3 className="font-semibold text-green-900 mb-2">Pay Ahead Benefits</h3>
+                      <ul className="text-sm text-green-800 space-y-1">
+                        <li>• No interruption in learning</li>
+                        <li>• Automatic subscription renewal</li>
+                        <li>• Peace of mind</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigate('/extend-subscription')}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl transform hover:scale-105 focus:scale-105 cursor-pointer focus:ring-4 focus:ring-green-300 focus:outline-none flex items-center justify-center gap-3"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    Pay Ahead & Extend Subscription
+                  </button>
+                </div>
               </div>
-            </div>
-          );
+            );
         })()}
 
         {/* Stats Cards */}
@@ -1240,7 +1239,7 @@ const Dashboard = () => {
                   </div>
                   <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-300">
                     <svg className="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z" />
                     </svg>
                   </div>
                 </div>
@@ -1259,7 +1258,7 @@ const Dashboard = () => {
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
                     <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                 </div>
@@ -1273,7 +1272,7 @@ const Dashboard = () => {
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-300">
                     <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
                 </div>
@@ -1290,16 +1289,16 @@ const Dashboard = () => {
             const hasPayment = enrollment.payment;
             const paymentStatus = enrollment.paymentStatus;
             const paymentApproved = enrollment.payment?.status === 'approved';
-            
+
             // Consider paid if: payment exists AND (status is approved OR paymentStatus is 'paid')
             return hasPayment && (paymentApproved || paymentStatus === 'paid');
           });
-          
+
           const unpaidEnrollments = enrollments.filter(enrollment => {
             const hasPayment = enrollment.payment;
             const paymentStatus = enrollment.paymentStatus;
             const paymentApproved = enrollment.payment?.status === 'approved';
-            
+
             // Consider unpaid if: no payment OR payment not approved AND paymentStatus not 'paid'
             return !hasPayment || (!paymentApproved && paymentStatus !== 'paid');
           });
@@ -1314,7 +1313,7 @@ const Dashboard = () => {
                     {paidEnrollments.map((enrollment) => {
                       const remaining = calculateDaysRemaining(enrollment);
                       const isExpired = remaining && remaining.days <= 0;
-                      
+
                       return (
                         <div
                           key={enrollment.id}
@@ -1329,42 +1328,41 @@ const Dashboard = () => {
                               />
                             </div>
                           )}
-                          
+
                           <div className="p-6">
                             <h3 className="font-bold text-xl text-gray-900 mb-2">
                               {enrollment.courseName}
                             </h3>
-                            
+
                             <div className="space-y-2 mb-4">
                               <div className="flex items-center gap-2 text-sm text-gray-600">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                                 </svg>
                                 <span>Enrolled: {enrollment.createdAt?.toDate().toLocaleDateString()}</span>
                               </div>
                               {remaining && (
                                 <div className={`flex items-center gap-2 text-sm ${isExpired ? 'text-red-600' : 'text-green-600'}`}>
                                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                                   </svg>
                                   <span>
-                                    {isExpired 
-                                      ? `Expired on ${remaining.expiryDate}` 
+                                    {isExpired
+                                      ? `Expired on ${remaining.expiryDate}`
                                       : `${remaining.days} days remaining`
                                     }
                                   </span>
                                 </div>
                               )}
                             </div>
-                            
+
                             <button
                               onClick={() => navigate(`/course/${enrollment.courseId}/learn`)}
                               disabled={isExpired}
-                              className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
-                                isExpired
-                                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg'
-                              }`}
+                              className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${isExpired
+                                ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg'
+                                }`}
                             >
                               {isExpired ? 'Access Expired' : 'Continue Learning →'}
                             </button>
@@ -1400,12 +1398,12 @@ const Dashboard = () => {
                             </div>
                           </div>
                         )}
-                        
+
                         <div className="p-6">
                           <h3 className="font-bold text-xl text-gray-900 mb-2">
                             {enrollment.courseName}
                           </h3>
-                          
+
                           <div className="bg-yellow-100 border border-yellow-300 rounded-xl p-4 mb-4">
                             <div className="flex items-center gap-2 mb-2">
                               <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1416,14 +1414,14 @@ const Dashboard = () => {
                             <p className="text-sm text-yellow-700 mb-3">
                               Complete your payment to access this course. Upload your payment receipt below.
                             </p>
-                            
+
                             {/* Bank Details */}
                             {bankDetails && (
                               <div className="bg-white rounded-lg p-3 mb-3 border border-yellow-200">
                                 <h4 className="font-semibold text-gray-900 mb-2 text-sm">Bank Transfer Details</h4>
                                 <div className="text-xs text-gray-600 space-y-1">
                                   <div><strong>Bank:</strong> {bankDetails.bankName || 'Access Bank'}</div>
-                                  <div><strong>Account Name:</strong> {bankDetails.accountName || 'Abubakar Dev'}</div>
+                                  <div><strong>Account Name:</strong> {bankDetails.accountName || 'ZedroTech'}</div>
                                   <div><strong>Account Number:</strong> {bankDetails.accountNumber || '1234567890'}</div>
                                   <div><strong>Amount:</strong> ₦{enrollment.planAmount?.toLocaleString() || '30,000'}</div>
                                 </div>
@@ -1454,7 +1452,7 @@ const Dashboard = () => {
 
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                             </svg>
                             <span>Enrolled: {enrollment.createdAt?.toDate().toLocaleDateString()}</span>
                           </div>
@@ -1470,7 +1468,7 @@ const Dashboard = () => {
                 <div className="bg-white rounded-3xl shadow-xl p-12 text-center">
                   <div className="inline-block p-6 bg-gray-100 rounded-full mb-6">
                     <svg className="w-16 h-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z" />
                     </svg>
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
@@ -1532,37 +1530,37 @@ const Dashboard = () => {
                   // Generate monthly history data similar to PaymentHistoryModal
                   const generateMonthlyHistory = () => {
                     const monthlyData = {};
-                    
+
                     paymentHistory.forEach(payment => {
                       if (!payment.submittedAt) return;
-                      
+
                       let coveredMonths = [];
-                      
+
                       if (payment.type === 'enrollment') {
                         // For enrollment payments, find the enrollment and calculate covered months
                         const enrollment = enrollments.find(e => e.customerEmail === payment.userEmail);
                         if (enrollment && enrollment.enrolledAt) {
                           const enrolledDate = enrollment.enrolledAt.toDate();
                           const planType = enrollment.enrollmentPlan?.planType;
-                          
+
                           if (planType === 'monthly') {
                             // Monthly plan: covers current month + future months based on payment
                             const paymentAmount = payment.amount || 0;
                             const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
-                            
+
                             for (let i = 0; i < monthsCovered; i++) {
                               const monthDate = new Date(enrolledDate);
                               monthDate.setMonth(enrolledDate.getMonth() + i);
-                              coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long' 
+                              coveredMonths.push(monthDate.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long'
                               }));
                             }
                           } else {
                             // One-time payment covers the enrollment month
-                            coveredMonths.push(enrolledDate.toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long' 
+                            coveredMonths.push(enrolledDate.toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long'
                             }));
                           }
                         }
@@ -1573,28 +1571,28 @@ const Dashboard = () => {
                           const enrolledDate = enrollment.enrolledAt.toDate();
                           const paymentAmount = payment.amount || 0;
                           const monthsCovered = Math.floor(paymentAmount / 6500); // Assuming ₦6,500 per month
-                          
+
                           // Find the next unpaid month from enrollment date
                           const paymentDate = payment.submittedAt;
                           let startMonth = new Date(enrolledDate);
-                          
+
                           // Find the month this payment should start covering
                           while (startMonth <= paymentDate) {
                             startMonth.setMonth(startMonth.getMonth() + 1);
                           }
                           startMonth.setMonth(startMonth.getMonth() - 1); // Go back to the current month
-                          
+
                           for (let i = 0; i < monthsCovered; i++) {
                             const monthDate = new Date(startMonth);
                             monthDate.setMonth(startMonth.getMonth() + i);
-                            coveredMonths.push(monthDate.toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long' 
+                            coveredMonths.push(monthDate.toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long'
                             }));
                           }
                         }
                       }
-                      
+
                       // Group by covered months
                       coveredMonths.forEach(month => {
                         if (!monthlyData[month]) {
@@ -1606,12 +1604,12 @@ const Dashboard = () => {
                         });
                       });
                     });
-                    
+
                     return monthlyData;
                   };
 
                   const monthlyHistory = generateMonthlyHistory();
-                  
+
                   return Object.keys(monthlyHistory)
                     .sort((a, b) => new Date(a + ' 1') - new Date(b + ' 1'))
                     .reverse() // Most recent first
@@ -1623,7 +1621,7 @@ const Dashboard = () => {
                           </div>
                           {month}
                         </h3>
-                        
+
                         <div className="space-y-3">
                           {monthlyHistory[month].map((payment) => (
                             <div
@@ -1633,14 +1631,13 @@ const Dashboard = () => {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                      payment.status === 'approved' ? 'bg-green-100' :
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${payment.status === 'approved' ? 'bg-green-100' :
                                       payment.status === 'pending' ? 'bg-yellow-100' :
-                                      payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
-                                    }`}>
+                                        payment.status === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
+                                      }`}>
                                       <span>
                                         {payment.type === 'renewal' ? '🔄' :
-                                         payment.type === 'extension' ? '⏰' : '💰'}
+                                          payment.type === 'extension' ? '⏰' : '💰'}
                                       </span>
                                     </div>
                                     <div>
@@ -1658,15 +1655,14 @@ const Dashboard = () => {
                                   </div>
 
                                   <div className="flex items-center gap-4 text-xs">
-                                    <span className={`px-2 py-1 rounded-full font-medium ${
-                                      payment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                    <span className={`px-2 py-1 rounded-full font-medium ${payment.status === 'approved' ? 'bg-green-100 text-green-800' :
                                       payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                      payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
+                                        payment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                          'bg-gray-100 text-gray-800'
+                                      }`}>
                                       {payment.status || 'Unknown'}
                                     </span>
-                                    
+
                                     {payment.receiptURL && (
                                       <button
                                         onClick={() => window.open(payment.receiptURL, '_blank')}

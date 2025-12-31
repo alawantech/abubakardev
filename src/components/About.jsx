@@ -75,7 +75,7 @@ const About = () => {
             <h2 className="section-title">Innovating the <span className="highlight">Digital Future</span></h2>
             <div className="about-description">
               <p>
-                At AbubakarDev, we believe that technology should be an enabler, not a barrier.
+                At ZedroTech, we believe that technology should be an enabler, not a barrier.
                 Our journey started with a simple mission: to help entrepreneurs and businesses
                 build digital products that actually work and scale.
               </p>

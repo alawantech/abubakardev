@@ -43,22 +43,22 @@ const RenewPayment = () => {
         where('blocked', '==', true)
       );
       const plansSnapshot = await getDocs(plansQuery);
-      
+
       const blockedEnrollments = [];
       for (const planDoc of plansSnapshot.docs) {
         const planData = planDoc.data();
-        
+
         // Fetch course details
         const courseDoc = await getDoc(doc(db, 'courses', planData.courseId));
         const courseData = courseDoc.exists() ? courseDoc.data() : null;
-        
+
         blockedEnrollments.push({
           id: planDoc.id,
           ...planData,
           course: courseData
         });
       }
-      
+
       setEnrollments(blockedEnrollments);
       if (blockedEnrollments.length > 0) {
         setSelectedCourse(blockedEnrollments[0].courseId);
@@ -120,7 +120,7 @@ const RenewPayment = () => {
       // Try to upload to Firebase Storage with multiple attempts
       let uploadAttempts = 0;
       const maxAttempts = 3;
-      
+
       while (uploadAttempts < maxAttempts && !receiptURL) {
         try {
           uploadAttempts++;
@@ -136,7 +136,7 @@ const RenewPayment = () => {
           break; // Success, exit loop
         } catch (uploadError) {
           console.warn(`Upload attempt ${uploadAttempts} failed:`, uploadError.message);
-          
+
           if (uploadAttempts >= maxAttempts) {
             console.error('All upload attempts failed');
             receiptURL = null;
@@ -174,7 +174,7 @@ const RenewPayment = () => {
       // Update enrollment plan - extend the next payment date instead of resetting
       const currentNextPayment = selectedEnrollment.nextPaymentDate?.toDate() || new Date();
       const newNextPayment = new Date(currentNextPayment);
-      
+
       if (selectedEnrollment.planType === 'monthly') {
         // Add one month to existing next payment date
         newNextPayment.setMonth(newNextPayment.getMonth() + 1);
@@ -228,7 +228,7 @@ const RenewPayment = () => {
         <div className="max-w-4xl mx-auto px-4 text-center py-20">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">No Blocked Courses</h2>
           <p className="text-gray-600 mb-6">You don't have any blocked courses that need renewal.</p>
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
             className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
           >
@@ -271,7 +271,7 @@ const RenewPayment = () => {
         {/* Payment Summary Card */}
         <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Renewal Payment Summary</h2>
-          
+
           {selectedCourse && (
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center pb-4 border-b border-gray-200">
@@ -307,7 +307,7 @@ const RenewPayment = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Account Name</p>
-                <p className="font-semibold text-gray-900">Abubakar Dev</p>
+                <p className="font-semibold text-gray-900">ZedroTech</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Account Number</p>
@@ -409,7 +409,7 @@ const RenewPayment = () => {
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             What Happens Next?
           </h3>

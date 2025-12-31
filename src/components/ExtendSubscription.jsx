@@ -227,11 +227,10 @@ const ExtendSubscription = () => {
               <button
                 key={months}
                 onClick={() => setExtensionMonths(months)}
-                className={`p-6 rounded-xl border-2 transition-all duration-300 ${
-                  extensionMonths === months
+                className={`p-6 rounded-xl border-2 transition-all duration-300 ${extensionMonths === months
                     ? 'border-green-500 bg-green-50 shadow-lg'
                     : 'border-gray-200 hover:border-green-300 hover:bg-green-25'
-                }`}
+                  }`}
               >
                 <div className="text-center">
                   <div className="text-3xl font-bold text-gray-900 mb-2">{months}</div>
@@ -288,7 +287,7 @@ const ExtendSubscription = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Account Name</p>
-                <p className="font-semibold text-gray-900">{bankDetails?.accountName || 'Abubakar Dev'}</p>
+                <p className="font-semibold text-gray-900">{bankDetails?.accountName || 'ZedroTech'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Account Number</p>

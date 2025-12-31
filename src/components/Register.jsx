@@ -3,7 +3,8 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaUser, FaEnvelope, FaWhatsapp, FaLock } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import './Register.css';
 
 const Register = () => {
@@ -54,7 +55,6 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -63,23 +63,18 @@ const Register = () => {
 
       const user = userCredential.user;
 
-      // Save additional user data to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         fullName: formData.fullName,
         email: formData.email,
         whatsappNumber: formData.whatsappNumber,
-        role: 'student', // Default role for all users
+        role: 'student',
         createdAt: serverTimestamp(),
         uid: user.uid,
       });
 
-      console.log('User registered successfully:', user);
-      // Redirect to login or dashboard
       navigate('/login');
     } catch (error) {
       console.error('Error registering user:', error);
-      
-      // Handle specific error cases
       switch (error.code) {
         case 'auth/email-already-in-use':
           setError('This email is already registered.');
@@ -102,16 +97,32 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container pt-32">
-      <div className="register-card">
-        <h2>Create Account</h2>
-        <p className="register-subtitle">Join us today! Fill in your details to get started.</p>
-        
-        {error && <div className="error-message">{error}</div>}
-        
+    <div className="register-container">
+      <div className="auth-blob blob-primary"></div>
+      <div className="auth-blob blob-purple"></div>
+
+      <motion.div
+        className="register-card"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+      >
+        <h2>Join ZedroTech</h2>
+        <p className="register-subtitle">Embark on your journey to digital excellence.</p>
+
+        {error && (
+          <motion.div
+            className="error-message"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <FaExclamationCircle /> {error}
+          </motion.div>
+        )}
+
         <form onSubmit={handleSubmit} className="register-form">
           <div className="form-group">
-            <label htmlFor="fullName">Full Name *</label>
+            <label htmlFor="fullName">Full Name</label>
             <input
               type="text"
               id="fullName"
@@ -119,12 +130,12 @@ const Register = () => {
               value={formData.fullName}
               onChange={handleChange}
               required
-              placeholder="Enter your full name"
+              placeholder="John Doe"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email">Email Address</label>
             <input
               type="email"
               id="email"
@@ -132,12 +143,12 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Enter your email"
+              placeholder="you@example.com"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="whatsappNumber">WhatsApp Number *</label>
+            <label htmlFor="whatsappNumber">WhatsApp Number</label>
             <input
               type="tel"
               id="whatsappNumber"
@@ -145,14 +156,14 @@ const Register = () => {
               value={formData.whatsappNumber}
               onChange={handleChange}
               required
-              placeholder="+1234567890"
+              placeholder="+234..."
               pattern="[+]?[0-9]{10,15}"
             />
-            <small>Include country code (e.g., +1234567890)</small>
+            <small>Include country code</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password *</label>
+            <label htmlFor="password">Password</label>
             <div className="password-input-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
@@ -161,7 +172,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 minLength="6"
               />
               <button
@@ -173,11 +184,10 @@ const Register = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
-            <small>Minimum 6 characters</small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password *</label>
+            <label htmlFor="confirmPassword">Confirm Password</label>
             <div className="password-input-wrapper">
               <input
                 type={showConfirmPassword ? "text" : "password"}
@@ -186,7 +196,7 @@ const Register = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
-                placeholder="Re-enter your password"
+                placeholder="••••••••"
                 minLength="6"
               />
               <button
@@ -200,19 +210,31 @@ const Register = () => {
             </div>
           </div>
 
-          <button type="submit" className="register-btn" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Register'}
-          </button>
+          <motion.button
+            type="submit"
+            className="register-btn"
+            disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="premium-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></span>
+                Creating...
+              </span>
+            ) : 'Create Account'}
+          </motion.button>
         </form>
 
         <div className="register-footer">
           <p>
-            Already have an account? <Link to="/login">Login here</Link>
+            Already have an account? <Link to="/login">Sign In</Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 export default Register;
+

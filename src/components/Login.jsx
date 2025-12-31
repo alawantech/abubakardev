@@ -3,7 +3,8 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaExclamationCircle } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import './Login.css';
 
 const Login = () => {
@@ -34,31 +35,22 @@ const Login = () => {
         formData.email,
         formData.password
       );
-      
+
       const user = userCredential.user;
-      console.log('User logged in:', user);
-      
-      // Fetch user data from Firestore to check role
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        
-        // Redirect based on role
         if (userData.role === 'admin') {
           navigate('/admin');
         } else {
-          // Students go to their dashboard
           navigate('/dashboard');
         }
       } else {
-        // If no user data found, redirect to dashboard anyway
         navigate('/dashboard');
       }
     } catch (error) {
       console.error('Error logging in:', error);
-      
-      // Handle specific error cases
       switch (error.code) {
         case 'auth/invalid-email':
           setError('Invalid email address.');
@@ -84,25 +76,43 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container pt-32">
-      <div className="login-card">
-        <h2>Login</h2>
-        <p className="login-subtitle">Welcome back! Please login to your account.</p>
-        
-        {error && <div className="error-message">{error}</div>}
-        
+    <div className="login-container">
+      <div className="auth-blob blob-primary"></div>
+      <div className="auth-blob blob-purple"></div>
+
+      <motion.div
+        className="login-card"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
+      >
+        <h2>Welcome Back</h2>
+        <p className="login-subtitle">Unlock your digital potential. Login to your account.</p>
+
+        {error && (
+          <motion.div
+            className="error-message"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <FaExclamationCircle /> {error}
+          </motion.div>
+        )}
+
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
+            <label htmlFor="email">Email Address</label>
+            <div className="password-input-wrapper">
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="you@example.com"
+              />
+            </div>
           </div>
 
           <div className="form-group">
@@ -115,7 +125,7 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 minLength="6"
               />
               <button
@@ -129,19 +139,31 @@ const Login = () => {
             </div>
           </div>
 
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
+          <motion.button
+            type="submit"
+            className="login-btn"
+            disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="premium-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></span>
+                Logging in...
+              </span>
+            ) : 'Sign In'}
+          </motion.button>
         </form>
 
         <div className="login-footer">
           <p>
-            Don't have an account? <Link to="/courses">Register here</Link>
+            Don't have an account? <Link to="/register">Create Account</Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 export default Login;
+

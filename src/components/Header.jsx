@@ -81,8 +81,9 @@ const Header = () => {
                 <FaUser className="btn-icon" />
                 <span>Dashboard</span>
               </Link>
-              <button onClick={handleSignOut} className="icon-btn logout-btn" title="Logout">
-                <FaSignOutAlt />
+              <button onClick={handleSignOut} className="logout-pill" title="Logout">
+                <FaSignOutAlt className="btn-icon" />
+                <span>Logout</span>
               </button>
             </div>
           ) : (
