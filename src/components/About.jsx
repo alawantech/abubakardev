@@ -2,163 +2,149 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import CountUp from 'react-countup'
+import { FaLightbulb, FaStar, FaHandshake, FaBullseye, FaRocket, FaUsers, FaHistory, FaHeadset } from 'react-icons/fa'
 import './About.css'
 
 const About = () => {
   const stats = [
-    { number: "50+", label: "Projects Completed" },
-    { number: "30+", label: "Happy Clients" },
-    { number: "5+", label: "Years Experience" },
-    { number: "24/7", label: "Support Available" }
+    { number: 50, label: "Projects Completed", icon: <FaRocket />, suffix: "+" },
+    { number: 30, label: "Happy Clients", icon: <FaUsers />, suffix: "+" },
+    { number: 5, label: "Years Experience", icon: <FaHistory />, suffix: "+" },
+    { number: 24, label: "Support Available", icon: <FaHeadset />, suffix: "/7" }
   ]
 
   const values = [
     {
       title: "Innovation",
       description: "We stay ahead of technology trends to deliver cutting-edge solutions that give your business a competitive advantage.",
-      icon: "💡"
+      icon: <FaLightbulb />,
+      color: "#0ea5e9"
     },
     {
       title: "Quality",
       description: "We maintain the highest standards in code quality, testing, and deployment to ensure reliable and robust applications.",
-      icon: "⭐"
+      icon: <FaStar />,
+      color: "#f59e0b"
     },
     {
       title: "Collaboration",
       description: "We work closely with our clients throughout the development process to ensure the final product exceeds expectations.",
-      icon: "🤝"
+      icon: <FaHandshake />,
+      color: "#10b981"
     },
     {
       title: "Results",
       description: "Our focus is on delivering measurable business value through technology solutions that drive growth and efficiency.",
-      icon: "🎯"
+      icon: <FaBullseye />,
+      color: "#ef4444"
     }
   ]
 
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.15 })
 
-  // Animation variants
-  const fadeUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
-  }
-  const fadeLeft = {
-    hidden: { opacity: 0, x: -40 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
-  }
-  const fadeRight = {
-    hidden: { opacity: 0, x: 40 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2, delayChildren: 0.3 }
+    }
   }
 
-  // Intersection Observer for scroll animation
-  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.2 })
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] } }
+  }
 
   return (
-    <section id="about" className="about section">
+    <section id="about" className="about-section">
+      <div className="about-bg-elements">
+        <div className="about-blob about-blob-1"></div>
+        <div className="about-blob about-blob-2"></div>
+      </div>
+
       <div className="container">
         <motion.div
-          className="about-content"
+          className="about-grid"
           ref={ref}
+          variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
-          variants={fadeUp}
         >
-          <motion.div
-            className="about-text"
-            initial="hidden"
-            animate={inView ? "visible" : "hidden"}
-            variants={fadeLeft}
-          >
-            <motion.h2 className="section-title" whileHover={{ scale: 1.04 }}>
-              About AbubakarDev
-            </motion.h2>
+          <motion.div className="about-text-content" variants={itemVariants}>
+            <span className="overline">Our Story</span>
+            <h2 className="section-title">Innovating the <span className="highlight">Digital Future</span></h2>
             <div className="about-description">
-              <motion.p variants={fadeUp}>
-                We are a software development company helping businesses grow with technology. 
-                With years of experience in web development, mobile app creation, and custom software solutions, 
-                we transform ideas into powerful digital experiences.
-              </motion.p>
-              <motion.p variants={fadeUp}>
-                Our team of skilled developers and designers is passionate about creating innovative solutions 
-                that solve real business problems. We believe in the power of technology to transform businesses 
-                and are committed to delivering exceptional results for every project.
-              </motion.p>
-              <motion.p variants={fadeUp}>
-                From startups to enterprise companies, we've helped organizations across various industries 
-                leverage technology to streamline operations, improve customer experiences, and drive sustainable growth.
-              </motion.p>
+              <p>
+                At AbubakarDev, we believe that technology should be an enabler, not a barrier.
+                Our journey started with a simple mission: to help entrepreneurs and businesses
+                build digital products that actually work and scale.
+              </p>
+              <p>
+                With half a decade of excellence in software engineering, we’ve mastered the art
+                of transforming complex business requirements into elegant, high-performance
+                digital experiences.
+              </p>
+            </div>
+
+            <div className="about-stats-grid">
+              {stats.map((stat, index) => (
+                <div key={index} className="about-stat-card">
+                  <div className="stat-icon">{stat.icon}</div>
+                  <div className="stat-info">
+                    <h4 className="stat-val">
+                      <CountUp end={stat.number} duration={2.5} start={inView ? 0 : null} />
+                      {stat.suffix}
+                    </h4>
+                    <span className="stat-name">{stat.label}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.div>
 
-          <motion.div
-            className="about-image"
-            initial="hidden"
-            animate={inView ? "visible" : "hidden"}
-            variants={fadeRight}
-            whileHover={{ scale: 1.03, rotate: 2 }}
-          >
-            <img 
-              src="https://images.pexels.com/photos/3184454/pexels-photo-3184454.jpeg?auto=compress&cs=tinysrgb&w=800" 
-              alt="AbubakarDev Team"
-            />
-            <motion.div
-              className="about-experience"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.7 }}
-              whileHover={{ scale: 1.1, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}
-            >
-              <span className="experience-number">5+</span>
-              <span className="experience-text">Years of Excellence</span>
-            </motion.div>
+          <motion.div className="about-visual-content" variants={itemVariants}>
+            <div className="image-stack">
+              <div className="main-image-wrapper">
+                <img
+                  src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg"
+                  alt="Team Collaboration"
+                  className="about-main-img"
+                />
+              </div>
+              <motion.div
+                className="floating-experience-card"
+                animate={{ y: [0, -15, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="exp-icon"><FaHistory /></div>
+                <div className="exp-text">
+                  <h5>5+ Years</h5>
+                  <span>Proven Track Record</span>
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         </motion.div>
 
         <motion.div
-          className="about-stats"
-          initial="hidden"
-          animate={inView ? "visible" : "hidden"}
-          variants={fadeUp}
+          className="values-section"
+          initial={{ opacity: 0, y: 40 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.6 }}
         >
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              className="stat-item"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.15, duration: 0.6 }}
-              whileHover={{ scale: 1.08, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
-            >
-              <span className="stat-number">
-                {stat.number === "24/7"
-                  ? "24/7"
-                  : <CountUp end={parseInt(stat.number)} duration={2} suffix="+" start={inView ? 0 : undefined} />}
-              </span>
-              <span className="stat-label">{stat.label}</span>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div
-          className="about-values"
-          initial="hidden"
-          animate={inView ? "visible" : "hidden"}
-          variants={fadeUp}
-        >
-          <h3 className="values-title">Our Core Values</h3>
+          <h3 className="values-header">Our Core <span className="highlight">Values</span></h3>
           <div className="values-grid">
             {values.map((value, index) => (
               <motion.div
                 key={index}
-                className="value-card"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.15, duration: 0.6 }}
-                whileHover={{ scale: 1.08, boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
+                className="value-card-premium"
+                whileHover={{ y: -10 }}
               >
-                <div className="value-icon">{value.icon}</div>
-                <h4 className="value-title">{value.title}</h4>
-                <p className="value-description">{value.description}</p>
+                <div className="value-icon-wrapper" style={{ backgroundColor: `${value.color}20`, color: value.color }}>
+                  {value.icon}
+                </div>
+                <h4 className="value-card-title">{value.title}</h4>
+                <p className="value-card-desc">{value.description}</p>
               </motion.div>
             ))}
           </div>

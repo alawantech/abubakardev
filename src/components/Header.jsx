@@ -13,11 +13,19 @@ const Header = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      if (location.pathname === '/') {
+        setIsScrolled(window.scrollY > 20)
+      } else {
+        setIsScrolled(true)
+      }
     }
+
+    // Set initial state
+    handleScroll()
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [location.pathname])
 
   const handleSignOut = async () => {
     try {
