@@ -117,7 +117,7 @@
 .card-glass-reveal {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06) 0%, transparent 80%);
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.06) 0%, transparent 80%);
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
@@ -216,13 +216,13 @@
 
 @media (max-width: 768px) {
   .services-section {
-    padding: 60px 0;
+    padding: 140px 0 60px;
   }
-  
+
   .services-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .service-card {
     padding: 30px;
   }

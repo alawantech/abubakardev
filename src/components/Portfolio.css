@@ -228,7 +228,7 @@
 
 @media (max-width: 768px) {
   .portfolio-section {
-    padding: 60px 0;
+    padding: 140px 0 60px;
   }
 
   .portfolio-grid {

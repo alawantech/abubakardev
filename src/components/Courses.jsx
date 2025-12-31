@@ -58,7 +58,8 @@ const Courses = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Spacer for fixed header */}
-      <div className="h-32"></div>
+      <div className="h-32 md:h-32"></div>
+      <div className="h-10 md:hidden"></div> {/* Additional spacing for mobile */}
 
       {/* Courses Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">

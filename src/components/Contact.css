@@ -305,7 +305,7 @@
 
 @media (max-width: 768px) {
   .contact-section {
-    padding: 80px 0;
+    padding: 140px 0 80px;
   }
 
   .form-row {
