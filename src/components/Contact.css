@@ -219,6 +219,23 @@
   position: relative;
 }
 
+.select-wrap::after {
+  content: '▼';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.8rem;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.select-wrap:focus-within::after {
+  color: #3b82f6;
+  transform: translateY(-50%) rotate(180deg);
+}
+
 .input-group select {
   appearance: none;
   width: 100%;

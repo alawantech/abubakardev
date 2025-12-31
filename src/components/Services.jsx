@@ -1,22 +1,34 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { FaGlobe, FaMobileAlt, FaCogs, FaArrowRight, FaCheckCircle } from 'react-icons/fa'
+import { FaGlobe, FaMobileAlt, FaCogs, FaArrowRight, FaCheckCircle, FaChalkboardTeacher, FaShoppingCart } from 'react-icons/fa'
 import './Services.css'
 
 const Services = () => {
   const services = [
     {
-      title: "Web Development",
+      title: "Website Development",
       description: "Grow your business with a stunning, high-converting website. We build fast, secure, and mobile-friendly sites that attract customers and turn visitors into loyal clients.",
       features: [
-        "Increase your online sales & leads",
-        "100% mobile responsive for all devices",
-        "SEO-optimized to rank on Google",
-        "Modern, professional design"
+        "Modern, SEO-friendly websites",
+        "100% mobile responsive design",
+        "Fast loading & secure performance",
+        "Google Search optimization"
       ],
       icon: <FaGlobe />,
       color: "var(--primary-blue)"
+    },
+    {
+      title: "E-Commerce Website",
+      description: "Start selling online with a powerful e-commerce platform. We build secure, scalable online stores that provide a seamless shopping experience for your customers.",
+      features: [
+        "Secure payment integrations",
+        "Product & inventory management",
+        "Shopping cart & checkout flow",
+        "Sales tracking & analytics"
+      ],
+      icon: <FaShoppingCart />,
+      color: "#f43f5e"
     },
     {
       title: "Mobile App Development",
@@ -41,6 +53,18 @@ const Services = () => {
       ],
       icon: <FaCogs />,
       color: "var(--primary-purple)"
+    },
+    {
+      title: "Online Class",
+      description: "Learn from industry experts with our comprehensive online courses. Master new skills, build real-world projects, and accelerate your career with flexible, guided learning.",
+      features: [
+        "Expert-led video lessons",
+        "Hands-on projects & assignments",
+        "Certificate of completion",
+        "Lifetime community access"
+      ],
+      icon: <FaChalkboardTeacher />,
+      color: "#f59e0b"
     }
   ]
 
@@ -59,9 +83,9 @@ const Services = () => {
 
   const cardVariants = {
     hidden: { opacity: 0, y: 50, scale: 0.9 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
+    visible: {
+      opacity: 1,
+      y: 0,
       scale: 1,
       transition: { duration: 0.8, ease: "easeOut" }
     }
@@ -73,10 +97,10 @@ const Services = () => {
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
       </div>
-      
+
       <div className="container">
         <div className="section-header" ref={ref}>
-          <motion.span 
+          <motion.span
             className="overline"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -113,7 +137,7 @@ const Services = () => {
               key={index}
               className="service-card"
               variants={cardVariants}
-              whileHover={{ 
+              whileHover={{
                 y: -15,
                 transition: { duration: 0.3 }
               }}
@@ -123,10 +147,10 @@ const Services = () => {
                 <div className="icon-bg"></div>
                 <div className="icon-inner">{service.icon}</div>
               </div>
-              
+
               <h3 className="service-title">{service.title}</h3>
               <p className="service-description">{service.description}</p>
-              
+
               <ul className="service-features">
                 {service.features.map((feature, idx) => (
                   <li key={idx}>
@@ -135,8 +159,8 @@ const Services = () => {
                   </li>
                 ))}
               </ul>
-              
-              <motion.button 
+
+              <motion.button
                 className="service-cta"
                 whileHover={{ gap: '12px' }}
               >

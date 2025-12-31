@@ -152,15 +152,38 @@ const Contact = () => {
                   <div className="select-wrap">
                     <select name="service" value={formData.service} onChange={handleChange} required>
                       <option value="">Select Service</option>
+                      <option value="Website Development">Website Development</option>
                       <option value="Web App">Web Application</option>
                       <option value="Mobile App">Mobile Application</option>
-                      <option value="E-Commerce">E-Commerce Solution</option>
-                      <option value="Branding">Digital Branding</option>
+                      <option value="E-Commerce">E-Commerce Website</option>
+                      <option value="Custom Software">Custom Software</option>
+                      <option value="Online Class">Online Class</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
               </div>
+
+              <AnimatePresence>
+                {formData.service === 'Other' && (
+                  <motion.div
+                    className="input-group"
+                    initial={{ opacity: 0, height: 0, y: -20 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -20 }}
+                  >
+                    <label>Please Specify Your Service</label>
+                    <input
+                      type="text"
+                      name="customService"
+                      value={formData.customService}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. Data Analysis, Cyber Security, etc."
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="input-group">
                 <label>Tell Us About Your Project</label>

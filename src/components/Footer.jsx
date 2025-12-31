@@ -35,9 +35,11 @@ const Footer = () => {
   ]
 
   const services = [
-    'Web Development',
+    'Website Development',
+    'E-Commerce Website',
     'Mobile App Development',
     'Custom Software Solutions',
+    'Online Class',
     'UI/UX Design',
     'Technical Consulting'
   ]
