@@ -83,7 +83,7 @@ const Pricing = () => {
               {idx === 1 && <div className="plan-badge">Popular</div>}
               <h3 className="pricing-card-title">{option.title}</h3>
               <div className="pricing-card-price">{option.price}</div>
-              <div className="pricing-note">One-time fee · includes 1 month support</div>
+              <div className="pricing-note">One-time fee · includes 1 month support.</div>
               <p className="pricing-card-desc">{option.description}</p>
               <ul className="pricing-features">
                 {option.features.map((feature, i) => (
