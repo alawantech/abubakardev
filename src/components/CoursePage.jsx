@@ -135,33 +135,43 @@ const CoursePage = () => {
             </motion.div>
 
             {/* Video Section */}
-            {course.introVideoUrl && (
-              <motion.div variants={itemVariants} className="video-container-premium">
-                <div className="relative aspect-video">
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${getYouTubeVideoId(course.introVideoUrl)}?rel=0&modestbranding=1`}
-                    title="Course Preview"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-                <div className="video-info-bar-premium flex items-center justify-between">
-                  <div className="flex items-center gap-4 text-slate-300">
-                    <div className="flex items-center gap-2">
-                      <FaBook className="text-blue-500" />
-                      <span>{course.topics?.length || 0} Modules</span>
+            {course.introVideoUrl && (() => {
+              const videoId = getYouTubeVideoId(course.introVideoUrl);
+              if (!videoId) return null;
+
+              // Use loop and playlist parameters to prevent YouTube showing other videos
+              const src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${videoId}`;
+
+              return (
+                <motion.div variants={itemVariants} className="video-container-premium">
+                  <div className="relative aspect-video">
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={src}
+                      title="Course Preview"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+
+                  <div className="video-info-bar-premium flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <FaBook className="text-blue-500" />
+                        <span>{course.topics?.length || 0} Modules</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaClock className="text-purple-500" />
+                        <span>{totalLessons} Lessons</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <FaClock className="text-purple-500" />
-                      <span>{totalLessons} Lessons</span>
+                    <div className="hidden sm:block text-xs font-bold text-slate-500 border border-slate-700 rounded px-2 py-1">
+                      4K ULTRA HD
                     </div>
                   </div>
-                  <div className="hidden sm:block text-xs font-bold text-slate-500 border border-slate-700 rounded px-2 py-1">
-                    4K ULTRA HD
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              );
+            })()}
 
             {/* About Course */}
             <motion.div variants={itemVariants} className="course-content-card">
@@ -220,9 +230,6 @@ const CoursePage = () => {
                   <button onClick={handleEnrollClick} className="enroll-btn-premium">
                     Enroll Now
                   </button>
-                  <p className="text-center text-slate-500 text-sm">
-                    7-day money back guarantee
-                  </p>
                 </div>
 
                 <div className="space-y-4 pt-8 border-t border-slate-700">
@@ -232,7 +239,7 @@ const CoursePage = () => {
                   </div>
                   <div className="flex items-center gap-3 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
-                    <span>Access on mobile and TV</span>
+                    <span>Students get instant support</span>
                   </div>
                   <div className="flex items-center gap-3 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />

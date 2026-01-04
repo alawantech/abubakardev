@@ -7,6 +7,8 @@
     position: relative;
     overflow: hidden;
     padding: 60px 20px;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
 }
 
 /* Background Blobs */
@@ -232,10 +234,60 @@
 
 @media (max-width: 640px) {
     .payment-card {
-        padding: 30px 20px;
+        padding: 32px 20px;
+        max-width: 100%;
     }
 
     .amount-value {
-        font-size: 2.75rem;
+        font-size: 2.5rem;
+    }
+
+    .bank-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-container-premium {
+        padding: 30px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-wrapper {
+        padding: 20px 12px;
+    }
+
+    .payment-card {
+        padding: 24px 16px;
+        max-width: 100%;
+        border-radius: 20px;
+    }
+
+    .amount-value {
+        font-size: 2rem;
+    }
+
+    .amount-container {
+        margin: 24px 0;
+        padding: 20px;
+    }
+
+    .bank-details-premium {
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .upload-container-premium {
+        padding: 20px 16px;
+        border-radius: 16px;
+    }
+
+    .payment-btn-premium {
+        padding: 14px;
+        font-size: 1rem;
+    }
+
+    .steps-container {
+        padding: 20px;
+        margin-top: 24px;
     }
 }

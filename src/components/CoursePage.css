@@ -6,6 +6,29 @@
   min-height: 100vh;
   position: relative;
   overflow: hidden;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure motion container is properly centered */
+motion {
+  display: block;
+}
+
+.course-page-wrapper motion {
+  width: 100% !important;
+}
+
+.course-page-wrapper > motion,
+.course-page-wrapper > div[class*="max-w"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 20px !important;
+  display: block !important;
+  align-items: stretch;
 }
 
 /* Background Blobs */
@@ -37,9 +60,16 @@
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 120px 0 16px;
+  padding: 120px 20px 16px;
   position: relative;
   z-index: 10;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+
+.course-breadcrumb > div {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Video Section Enhancement */
@@ -47,7 +77,9 @@
   position: relative;
   z-index: 5;
   background: linear-gradient(to bottom, #020617 0%, rgba(15, 23, 42, 0.8) 100%);
-  padding: 60px 0 100px;
+  padding: 60px 20px 100px;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
 }
 
 .video-container-premium {
@@ -191,10 +223,62 @@
 
 @media (max-width: 768px) {
   .course-content-card {
-    padding: 30px 20px;
+    padding: 24px 16px;
   }
 
   .price-value-premium {
     font-size: 2.75rem;
+  }
+
+  .course-page-wrapper {
+    padding: 0 16px;
+  }
+
+  /* Override Tailwind px-6 on mobile */
+  [class*="px-6"] {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Ensure balanced grid spacing on tablet */
+  .course-breadcrumb > div {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-breadcrumb {
+    padding: 80px 12px 12px;
+  }
+
+  .course-breadcrumb > div {
+    padding: 0 12px;
+  }
+
+  .course-content-card {
+    padding: 20px 12px;
+  }
+
+  .sidebar-card-premium {
+    padding: 0;
+  }
+
+  .sidebar-card-premium > div {
+    padding: 24px 16px;
+  }
+
+  .price-value-premium {
+    font-size: 2.2rem;
+  }
+
+  /* Force full-width centered content on mobile */
+  .course-page-wrapper {
+    padding: 0 12px;
+  }
+
+  /* Override Tailwind px-6 on small screens */
+  [class*="px-6"] {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
 }

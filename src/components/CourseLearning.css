@@ -1,18 +1,20 @@
 .course-learning-container {
   min-height: 100vh;
-  background: #f8f9fa;
+  background: #0f172a;
   display: flex;
   flex-direction: column;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
 }
 
 /* Header */
 .learning-header {
-  background: white;
-  border-bottom: 2px solid #e9ecef;
+  background: #1e293b;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .header-content {
@@ -34,7 +36,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6c757d;
+  color: #94a3b8;
   font-weight: 600;
   background: none;
   border: none;
@@ -45,8 +47,8 @@
 }
 
 .back-button:hover {
-  background: #f8f9fa;
-  color: #495057;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
 }
 
 /* Curriculum Toggle Button (Hamburger) - Hidden on desktop */
@@ -78,7 +80,7 @@
   flex: 1;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #212529;
+  color: #f8fafc;
   margin: 0;
 }
 
@@ -90,7 +92,7 @@
 
 .progress-text {
   font-weight: 600;
-  color: #495057;
+  color: #94a3b8;
   font-size: 0.9rem;
   white-space: nowrap;
 }
