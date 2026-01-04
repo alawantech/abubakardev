@@ -43,6 +43,31 @@
   z-index: 2;
 }
 
+/* Make section header readable on dark background */
+.portfolio-section .section-title {
+  color: #f8fafc;
+}
+
+.portfolio-section .section-subtitle {
+  color: #94a3b8;
+}
+
+.portfolio-section .highlight {
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Responsive typography for mobile */
+.portfolio-section .section-title {
+  font-size: clamp(1.6rem, 5vw, 3rem);
+  line-height: 1.15;
+}
+
+.portfolio-section .section-subtitle {
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+}
+
 .projects-overline {
   display: block;
   font-size: 0.9rem;

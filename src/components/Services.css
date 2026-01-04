@@ -81,6 +81,15 @@
   margin-bottom: 24px;
 }
 
+/* Ensure readability on dark background */
+.services-section .section-title {
+  color: var(--text-main);
+}
+
+.services-section .section-subtitle {
+  color: var(--text-dim);
+}
+
 .highlight {
   background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
   -webkit-background-clip: text;

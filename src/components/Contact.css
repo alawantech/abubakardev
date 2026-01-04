@@ -43,6 +43,25 @@
   z-index: 2;
 }
 
+/* Ensure section header text is readable on dark contact background */
+.contact-section .section-title {
+  color: #f8fafc;
+}
+
+.contact-section .section-subtitle {
+  color: #94a3b8;
+}
+
+/* Responsive typography for mobile */
+.contact-section .section-title {
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  line-height: 1.15;
+}
+
+.contact-section .section-subtitle {
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+}
+
 .center-header {
   text-align: center;
   margin-bottom: 80px;

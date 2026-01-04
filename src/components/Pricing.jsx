@@ -64,26 +64,39 @@ const pricingOptions = [
 
 const Pricing = () => {
   return (
-    <div className="pricing-page pt-32">
-      <h1 className="pricing-title">Website Development Pricing</h1>
-      <p className="pricing-subtitle">Choose the perfect package for your business. All plans include free domain, hosting, and expert support.</p>
-      <div className="pricing-grid">
-        {pricingOptions.map((option, idx) => (
-          <div className="pricing-card" key={idx}>
-            <h2 className="pricing-card-title">{option.title}</h2>
-            <div className="pricing-card-price">{option.price}</div>
-            <p className="pricing-card-desc">{option.description}</p>
-            <ul className="pricing-features">
-              {option.features.map((feature, i) => (
-                <li key={i}>{feature}</li>
-              ))}
-            </ul>
-            <Link to="/contact" className="pricing-cta-btn">{option.cta}</Link>
-          </div>
-        ))}
+    <section className="pricing-section">
+      <div className="pricing-bg-elements">
+        <div className="pricing-blob blob-1"></div>
+        <div className="pricing-blob blob-2"></div>
       </div>
-    </div>
-  );
-};
+
+      <div className="container">
+        <div className="section-header center-header">
+          <span className="overline">Pricing</span>
+          <h2 className="section-title">Flexible Plans for Every <span className="highlight">Business</span></h2>
+          <p className="section-subtitle">Choose the perfect package for your business. All plans include free domain, hosting, and expert support.</p>
+        </div>
+
+        <div className="pricing-grid">
+          {pricingOptions.map((option, idx) => (
+            <div className="pricing-card" key={idx}>
+              {idx === 1 && <div className="plan-badge">Popular</div>}
+              <h3 className="pricing-card-title">{option.title}</h3>
+              <div className="pricing-card-price">{option.price}</div>
+              <div className="pricing-note">One-time fee · includes 1 month support</div>
+              <p className="pricing-card-desc">{option.description}</p>
+              <ul className="pricing-features">
+                {option.features.map((feature, i) => (
+                  <li key={i}>{feature}</li>
+                ))}
+              </ul>
+              <Link to="/contact" className="pricing-cta-btn">{option.cta}</Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export default Pricing;
