@@ -35,8 +35,8 @@
 .glass-morphism-bg {
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  /* backdrop-filter: blur(4px); Removed blur as requested */
+  /* -webkit-backdrop-filter: blur(4px); Removed blur as requested */
   z-index: 2;
 }
 

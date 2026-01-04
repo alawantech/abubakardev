@@ -53,12 +53,12 @@ const Hero = () => {
             playsInline
             preload="auto"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }} // Increased opacity for better visibility
+            animate={{ opacity: 1 }} // Increased opacity for better visibility
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
             className="hero-video"
           >
-            <source src={currentVideo === 1 ? '/assets/video1.mp4' : '/assets/video2.mp4'} type="video/mp4" />
+            <source src={currentVideo === 1 ? '/assets/video2.mp4' : '/assets/video2.mp4'} type="video/mp4" />
           </motion.video>
         </AnimatePresence>
         <div className="hero-overlay"></div>

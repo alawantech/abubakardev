@@ -9,7 +9,7 @@ const pricingOptions = [
     description: "Perfect for any small business, startup, or personal brand wanting a professional online presence.",
     features: [
       "Conversion-focused design for any business type",
-      "Free domain & hosting for 1 year",
+      "Free domain (yourbusinessname.com)",
       "1 month free support",
       "4 to 5 pages (Home, About, Services, Contact, etc.)",
       "Contact form integration",
@@ -23,7 +23,7 @@ const pricingOptions = [
     description: "Great for businesses needing more features, including online sales or advanced service pages.",
     features: [
       "E-commerce or advanced business functionality (optional)",
-      "Free domain & hosting for 1 year",
+      "Free domain (yourbusinessname.com)",
       "1 month free support",
       "5 to 7 pages (Home, About, Services, Contact, Blog, etc.)",
       "Payment gateway integration (if needed)",
@@ -33,16 +33,16 @@ const pricingOptions = [
   },
   {
     title: "Advanced Business Website",
-    price: "₦350,000",
+    price: "₦650,000",
     description: "For growing businesses needing advanced features, scalable solutions, and user accounts.",
     features: [
       "Advanced features for any business (e-commerce, booking, custom forms, etc.)",
-      "Free domain & hosting for 1 year",
+      "Free domain (yourbusinessname.com)",
       "1 month free support",
-      "7 to 10 pages",
+      "7 to 15 pages",
       "Custom integrations",
       "Analytics & reporting",
-      "Customer accounts & wishlists",
+      "Customer accounts & and business management",
       "Login & registration features"
     ],
     cta: "Go Advanced"
