@@ -5,40 +5,26 @@
   color: #f8fafc;
   min-height: 100vh;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
   width: 100vw;
   margin-left: calc(-50vw + 50%);
-  display: flex;
-  flex-direction: column;
 }
 
-/* Ensure motion container is properly centered */
-motion {
-  display: block;
-}
-
-.course-page-wrapper motion {
-  width: 100% !important;
-}
-
-.course-page-wrapper > motion,
-.course-page-wrapper > div[class*="max-w"] {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-  padding: 0 20px !important;
-  display: block !important;
-  align-items: stretch;
+/* Content Container */
+.course-page-content {
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: 100px;
 }
 
 /* Background Blobs */
 .course-page-blob {
-  position: absolute;
+  position: fixed;
   width: 600px;
   height: 600px;
   border-radius: 50%;
   filter: blur(140px);
-  opacity: 0.1;
+  opacity: 0.08;
   z-index: 0;
   pointer-events: none;
 }
@@ -57,34 +43,125 @@ motion {
 
 /* Breadcrumb Styling */
 .course-breadcrumb {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 120px 20px 16px;
+  padding: 100px 20px 16px;
   position: relative;
   z-index: 10;
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
 }
 
-.course-breadcrumb > div {
+.course-breadcrumb>div {
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* Video Section Enhancement */
-.video-hero-section {
-  position: relative;
-  z-index: 5;
-  background: linear-gradient(to bottom, #020617 0%, rgba(15, 23, 42, 0.8) 100%);
-  padding: 60px 20px 100px;
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
+/* Single Column Layout */
+.course-single-column {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 100px;
 }
 
+/* Full Width Pricing Card - Below Video & Description */
+.pricing-card-section {
+  margin-bottom: 40px;
+}
+
+.pricing-card-full {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.pricing-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .pricing-card-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+
+.pricing-card-left {
+  flex-shrink: 0;
+}
+
+.pricing-main-price {
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.pricing-card-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .pricing-card-features {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+}
+
+.pricing-enroll-btn {
+  flex-shrink: 0;
+  padding: 18px 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pricing-enroll-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(37, 99, 235, 0.4);
+  filter: brightness(1.1);
+}
+
+@media (max-width: 767px) {
+  .pricing-card-full {
+    padding: 24px;
+  }
+
+  .pricing-main-price {
+    font-size: 2.5rem;
+  }
+
+  .pricing-enroll-btn {
+    width: 100%;
+    padding: 16px;
+  }
+}
+
+
+
+/* Video Section Enhancement */
 .video-container-premium {
   position: relative;
-  border-radius: 32px;
+  border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -94,7 +171,7 @@ motion {
 .video-info-bar-premium {
   background: rgba(30, 41, 59, 0.8);
   backdrop-filter: blur(16px);
-  padding: 24px 32px;
+  padding: 20px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -102,35 +179,48 @@ motion {
 .course-content-card {
   background: rgba(30, 41, 59, 0.4);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 32px;
-  padding: 40px;
-  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 32px;
+  width: 100%;
 }
 
+/* Vertical Spacing for Single Column Content */
+.course-single-column>* {
+  margin-bottom: 72px;
+  /* Increased from 48px */
+}
+
+.course-single-column>*:last-child {
+  margin-bottom: 160px;
+  /* Extra space for bottom banner */
+}
+
+.pricing-card-section {
+  margin: 72px 0;
+}
+
+
+/* Sidebar Card */
 .sidebar-card-premium {
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(30, 41, 59, 0.8);
   backdrop-filter: blur(32px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 32px;
+  border-radius: 24px;
   overflow: hidden;
-  position: sticky;
-  top: 100px;
-  z-index: 20;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .price-tag-premium {
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 24px;
-  padding: 32px;
+  border-radius: 16px;
+  padding: 24px;
   text-align: center;
-  margin-bottom: 24px;
 }
 
 .price-value-premium {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 800;
   background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
   -webkit-background-clip: text;
@@ -145,8 +235,8 @@ motion {
   justify-content: center;
   gap: 12px;
   width: 100%;
-  padding: 20px;
-  border-radius: 18px;
+  padding: 18px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   font-weight: 700;
@@ -162,123 +252,266 @@ motion {
   filter: brightness(1.1);
 }
 
-/* Topics and Lessons List */
-.topic-item-premium {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Course Details Section */
+.course-details-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+@media (min-width: 1024px) {
+  .course-details-section {
+    max-width: 780px;
+    margin: 0 auto 0 24px;
+    padding-left: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .course-details-section {
+    margin-left: calc((100% - 1200px) / 2);
+    max-width: 720px;
+  }
+}
+
+/* Topics and Lessons List - Premium Glassmorphism */
+.cp-topic-item {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 16px;
-  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-bottom: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.topic-item-premium:hover {
-  border-color: rgba(59, 130, 246, 0.3);
-  background: rgba(15, 23, 42, 0.6);
+.cp-topic-item:hover {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(30, 41, 59, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
-.topic-header {
+.cp-topic-header {
+  padding: 24px 28px;
+  background: rgba(15, 23, 42, 0.8) !important;
+  /* Darker background for visibility */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.lesson-list {
+.cp-topic-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  /* Explicit white for visibility */
+  letter-spacing: -0.01em;
+}
+
+.cp-lesson-list {
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
-.lesson-item-premium {
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
+.cp-lesson-item {
+  padding: 12px 18px;
+  background: transparent;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   font-size: 0.95rem;
-  color: #94a3b8;
+  color: #cbd5e1 !important;
+  /* Lighter slate for better reading */
+  transition: all 0.2s ease;
+  cursor: default;
 }
 
-/* Modals */
-.payment-modal-overlay {
-  background: rgba(2, 6, 23, 0.85);
-  backdrop-filter: blur(12px);
+.cp-lesson-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff !important;
 }
 
-.payment-modal-card {
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+.lesson-icon-play {
+  color: #3b82f6;
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
-@media (max-width: 1024px) {
-  .sidebar-card-premium {
-    position: relative;
-    top: 0;
-    margin-top: 40px;
-  }
+/* Mobile Sticky Enroll Bar */
+.universal-enroll-bar {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 18px 40px;
+  /* Increased padding */
+  z-index: 100;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+.enroll-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  width: 100%;
+  /* Spans full width */
+  max-width: 1400px;
+  /* Slightly wider for large screens */
+  margin: 0 auto;
+}
+
+.enroll-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.enroll-bar-price {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-now {
+  font-size: 1.6rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.price-before {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.enroll-bar-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  max-width: 400px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enroll-bar-btn {
+  flex-shrink: 0;
+  padding: 14px 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.enroll-bar-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+  filter: brightness(1.1);
 }
 
 @media (max-width: 768px) {
-  .course-content-card {
+  .universal-enroll-bar {
+    padding: 12px 20px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .enroll-bar-price .price-now {
+    font-size: 1.4rem;
+  }
+
+  .enroll-bar-btn {
+    padding: 12px 28px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .course-breadcrumb {
+    padding: 80px 16px 12px;
+  }
+
+  .course-hero-section {
     padding: 24px 16px;
   }
 
+  .course-content-card {
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+
   .price-value-premium {
-    font-size: 2.75rem;
+    font-size: 2.5rem;
   }
 
-  .course-page-wrapper {
-    padding: 0 16px;
-  }
-
-  /* Override Tailwind px-6 on mobile */
-  [class*="px-6"] {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  /* Ensure balanced grid spacing on tablet */
-  .course-breadcrumb > div {
-    padding: 0 16px;
+  .course-details-section {
+    padding: 0 16px 120px;
   }
 }
 
 @media (max-width: 480px) {
   .course-breadcrumb {
-    padding: 80px 12px 12px;
+    padding: 70px 12px 10px;
   }
 
-  .course-breadcrumb > div {
-    padding: 0 12px;
+  .course-hero-section {
+    padding: 20px 12px;
   }
 
   .course-content-card {
     padding: 20px 12px;
+    border-radius: 12px;
   }
 
-  .sidebar-card-premium {
-    padding: 0;
-  }
-
-  .sidebar-card-premium > div {
-    padding: 24px 16px;
+  .video-container-premium {
+    border-radius: 16px;
   }
 
   .price-value-premium {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
 
-  /* Force full-width centered content on mobile */
-  .course-page-wrapper {
-    padding: 0 12px;
+  .topic-item-premium {
+    padding: 16px 12px;
+    border-radius: 12px;
   }
 
-  /* Override Tailwind px-6 on small screens */
-  [class*="px-6"] {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
+  .course-details-section {
+    padding: 0 12px 120px;
+  }
+}
+
+/* Premium Spinner */
+.premium-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

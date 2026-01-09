@@ -104,165 +104,228 @@ const CoursePage = () => {
       </div>
 
       <motion.div
-        className="max-w-7xl mx-auto px-6 py-12"
+        className="course-page-content"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-12">
+        {/* Single Column Layout */}
+        <div className="course-single-column">
+          {/* Header Section */}
+          <motion.div variants={itemVariants} className="space-y-6 mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold text-sm">
+              <FaAward /> Featured Specialization
+            </div>
+            <h1 className="text-3xl lg:text-5xl font-extrabold text-white leading-tight">
+              {course.title}
+            </h1>
 
-            {/* Header Section */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full background-rgba(59, 130, 246, 0.1) border border-blue-500/20 text-blue-400 font-semibold text-sm">
-                <FaAward /> Featured Specialization
+            <div className="flex flex-wrap gap-6 text-slate-400">
+              <div className="flex items-center gap-2">
+                <FaStar className="text-yellow-500" />
+                <span className="text-white font-bold">4.9</span> (2.4k reviews)
               </div>
-              <h1 className="text-4xl lg:text-6xl font-extrabold text-white leading-tight">
-                {course.title}
-              </h1>
-
-              <div className="flex flex-wrap gap-6 text-slate-400">
-                <div className="flex items-center gap-2">
-                  <FaStar className="text-yellow-500" />
-                  <span className="text-white font-bold">4.9</span> (2.4k reviews)
-                </div>
-                <div className="flex items-center gap-2">
-                  <FaUsers className="text-blue-500" />
-                  <span className="text-white font-semibold">12,450+</span> Enrolled students
-                </div>
+              <div className="flex items-center gap-2">
+                <FaUsers className="text-blue-500" />
+                <span className="text-white font-semibold">12,450+</span> Enrolled students
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            {/* Video Section */}
-            {course.introVideoUrl && (() => {
-              const videoId = getYouTubeVideoId(course.introVideoUrl);
-              if (!videoId) return null;
+          {/* Video Section */}
+          {course.introVideoUrl && (() => {
+            const videoId = getYouTubeVideoId(course.introVideoUrl);
+            if (!videoId) return null;
 
-              // Use loop and playlist parameters to prevent YouTube showing other videos
-              const src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${videoId}`;
+            const src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&loop=1&playlist=${videoId}`;
 
-              return (
-                <motion.div variants={itemVariants} className="video-container-premium">
-                  <div className="relative aspect-video">
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={src}
-                      title="Course Preview"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
+            return (
+              <motion.div variants={itemVariants} className="video-container-premium mb-10">
+                <div className="relative aspect-video">
+                  <iframe
+                    className="absolute inset-0 w-full h-full"
+                    src={src}
+                    title="Course Preview"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
 
-                  <div className="video-info-bar-premium flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <FaBook className="text-blue-500" />
-                        <span>{course.topics?.length || 0} Modules</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaClock className="text-purple-500" />
-                        <span>{totalLessons} Lessons</span>
-                      </div>
-                    </div>
-                    <div className="hidden sm:block text-xs font-bold text-slate-500 border border-slate-700 rounded px-2 py-1">
-                      4K ULTRA HD
+                <div className="video-info-bar-premium flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <FaBook className="text-blue-500" />
+                      <span>{course.topics?.length || 0} Modules</span>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })()}
-
-            {/* About Course */}
-            <motion.div variants={itemVariants} className="course-content-card">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-blue-500 rounded-full"></div>
-                About this course
-              </h2>
-              <div
-                className="prose prose-invert max-w-none text-slate-300 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: formatDescription(course.description) }}
-              />
-            </motion.div>
-
-            {/* Curriculum */}
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="w-1.5 h-8 bg-purple-500 rounded-full"></div>
-                Curriculum
-              </h2>
-              <div className="space-y-4">
-                {course.topics?.map((topic, idx) => (
-                  <div key={idx} className="topic-item-premium">
-                    <div className="topic-header">
-                      <h3 className="text-xl font-bold text-white">{topic.title}</h3>
-                      <span className="text-slate-400 text-sm font-semibold">{topic.lessons?.length || 0} Lessons</span>
-                    </div>
-                    <div className="lesson-list">
-                      {topic.lessons?.map((lesson, lIdx) => (
-                        <div key={lIdx} className="lesson-item-premium">
-                          <FaPlay className="text-blue-500 text-xs" />
-                          <span>{lesson.title || `Lesson ${lIdx + 1}`}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="hidden sm:block text-xs font-bold text-slate-500 border border-slate-700 rounded px-2 py-1">
+                    4K ULTRA HD
                   </div>
-                ))}
-              </div>
-            </motion.div>
+                </div>
+              </motion.div>
+            );
+          })()}
 
-          </div>
+          {/* About Course */}
+          <motion.div variants={itemVariants} className="course-content-card mb-12">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-blue-500 rounded-full"></div>
+              About this course
+            </h2>
+            <div
+              className="prose prose-invert max-w-none text-slate-300 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: formatDescription(course.description) }}
+            />
+          </motion.div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <motion.div
-              variants={itemVariants}
-              className="sidebar-card-premium"
-            >
-              <div className="p-8 space-y-8">
-                <div className="price-tag-premium">
-                  <div className="text-slate-400 text-sm font-bold mb-2">FULL COURSE ACCESS</div>
-                  <div className="price-value-premium">₦49,000</div>
-                  <div className="text-slate-500 text-sm mt-2 line-through">₦75,000</div>
+          {/* PRICING CARD - Below Video and Description */}
+          <motion.div variants={itemVariants} className="pricing-card-section mb-12">
+            <div className="pricing-card-full">
+              <div className="pricing-card-inner">
+                <div className="pricing-card-left">
+                  <div className="text-slate-400 text-sm font-bold mb-1">FULL COURSE ACCESS</div>
+                  <div className="pricing-main-price">₦{course.price || '49,000'}</div>
+                  <div className="text-slate-500 text-sm line-through">₦75,000</div>
                 </div>
 
-                <div className="space-y-4">
-                  <button onClick={handleEnrollClick} className="enroll-btn-premium">
-                    Enroll Now
-                  </button>
-                </div>
-
-                <div className="space-y-4 pt-8 border-t border-slate-700">
-                  <div className="flex items-center gap-3 text-slate-300">
+                <div className="pricing-card-features">
+                  <div className="flex items-center gap-2 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
                     <span>Full lifetime access</span>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-300">
+                  <div className="flex items-center gap-2 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
                     <span>Students get instant support</span>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-300">
+                  <div className="flex items-center gap-2 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
                     <span>Certificate of completion</span>
                   </div>
                 </div>
 
-                {/* Requirements */}
-                {course.requirements?.length > 0 && (
-                  <div className="pt-8 border-t border-slate-700">
-                    <h4 className="text-white font-bold mb-4">Requirements</h4>
-                    <ul className="space-y-2">
-                      {course.requirements.map((req, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-slate-400 text-sm">
-                          <div className="mt-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                          {req}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <button onClick={handleEnrollClick} className="pricing-enroll-btn">
+                  Enroll Now
+                </button>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
+
+          {/* New Sections: What You Will Learn, Target Audience, etc. */}
+          <div className="course-additional-info space-y-8 mb-12">
+            {/* What Will Students Learn */}
+            {course.whatYouWillLearn?.length > 0 && (
+              <motion.div variants={itemVariants} className="course-content-card">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
+                  What Will Students Learn?
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {course.whatYouWillLearn.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3 text-slate-300">
+                      <FaCheckCircle className="text-emerald-500 mt-1 flex-shrink-0" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Target Audience */}
+            {course.targetAudience?.length > 0 && (
+              <motion.div variants={itemVariants} className="course-content-card">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                  Target Audience
+                </h2>
+                <ul className="space-y-3">
+                  {course.targetAudience.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-slate-300">
+                      <div className="mt-2 w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+
+            {/* Materials Included */}
+            {course.materialsIncluded?.length > 0 && (
+              <motion.div variants={itemVariants} className="course-content-card">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                  Materials Included
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {course.materialsIncluded.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 text-slate-300">
+                      <FaFolderOpen className="text-purple-500" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Requirements/Instructions */}
+            {course.requirements?.length > 0 && (
+              <motion.div variants={itemVariants} className="course-content-card">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                  <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+                  Requirements/Instructions
+                </h2>
+                <ul className="space-y-3">
+                  {course.requirements.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-slate-300">
+                      <FaExclamationTriangle className="text-orange-500 mt-1 flex-shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Curriculum */}
+          <motion.div variants={itemVariants} className="space-y-6 mt-10">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-purple-500 rounded-full"></div>
+              Curriculum
+            </h2>
+            <div className="space-y-4">
+              {course.topics?.map((topic, idx) => (
+                <div key={idx} className="cp-topic-item">
+                  <div className="cp-topic-header">
+                    <h3 className="text-xl font-bold text-white">{topic.title}</h3>
+                  </div>
+                  <div className="cp-lesson-list">
+                    {topic.lessons?.map((lesson, lIdx) => (
+                      <div key={lIdx} className="cp-lesson-item">
+                        <FaPlay className="lesson-icon-play" />
+                        <span>{lesson.name || `Lesson ${lIdx + 1}`}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Universal Sticky Enroll Bar (Bottom) */}
+        <div className="universal-enroll-bar">
+          <div className="enroll-bar-container">
+            <div className="enroll-bar-info">
+              <div className="enroll-bar-price">
+                <span className="price-now">₦{course.price || '49,000'}</span>
+                <span className="price-before">₦75,000</span>
+              </div>
+              <div className="enroll-bar-title hidden md:block">
+                {course.title}
+              </div>
+            </div>
+            <button onClick={handleEnrollClick} className="enroll-bar-btn">
+              Enroll Now
+            </button>
           </div>
         </div>
       </motion.div>

@@ -149,7 +149,7 @@ const Courses = () => {
                         className="enroll-button-premium"
                         onClick={() => handleViewCourse(course.id)}
                       >
-                        Enroll Now <FaArrowRight />
+                        Learn More <FaArrowRight />
                       </button>
                     </div>
                   </div>

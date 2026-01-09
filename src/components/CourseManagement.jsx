@@ -12,7 +12,7 @@ const CourseManagement = () => {
   const [currentCourse, setCurrentCourse] = useState(null);
   const [expandedCourse, setExpandedCourse] = useState(null);
   const [playingVideo, setPlayingVideo] = useState(null);
-  
+
   const [courseData, setCourseData] = useState({
     title: '',
     description: '',
@@ -66,6 +66,7 @@ const CourseManagement = () => {
         introVideoUrl: courseData.introVideoUrl,
         pricingModel: courseData.pricingModel,
         price: courseData.price,
+        topics: courseData.topics, // Include topics/curriculum
         whatYouWillLearn: courseData.whatYouWillLearn.filter(item => item.trim() !== ''),
         targetAudience: courseData.targetAudience.filter(item => item.trim() !== ''),
         courseDurationMonths: courseData.courseDurationMonths,
@@ -83,31 +84,15 @@ const CourseManagement = () => {
         setView('list');
       } else {
         // Add new course
-        const docRef = await addDoc(collection(db, 'courses'), {
+        await addDoc(collection(db, 'courses'), {
           ...cleanedData,
-          topics: [],
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        alert('Course created successfully! Now you can add topics and lessons.');
-        
-        // After creating, redirect to manage curriculum
-        const newCourse = {
-          id: docRef.id,
-          title: courseData.title,
-          description: courseData.description,
-          visibility: courseData.visibility,
-          featuredImage: courseData.featuredImage,
-          introVideoUrl: courseData.introVideoUrl,
-          pricingModel: courseData.pricingModel,
-          price: courseData.price,
-          topics: []
-        };
-        setCurrentCourse(newCourse);
-        setCourseData({ ...courseData, topics: [] });
-        setView('manage-curriculum');
+        alert('Course created successfully!');
+        setView('list');
       }
-      
+
       fetchCourses();
     } catch (error) {
       console.error('Error saving course:', error);
@@ -148,20 +133,6 @@ const CourseManagement = () => {
     setView('edit-course');
   };
 
-  const handleManageCurriculum = (course) => {
-    setCurrentCourse(course);
-    setCourseData({
-      title: course.title,
-      description: course.description,
-      visibility: course.visibility || 'public',
-      featuredImage: course.featuredImage || '',
-      introVideoUrl: course.introVideoUrl || '',
-      pricingModel: course.pricingModel || 'free',
-      price: course.price || 0,
-      topics: course.topics || []
-    });
-    setView('manage-curriculum');
-  };
 
   const resetForm = () => {
     setCurrentCourse(null);
@@ -229,28 +200,12 @@ const CourseManagement = () => {
     setCourseData({ ...courseData, topics: updatedTopics });
   };
 
-  const handleSaveCurriculum = async () => {
-    try {
-      if (!currentCourse) return;
-      
-      await updateDoc(doc(db, 'courses', currentCourse.id), {
-        topics: courseData.topics,
-        updatedAt: serverTimestamp()
-      });
-      
-      alert('Curriculum saved successfully!');
-      fetchCourses();
-    } catch (error) {
-      console.error('Error saving curriculum:', error);
-      alert('Error saving curriculum. Please try again.');
-    }
-  };
 
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
       ['link'],
       ['clean']
     ]
@@ -352,12 +307,6 @@ const CourseManagement = () => {
                         Edit Course
                       </button>
                       <button
-                        className="btn-curriculum"
-                        onClick={() => handleManageCurriculum(course)}
-                      >
-                        Manage Curriculum
-                      </button>
-                      <button
                         className="btn-delete"
                         onClick={() => handleDeleteCourse(course.id)}
                       >
@@ -394,7 +343,7 @@ const CourseManagement = () => {
                               <div className="play-button-overlay">
                                 <div className="play-button">
                                   <svg viewBox="0 0 24 24" fill="white">
-                                    <path d="M8 5v14l11-7z"/>
+                                    <path d="M8 5v14l11-7z" />
                                   </svg>
                                 </div>
                               </div>
@@ -403,17 +352,17 @@ const CourseManagement = () => {
                         )}
                       </div>
                     )}
-                    
+
                     <div className="course-info">
                       {course.description && (
-                        <div 
-                          className="course-description" 
-                          dangerouslySetInnerHTML={{ 
-                            __html: course.description.substring(0, 150) + '...' 
+                        <div
+                          className="course-description"
+                          dangerouslySetInnerHTML={{
+                            __html: course.description.substring(0, 150) + '...'
                           }}
                         />
                       )}
-                      
+
                       <p className="course-meta">
                         {course.topics?.length || 0} Topics • {' '}
                         {course.topics?.reduce((acc, topic) => acc + (topic.lessons?.length || 0), 0) || 0} Lessons
@@ -547,11 +496,11 @@ const CourseManagement = () => {
                       </label>
                       <small className="field-hint">Upload from your device (max 5MB)</small>
                     </div>
-                    
+
                     <div className="upload-option">
                       <span className="option-or">OR</span>
                     </div>
-                    
+
                     <div className="upload-option">
                       <input
                         type="url"
@@ -562,7 +511,7 @@ const CourseManagement = () => {
                       <small className="field-hint">Enter image URL directly</small>
                     </div>
                   </div>
-                  
+
                   {courseData.featuredImage && (
                     <div className="image-preview">
                       <img src={courseData.featuredImage} alt="Featured" />
@@ -589,8 +538,8 @@ const CourseManagement = () => {
                 <small className="field-hint">Enter one benefit per line. Students will see key takeaways before enrolling.</small>
                 <textarea
                   value={(courseData.whatYouWillLearn || []).join('\n')}
-                  onChange={(e) => setCourseData({ 
-                    ...courseData, 
+                  onChange={(e) => setCourseData({
+                    ...courseData,
                     whatYouWillLearn: e.target.value.split('\n')
                   })}
                   placeholder="Master React fundamentals&#10;Build real-world applications&#10;Learn modern JavaScript ES6+&#10;Understand state management"
@@ -603,8 +552,8 @@ const CourseManagement = () => {
                 <small className="field-hint">One line per target audience. Who will benefit most from this course?</small>
                 <textarea
                   value={(courseData.targetAudience || []).join('\n')}
-                  onChange={(e) => setCourseData({ 
-                    ...courseData, 
+                  onChange={(e) => setCourseData({
+                    ...courseData,
                     targetAudience: e.target.value.split('\n')
                   })}
                   placeholder="Beginner developers wanting to learn React&#10;Students with basic JavaScript knowledge&#10;Web developers looking to modernize their skills"
@@ -630,8 +579,8 @@ const CourseManagement = () => {
                 <small className="field-hint">List assets provided to students (one per line). E.g., downloadable resources, certificates, etc.</small>
                 <textarea
                   value={(courseData.materialsIncluded || []).join('\n')}
-                  onChange={(e) => setCourseData({ 
-                    ...courseData, 
+                  onChange={(e) => setCourseData({
+                    ...courseData,
                     materialsIncluded: e.target.value.split('\n')
                   })}
                   placeholder="Downloadable code files&#10;Certificate of completion&#10;Lifetime access to course updates&#10;Project source code"
@@ -644,13 +593,103 @@ const CourseManagement = () => {
                 <small className="field-hint">Additional requirements or instructions for students (one per line).</small>
                 <textarea
                   value={(courseData.requirements || []).join('\n')}
-                  onChange={(e) => setCourseData({ 
-                    ...courseData, 
+                  onChange={(e) => setCourseData({
+                    ...courseData,
                     requirements: e.target.value.split('\n')
                   })}
                   placeholder="Basic understanding of HTML and CSS&#10;A computer with internet connection&#10;Text editor installed (VS Code recommended)"
                   rows="5"
                 />
+              </div>
+
+              <hr className="form-divider" />
+              <div className="curriculum-section-integrated">
+                <div className="section-header">
+                  <h4 className="section-title">📖 Course Curriculum (Topics & Lessons)</h4>
+                  <button type="button" className="btn-secondary-small" onClick={addTopic}>
+                    + Add Topic
+                  </button>
+                </div>
+
+                {courseData.topics.length === 0 ? (
+                  <div className="empty-state-small">
+                    <p>No topics added. Start by adding a topic to build your curriculum.</p>
+                  </div>
+                ) : (
+                  <div className="topics-list-integrated">
+                    {courseData.topics.map((topic, topicIndex) => (
+                      <div key={topicIndex} className="topic-card-integrated">
+                        <div className="topic-header">
+                          <div className="topic-title-group">
+                            <span className="index-label">Topic {topicIndex + 1}:</span>
+                            <input
+                              type="text"
+                              value={topic.title}
+                              onChange={(e) => updateTopic(topicIndex, 'title', e.target.value)}
+                              placeholder="e.g., Introduction to the Course"
+                              className="topic-title-input"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-danger-text"
+                            onClick={() => deleteTopic(topicIndex)}
+                          >
+                            Remove Topic
+                          </button>
+                        </div>
+
+                        <div className="lessons-container">
+                          {topic.lessons.map((lesson, lessonIndex) => (
+                            <div key={lessonIndex} className="lesson-card-integrated">
+                              <div className="lesson-header">
+                                <h5>Lesson {lessonIndex + 1}</h5>
+                                <button
+                                  type="button"
+                                  className="btn-danger-text"
+                                  onClick={() => deleteLesson(topicIndex, lessonIndex)}
+                                >
+                                  Delete Lesson
+                                </button>
+                              </div>
+
+                              <div className="form-group">
+                                <label>Lesson Name *</label>
+                                <input
+                                  type="text"
+                                  value={lesson.name}
+                                  onChange={(e) =>
+                                    updateLesson(topicIndex, lessonIndex, 'name', e.target.value)
+                                  }
+                                  placeholder="Enter lesson name"
+                                />
+                              </div>
+
+                              <div className="form-group">
+                                <label>YouTube Video URL</label>
+                                <input
+                                  type="url"
+                                  value={lesson.videoUrl}
+                                  onChange={(e) =>
+                                    updateLesson(topicIndex, lessonIndex, 'videoUrl', e.target.value)
+                                  }
+                                  placeholder="https://www.youtube.com/watch?v=..."
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="btn-add-lesson"
+                            onClick={() => addLesson(topicIndex)}
+                          >
+                            + Add Lesson to {topic.title || `Topic ${topicIndex + 1}`}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -666,122 +705,6 @@ const CourseManagement = () => {
         </div>
       )}
 
-      {view === 'manage-curriculum' && currentCourse && (
-        <div className="curriculum-container">
-          <div className="form-header">
-            <h3>Manage Curriculum: {currentCourse.title}</h3>
-            <button className="btn-secondary" onClick={resetForm}>
-              ← Back to Courses
-            </button>
-          </div>
-
-          <div className="curriculum-card">
-            <div className="topics-section">
-              <div className="section-header">
-                <h4>Topics & Lessons</h4>
-                <button className="btn-secondary" onClick={addTopic}>
-                  + Add Topic
-                </button>
-              </div>
-
-              {courseData.topics.length === 0 ? (
-                <div className="empty-state">
-                  <p>No topics yet. Add your first topic to start building the curriculum.</p>
-                </div>
-              ) : (
-                courseData.topics.map((topic, topicIndex) => (
-                  <div key={topicIndex} className="topic-card">
-                    <div className="topic-header">
-                      <input
-                        type="text"
-                        value={topic.title}
-                        onChange={(e) => updateTopic(topicIndex, 'title', e.target.value)}
-                        placeholder="Topic Title"
-                        className="topic-title-input"
-                      />
-                      <button
-                        className="btn-danger-small"
-                        onClick={() => deleteTopic(topicIndex)}
-                      >
-                        Delete Topic
-                      </button>
-                    </div>
-
-                    <div className="lessons-section">
-                      <button
-                        className="btn-secondary-small"
-                        onClick={() => addLesson(topicIndex)}
-                      >
-                        + Add Lesson
-                      </button>
-
-                      {topic.lessons.map((lesson, lessonIndex) => (
-                        <div key={lessonIndex} className="lesson-card">
-                          <div className="lesson-header">
-                            <h5>Lesson {lessonIndex + 1}</h5>
-                            <button
-                              className="btn-danger-small"
-                              onClick={() => deleteLesson(topicIndex, lessonIndex)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-
-                          <div className="form-group">
-                            <label>Lesson Name *</label>
-                            <input
-                              type="text"
-                              value={lesson.name}
-                              onChange={(e) =>
-                                updateLesson(topicIndex, lessonIndex, 'name', e.target.value)
-                              }
-                              placeholder="Enter lesson name"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Lesson Description</label>
-                            <ReactQuill
-                              theme="snow"
-                              value={lesson.description}
-                              onChange={(value) =>
-                                updateLesson(topicIndex, lessonIndex, 'description', value)
-                              }
-                              modules={modules}
-                              placeholder="Enter lesson description with rich text formatting"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>YouTube Video URL</label>
-                            <input
-                              type="url"
-                              value={lesson.videoUrl}
-                              onChange={(e) =>
-                                updateLesson(topicIndex, lessonIndex, 'videoUrl', e.target.value)
-                              }
-                              placeholder="https://www.youtube.com/watch?v=..."
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="form-footer">
-              <button className="btn-secondary" onClick={resetForm}>
-                Back to Courses
-              </button>
-              <button className="btn-primary" onClick={handleSaveCurriculum}>
-                Save Curriculum
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
