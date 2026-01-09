@@ -136,11 +136,11 @@ const Courses = () => {
                     <div className="course-meta">
                       <div className="meta-item">
                         <FaBookOpen />
-                        <span>{course.topics?.length || 0} Topics</span>
+                        <span>50+ Topics</span>
                       </div>
                       <div className="meta-item">
                         <FaClock />
-                        <span>{totalLessons} Lessons</span>
+                        <span>100+ Lessons</span>
                       </div>
                     </div>
 

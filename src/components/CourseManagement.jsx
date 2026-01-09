@@ -583,7 +583,7 @@ const CourseManagement = () => {
                     ...courseData,
                     materialsIncluded: e.target.value.split('\n')
                   })}
-                  placeholder="Downloadable code files&#10;Certificate of completion&#10;Lifetime access to course updates&#10;Project source code"
+                  placeholder="Downloadable code files&#10;Certificate of completion&#10;Access to course updates&#10;Project source code"
                   rows="5"
                 />
               </div>

@@ -41,7 +41,7 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
   const fetchPaymentHistory = async () => {
     setLoading(true);
     try {
-      
+
       // Query payments by userId (if available) or userEmail
       const paymentsQueries = [];
 
@@ -99,7 +99,7 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
 
       // Combine and deduplicate payments
       const paymentsData = [...paymentsData1, ...paymentsData2].filter(
-        (payment, index, self) => 
+        (payment, index, self) =>
           index === self.findIndex(p => p.id === payment.id)
       );
 
@@ -124,7 +124,7 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
 
       // Combine enrollment snapshots
       const allEnrollmentDocs = [...enrollmentsSnapshot1.docs, ...enrollmentsSnapshot2.docs]
-        .filter((doc, index, self) => 
+        .filter((doc, index, self) =>
           index === self.findIndex(d => d.id === doc.id)
         );
 
@@ -137,16 +137,16 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
           })
           .map(async (doc) => {
             const data = doc.data();
-            
+
             // Try to find the corresponding payment record for receipt URL
             let receiptURL = data.receiptURL || data.receiptUrl || data.receipt_link || data.receipt || data.paymentReceipt || null;
-            
+
             if (!receiptURL && (data.transactionId || data.paymentReference)) {
               // Query payments collection to find matching payment record
-              const paymentQuery = data.transactionId 
+              const paymentQuery = data.transactionId
                 ? query(collection(db, 'payments'), where('transactionId', '==', data.transactionId))
                 : query(collection(db, 'payments'), where('paymentReference', '==', data.paymentReference));
-              
+
               try {
                 const paymentSnapshot = await getDocs(paymentQuery);
                 if (!paymentSnapshot.empty) {
@@ -157,7 +157,7 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
                 console.error('Error fetching payment receipt:', error);
               }
             }
-            
+
             return {
               id: doc.id,
               userId: actualUserId,
@@ -191,28 +191,28 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
 
   const generatePaymentHistory = (payments) => {
     const paymentData = {};
-    
+
     payments.forEach(payment => {
       if (!payment.submittedAt) return;
-      
+
       const paymentDate = payment.submittedAt.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-      
+
       if (!paymentData[paymentDate]) {
         paymentData[paymentDate] = [];
       }
-      
+
       paymentData[paymentDate].push({
         ...payment,
         paymentDate: paymentDate
       });
     });
-    
+
     return paymentData;
-  };  const getStatusColor = (status) => {
+  }; const getStatusColor = (status) => {
     switch (status) {
       case 'approved':
       case 'paid':
@@ -299,12 +299,12 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
       setPayments(prev => prev.map(payment =>
         payment.id === paymentId
           ? {
-              ...payment,
-              receiptURL: receiptURL,
-              status: 'approved',
-              receiptUploadedBy: 'admin',
-              receiptUploadedAt: new Date()
-            }
+            ...payment,
+            receiptURL: receiptURL,
+            status: 'approved',
+            receiptUploadedBy: 'admin',
+            receiptUploadedAt: new Date()
+          }
           : payment
       ));
 
@@ -352,7 +352,7 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
                 {userName} - {courseName}
               </p>
               <p className="text-blue-200 text-sm mt-1">
-                One-Time Payment: ₦49,000 (Lifetime Access)
+                One-Time Payment: ₦49,000 (Full Access)
               </p>
             </div>
             <button
@@ -395,22 +395,21 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                                  payment.type === 'enrollment' ? 'bg-green-100' :
-                                  payment.type === 'renewal' ? 'bg-blue-100' :
-                                  payment.type === 'extension' ? 'bg-purple-100' : 'bg-gray-100'
-                                }`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${payment.type === 'enrollment' ? 'bg-green-100' :
+                                    payment.type === 'renewal' ? 'bg-blue-100' :
+                                      payment.type === 'extension' ? 'bg-purple-100' : 'bg-gray-100'
+                                  }`}>
                                   <span>
                                     {payment.type === 'enrollment' ? '🎓' :
-                                     payment.type === 'renewal' ? '🔄' :
-                                     payment.type === 'extension' ? '⏰' : '💰'}
+                                      payment.type === 'renewal' ? '🔄' :
+                                        payment.type === 'extension' ? '⏰' : '💰'}
                                   </span>
                                 </div>
                                 <div>
                                   <h4 className="font-semibold text-gray-900 text-lg">
                                     {payment.type === 'enrollment' ? 'Course Enrollment' :
-                                     payment.type === 'renewal' ? 'Subscription Renewal' :
-                                     payment.type === 'extension' ? 'Access Extension' : 'Payment'}
+                                      payment.type === 'renewal' ? 'Subscription Renewal' :
+                                        payment.type === 'extension' ? 'Access Extension' : 'Payment'}
                                   </h4>
                                   <p className="text-sm text-gray-600">
                                     Amount: {formatCurrency(payment.amount || 49000)}
@@ -426,13 +425,13 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
                               <div className="flex items-center gap-4 mt-3">
                                 <span className={`px-3 py-1 rounded-full font-medium text-sm ${getStatusColor(payment.status)}`}>
                                   {payment.status === 'approved' ? '✓ Approved' :
-                                   payment.status === 'paid' ? '✓ Paid' :
-                                   payment.status === 'success' ? '✓ Success' :
-                                   payment.status === 'pending' ? '⏳ Pending' :
-                                   payment.status === 'receipt_pending_upload' && payment.isRenewal ? '📄 Receipt Pending' :
-                                   payment.status === 'rejected' ? '✗ Rejected' :
-                                   payment.status === 'failed' ? '✗ Failed' :
-                                   payment.status === 'cancelled' ? '✗ Cancelled' : payment.status}
+                                    payment.status === 'paid' ? '✓ Paid' :
+                                      payment.status === 'success' ? '✓ Success' :
+                                        payment.status === 'pending' ? '⏳ Pending' :
+                                          payment.status === 'receipt_pending_upload' && payment.isRenewal ? '📄 Receipt Pending' :
+                                            payment.status === 'rejected' ? '✗ Rejected' :
+                                              payment.status === 'failed' ? '✗ Failed' :
+                                                payment.status === 'cancelled' ? '✗ Cancelled' : payment.status}
                                 </span>
 
                                 {payment.receiptURL && (
@@ -543,18 +542,18 @@ const PaymentHistoryModal = ({ isOpen, onClose, userId, userName, courseId, cour
                   </div>
                 ))}
 
-                {Object.keys(paymentHistory).length === 0 && (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
-                    <p className="text-gray-600">No payments have been recorded for this student yet.</p>
+              {Object.keys(paymentHistory).length === 0 && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-                )}
-              </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment History</h3>
+                  <p className="text-gray-600">No payments have been recorded for this student yet.</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

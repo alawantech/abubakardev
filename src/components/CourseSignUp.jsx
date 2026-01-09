@@ -143,7 +143,7 @@ const CourseSignUp = () => {
             Join <span className="text-blue-500">{plan.courseName}</span>
           </h1>
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 font-bold">
-            💎 One-Time Investment: ₦49,000 (Lifetime Access)
+            💎 One-Time Investment: ₦49,000 (Full Access)
           </div>
         </motion.div>
 
@@ -309,18 +309,24 @@ const CourseSignUp = () => {
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Terms & Conditions</h2>
 
                 <section>
-                  <h3>1. Payment Terms</h3>
-                  <p>All payments are 100% non-refundable. Once payment is completed, no refunds will be issued under any circumstances.</p>
+                  <h3>1. One-Time Payment</h3>
+                  <p>Payment for this course is a <strong>one-time fee</strong>. Once completed, you will have <strong>full access</strong> to all course materials and projects included in the curriculum.</p>
+                  <p className="text-red-400 font-bold mt-2">Note: All payments are 100% non-refundable.</p>
                 </section>
 
                 <section>
-                  <h3>2. Course Access</h3>
-                  <p>Course is designed for 6 months completion. You receive a 6-month grace period (12 months total). Access period cannot be extended beyond 12 months.</p>
+                  <h3>2. Full Course Access</h3>
+                  <p>You will have full access to the course content as specified in the curriculum. Our goal is to ensure you complete your training successfully and transition into a professional developer.</p>
                 </section>
 
                 <section>
-                  <h3>3. Requirements</h3>
-                  <p>You MUST own a functional laptop. Mobile devices are not sufficient for this programming course. You must be able to understand English technical terms.</p>
+                  <h3>3. Importance of Support</h3>
+                  <p>We provide <strong>instant and dedicated support</strong> to our students. Getting stuck is part of learning, and our expert team is here to guide you. Active participation and reaching out for support when needed is critical to your success.</p>
+                </section>
+
+                <section>
+                  <h3>4. Requirements</h3>
+                  <p>You MUST own a functional laptop. Mobile devices are not sufficient for this programming course. You must be able to understand basics of English.</p>
                 </section>
 
                 <div className="modal-footer">

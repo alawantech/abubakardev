@@ -61,7 +61,7 @@ const Services = () => {
         "Expert-led video lessons",
         "Hands-on projects & assignments",
         "Certificate of completion",
-        "Lifetime community access"
+        "Full community access"
       ],
       icon: <FaChalkboardTeacher />,
       color: "#f59e0b"

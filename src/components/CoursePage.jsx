@@ -191,7 +191,7 @@ const CoursePage = () => {
                 <div className="pricing-card-features">
                   <div className="flex items-center gap-2 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
-                    <span>Full lifetime access</span>
+                    <span>Full course access</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-300">
                     <FaCheckCircle className="text-emerald-500" />
