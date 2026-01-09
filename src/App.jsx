@@ -210,7 +210,7 @@ function App() {
         className="whatsapp-float"
         style={{
           position: 'fixed',
-          bottom: '100px',
+          bottom: '98px',
           right: '2px',
           zIndex: 2147483647,
           pointerEvents: 'auto'
