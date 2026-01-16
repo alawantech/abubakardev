@@ -111,6 +111,13 @@ const CourseManagement = () => {
     }
   };
 
+  const [activeTopicIndex, setActiveTopicIndex] = useState(null);
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [tempLesson, setTempLesson] = useState({ name: '', videoUrl: '', description: '' });
+
+  // ... existing fetchCourses, handleDeleteCourse ...
+
   const handleEditCourse = (course) => {
     setCurrentCourse(course);
     setCourseData({
@@ -133,6 +140,73 @@ const CourseManagement = () => {
     setView('edit-course');
   };
 
+  const handleManageContent = (course) => {
+    setCurrentCourse(course);
+    setCourseData({
+      ...course, // Keep all course data
+      topics: course.topics || [], // Ensure topics array exists
+    });
+    setView('manage-curriculum');
+  };
+
+  const saveCurriculumChanges = async () => {
+    try {
+      if (!currentCourse) return;
+
+      const courseRef = doc(db, 'courses', currentCourse.id);
+      await updateDoc(courseRef, {
+        topics: courseData.topics,
+        updatedAt: serverTimestamp()
+      });
+
+      alert('Curriculum saved successfully!');
+      // Update local courses state to reflect changes
+      const updatedCourses = courses.map(c =>
+        c.id === currentCourse.id ? { ...c, topics: courseData.topics } : c
+      );
+      setCourses(updatedCourses);
+    } catch (error) {
+      console.error('Error saving curriculum:', error);
+      alert('Error saving curriculum. Please try again.');
+    }
+  };
+
+  const openAddLessonModal = (topicIndex) => {
+    setActiveTopicIndex(topicIndex);
+    setTempLesson({ name: '', videoUrl: '', description: '' });
+    setEditingLesson(null); // null means creating new
+    setShowLessonModal(true);
+  };
+
+  const openEditLessonModal = (topicIndex, lesson, lessonIndex) => {
+    setActiveTopicIndex(topicIndex);
+    setEditingLesson(lessonIndex); // index of lesson being edited
+    setTempLesson({ ...lesson });
+    setShowLessonModal(true);
+  };
+
+  const saveLessonFromModal = () => {
+    if (!tempLesson.name) {
+      alert('Lesson name is required');
+      return;
+    }
+
+    const updatedTopics = [...courseData.topics];
+
+    if (editingLesson !== null) {
+      // Update existing lesson
+      updatedTopics[activeTopicIndex].lessons[editingLesson] = tempLesson;
+    } else {
+      // Add new lesson
+      if (!updatedTopics[activeTopicIndex].lessons) {
+        updatedTopics[activeTopicIndex].lessons = [];
+      }
+      updatedTopics[activeTopicIndex].lessons.push(tempLesson);
+    }
+
+    setCourseData({ ...courseData, topics: updatedTopics });
+    setShowLessonModal(false);
+  };
 
   const resetForm = () => {
     setCurrentCourse(null);
@@ -176,22 +250,6 @@ const CourseManagement = () => {
     }
   };
 
-  const addLesson = (topicIndex) => {
-    const updatedTopics = [...courseData.topics];
-    updatedTopics[topicIndex].lessons.push({
-      name: '',
-      description: '',
-      videoUrl: ''
-    });
-    setCourseData({ ...courseData, topics: updatedTopics });
-  };
-
-  const updateLesson = (topicIndex, lessonIndex, field, value) => {
-    const updatedTopics = [...courseData.topics];
-    updatedTopics[topicIndex].lessons[lessonIndex][field] = value;
-    setCourseData({ ...courseData, topics: updatedTopics });
-  };
-
   const deleteLesson = (topicIndex, lessonIndex) => {
     const updatedTopics = [...courseData.topics];
     updatedTopics[topicIndex].lessons = updatedTopics[topicIndex].lessons.filter(
@@ -199,7 +257,6 @@ const CourseManagement = () => {
     );
     setCourseData({ ...courseData, topics: updatedTopics });
   };
-
 
   const modules = {
     toolbar: [
@@ -305,6 +362,12 @@ const CourseManagement = () => {
                         onClick={() => handleEditCourse(course)}
                       >
                         Edit Course
+                      </button>
+                      <button
+                        className="btn-curriculum"
+                        onClick={() => handleManageContent(course)}
+                      >
+                        📚 Manage Content
                       </button>
                       <button
                         className="btn-delete"
@@ -601,96 +664,6 @@ const CourseManagement = () => {
                   rows="5"
                 />
               </div>
-
-              <hr className="form-divider" />
-              <div className="curriculum-section-integrated">
-                <div className="section-header">
-                  <h4 className="section-title">📖 Course Curriculum (Topics & Lessons)</h4>
-                  <button type="button" className="btn-secondary-small" onClick={addTopic}>
-                    + Add Topic
-                  </button>
-                </div>
-
-                {courseData.topics.length === 0 ? (
-                  <div className="empty-state-small">
-                    <p>No topics added. Start by adding a topic to build your curriculum.</p>
-                  </div>
-                ) : (
-                  <div className="topics-list-integrated">
-                    {courseData.topics.map((topic, topicIndex) => (
-                      <div key={topicIndex} className="topic-card-integrated">
-                        <div className="topic-header">
-                          <div className="topic-title-group">
-                            <span className="index-label">Topic {topicIndex + 1}:</span>
-                            <input
-                              type="text"
-                              value={topic.title}
-                              onChange={(e) => updateTopic(topicIndex, 'title', e.target.value)}
-                              placeholder="e.g., Introduction to the Course"
-                              className="topic-title-input"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn-danger-text"
-                            onClick={() => deleteTopic(topicIndex)}
-                          >
-                            Remove Topic
-                          </button>
-                        </div>
-
-                        <div className="lessons-container">
-                          {topic.lessons.map((lesson, lessonIndex) => (
-                            <div key={lessonIndex} className="lesson-card-integrated">
-                              <div className="lesson-header">
-                                <h5>Lesson {lessonIndex + 1}</h5>
-                                <button
-                                  type="button"
-                                  className="btn-danger-text"
-                                  onClick={() => deleteLesson(topicIndex, lessonIndex)}
-                                >
-                                  Delete Lesson
-                                </button>
-                              </div>
-
-                              <div className="form-group">
-                                <label>Lesson Name *</label>
-                                <input
-                                  type="text"
-                                  value={lesson.name}
-                                  onChange={(e) =>
-                                    updateLesson(topicIndex, lessonIndex, 'name', e.target.value)
-                                  }
-                                  placeholder="Enter lesson name"
-                                />
-                              </div>
-
-                              <div className="form-group">
-                                <label>YouTube Video URL</label>
-                                <input
-                                  type="url"
-                                  value={lesson.videoUrl}
-                                  onChange={(e) =>
-                                    updateLesson(topicIndex, lessonIndex, 'videoUrl', e.target.value)
-                                  }
-                                  placeholder="https://www.youtube.com/watch?v=..."
-                                />
-                              </div>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            className="btn-add-lesson"
-                            onClick={() => addLesson(topicIndex)}
-                          >
-                            + Add Lesson to {topic.title || `Topic ${topicIndex + 1}`}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="form-footer">
@@ -705,6 +678,159 @@ const CourseManagement = () => {
         </div>
       )}
 
+      {view === 'manage-curriculum' && (
+        <div className="curriculum-container">
+          <div className="course-form-card">
+            <div className="form-header">
+              <h3>Manage Content: {courseData.title}</h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="btn-secondary" onClick={resetForm}>
+                  ← Back to Courses
+                </button>
+                <button className="btn-primary" onClick={saveCurriculumChanges}>
+                  💾 Save Changes
+                </button>
+              </div>
+            </div>
+
+            <div className="form-body">
+              <div className="curriculum-actions" style={{ marginBottom: '20px' }}>
+                <button type="button" className="btn-primary" onClick={addTopic}>
+                  + Add New Topic
+                </button>
+              </div>
+
+              {courseData.topics.length === 0 ? (
+                <div className="empty-state">
+                  <p>No topics yet. Start by adding a topic!</p>
+                </div>
+              ) : (
+                <div className="topics-list">
+                  {courseData.topics.map((topic, topicIndex) => (
+                    <div key={topicIndex} className="topic-card">
+                      <div className="topic-header">
+                        <div className="topic-title-group" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span className="index-label">Topic {topicIndex + 1}:</span>
+                          <input
+                            type="text"
+                            value={topic.title}
+                            onChange={(e) => updateTopic(topicIndex, 'title', e.target.value)}
+                            placeholder="Enter Topic Title (e.g. Introduction)"
+                            className="topic-title-input"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-delete"
+                          onClick={() => deleteTopic(topicIndex)}
+                          style={{ padding: '8px 12px', fontSize: '0.9rem' }}
+                        >
+                          Delete Topic
+                        </button>
+                      </div>
+
+                      <div className="lessons-container">
+                        {topic.lessons.map((lesson, lessonIndex) => (
+                          <div key={lessonIndex} className="lesson-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>{lessonIndex + 1}. {lesson.name}</strong>
+                              {lesson.videoUrl && <span className="video-badge" style={{ marginLeft: '10px' }}>Video</span>}
+                            </div>
+                            <div>
+                              <button
+                                className="btn-edit"
+                                onClick={() => openEditLessonModal(topicIndex, lesson, lessonIndex)}
+                              >
+                                Edit Lesson
+                              </button>
+                              <button
+                                className="btn-delete"
+                                onClick={() => deleteLesson(topicIndex, lessonIndex)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        <div style={{ marginTop: '15px' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary-small"
+                            onClick={() => openAddLessonModal(topicIndex)}
+                          >
+                            + Add Lesson to "{topic.title || `Topic ${topicIndex + 1}`}"
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="form-footer">
+              <button className="btn-primary" onClick={saveCurriculumChanges}>
+                💾 Save Curriculum Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLessonModal && (
+        <div className="course-form-modal">
+          <div className="course-form-card" style={{ width: '800px', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="form-header">
+              <h3>{editingLesson !== null ? 'Edit Lesson' : 'Add New Lesson'}</h3>
+              <button className="close-btn" onClick={() => setShowLessonModal(false)}>×</button>
+            </div>
+
+            <div className="form-body">
+              <div className="form-group">
+                <label>Lesson Name *</label>
+                <input
+                  type="text"
+                  value={tempLesson.name}
+                  onChange={(e) => setTempLesson({ ...tempLesson, name: e.target.value })}
+                  placeholder="e.g. Setting up the Environment"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Video URL (YouTube)</label>
+                <input
+                  type="url"
+                  value={tempLesson.videoUrl}
+                  onChange={(e) => setTempLesson({ ...tempLesson, videoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Lesson Content / Description / Links</label>
+                <small className="field-hint" style={{ display: 'block', marginBottom: '5px' }}>
+                  Use the editor below to add text, links, and formatted content for this lesson.
+                </small>
+                <ReactQuill
+                  theme="snow"
+                  value={tempLesson.description}
+                  onChange={(value) => setTempLesson({ ...tempLesson, description: value })}
+                  modules={modules}
+                  style={{ height: '300px', marginBottom: '50px' }}
+                />
+              </div>
+            </div>
+
+            <div className="form-footer">
+              <button className="btn-secondary" onClick={() => setShowLessonModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={saveLessonFromModal}>
+                {editingLesson !== null ? 'Update Lesson' : 'Add Lesson'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
