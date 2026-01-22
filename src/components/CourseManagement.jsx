@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Reorder } from 'framer-motion';
+import { MdDragIndicator } from 'react-icons/md';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -141,10 +143,19 @@ const CourseManagement = () => {
   };
 
   const handleManageContent = (course) => {
+    // Ensure all lessons have IDs for drag and drop
+    const topicsWithIds = (course.topics || []).map(topic => ({
+      ...topic,
+      lessons: (topic.lessons || []).map(lesson => ({
+        ...lesson,
+        id: lesson.id || Date.now() + Math.random().toString(36).substr(2, 9)
+      }))
+    }));
+
     setCurrentCourse(course);
     setCourseData({
       ...course, // Keep all course data
-      topics: course.topics || [], // Ensure topics array exists
+      topics: topicsWithIds, // Ensure topics array exists and has IDs
     });
     setView('manage-curriculum');
   };
@@ -201,7 +212,10 @@ const CourseManagement = () => {
       if (!updatedTopics[activeTopicIndex].lessons) {
         updatedTopics[activeTopicIndex].lessons = [];
       }
-      updatedTopics[activeTopicIndex].lessons.push(tempLesson);
+      updatedTopics[activeTopicIndex].lessons.push({
+        ...tempLesson,
+        id: Date.now() + Math.random().toString(36).substr(2, 9) // Generate ID for new lesson
+      });
     }
 
     setCourseData({ ...courseData, topics: updatedTopics });
@@ -730,28 +744,50 @@ const CourseManagement = () => {
                       </div>
 
                       <div className="lessons-container">
-                        {topic.lessons.map((lesson, lessonIndex) => (
-                          <div key={lessonIndex} className="lesson-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <strong>{lessonIndex + 1}. {lesson.name}</strong>
-                              {lesson.videoUrl && <span className="video-badge" style={{ marginLeft: '10px' }}>Video</span>}
-                            </div>
-                            <div>
-                              <button
-                                className="btn-edit"
-                                onClick={() => openEditLessonModal(topicIndex, lesson, lessonIndex)}
-                              >
-                                Edit Lesson
-                              </button>
-                              <button
-                                className="btn-delete"
-                                onClick={() => deleteLesson(topicIndex, lessonIndex)}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                        <Reorder.Group
+                          axis="y"
+                          values={topic.lessons}
+                          onReorder={(newOrder) => updateTopic(topicIndex, 'lessons', newOrder)}
+                          className="lessons-reorder-group"
+                        >
+                          {topic.lessons.map((lesson, lessonIndex) => (
+                            <Reorder.Item
+                              key={lesson.id}
+                              value={lesson}
+                              className="lesson-card"
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'grab',
+                                userSelect: 'none'
+                              }}
+                              whileDrag={{ scale: 1.02, boxShadow: "0 8px 20px rgba(0,0,0,0.1)", zIndex: 10 }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <MdDragIndicator className="text-gray-400" size={20} style={{ cursor: 'grab' }} />
+                                <div>
+                                  <strong>{lessonIndex + 1}. {lesson.name}</strong>
+                                  {lesson.videoUrl && <span className="video-badge" style={{ marginLeft: '10px' }}>Video</span>}
+                                </div>
+                              </div>
+                              <div>
+                                <button
+                                  className="btn-edit"
+                                  onClick={() => openEditLessonModal(topicIndex, lesson, lessonIndex)}
+                                >
+                                  Edit Lesson
+                                </button>
+                                <button
+                                  className="btn-delete"
+                                  onClick={() => deleteLesson(topicIndex, lessonIndex)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </Reorder.Item>
+                          ))}
+                        </Reorder.Group>
 
                         <div style={{ marginTop: '15px' }}>
                           <button
