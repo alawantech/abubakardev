@@ -110,6 +110,24 @@
   line-height: 1;
 }
 
+/* Small per-month label */
+.pricing-per {
+  font-size: 0.85rem;
+  color: #9ca3af; /* slate-400 */
+  margin-left: 10px;
+  font-weight: 700;
+}
+
+.enroll-bar-price .price-now {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.enroll-bar-price .price-now::after {
+  /* keep extra spacing when showing suffix */
+}
+
 .pricing-card-features {
   display: flex;
   flex-direction: column;
