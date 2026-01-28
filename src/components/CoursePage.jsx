@@ -284,31 +284,6 @@ const CoursePage = () => {
               </motion.div>
             )}
           </div>
-
-          {/* Curriculum */}
-          <motion.div variants={itemVariants} className="space-y-6 mt-10">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-purple-500 rounded-full"></div>
-              Curriculum
-            </h2>
-            <div className="space-y-4">
-              {course.topics?.map((topic, idx) => (
-                <div key={idx} className="cp-topic-item">
-                  <div className="cp-topic-header">
-                    <h3 className="text-xl font-bold text-white">{topic.title}</h3>
-                  </div>
-                  <div className="cp-lesson-list">
-                    {topic.lessons?.map((lesson, lIdx) => (
-                      <div key={lIdx} className="cp-lesson-item">
-                        <FaPlay className="lesson-icon-play" />
-                        <span>{lesson.name || `Lesson ${lIdx + 1}`}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
         </div>
 
         {/* Universal Sticky Enroll Bar (Bottom) */}
