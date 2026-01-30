@@ -1,5 +1,6 @@
 import RobotProfileImage from '../../assets/robot.png';
 import UserProfileImage from '../../assets/user.png';
+import LoadingSpinner from '../../assets/loading-spinner.gif';
 import './ChatMessage.css';
 
 export function ChatMessage({ message, sender }) {
@@ -29,7 +30,7 @@ export function ChatMessage({ message, sender }) {
       )}
       <div className="chat-message-text">
         {message === '___LOADING___' ? (
-          <img src="/loading-spinner.gif" className="loading-spinner" alt="Loading..." />
+          <img src={LoadingSpinner} className="loading-spinner" alt="Loading..." width={50} />
         ) : (
           message
         )}

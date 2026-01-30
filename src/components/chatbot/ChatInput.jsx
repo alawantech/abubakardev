@@ -26,7 +26,7 @@ export function ChatInput({ chatMessages, setChatMessages }) {
       // Because we don't save this message in newChatMessages,
       // it will be removed later, when we add the response.
       {
-        message: <img src="/loading-spinner.gif" className="loading-spinner" style={{ height: '40px', width: '-40px' }} />,
+        message: '___LOADING___',
         sender: 'robot',
         id: crypto.randomUUID()
       }
