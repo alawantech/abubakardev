@@ -1,7 +1,6 @@
-import RobotProfileImage from '../../assets/robot.png';
-import UserProfileImage from '../../assets/user.png';
-import LoadingSpinner from '../../assets/chatbot-spinner.gif';
-import './ChatMessage.css';
+import RobotProfileImage from "../../assets/robot.png";
+import UserProfileImage from "../../assets/user.png";
+import "./ChatMessage.css";
 
 export function ChatMessage({ message, sender }) {
   // const message = props.message;
@@ -20,22 +19,25 @@ export function ChatMessage({ message, sender }) {
   */
 
   return (
-    <div className={
-      sender === 'user'
-        ? 'chat-message-user'
-        : 'chat-message-robot'
-    }>
-      {sender === 'robot' && (
+    <div
+      className={sender === "user" ? "chat-message-user" : "chat-message-robot"}
+    >
+      {sender === "robot" && (
         <img src={RobotProfileImage} className="chat-message-profile" />
       )}
       <div className="chat-message-text">
-        {message === '___LOADING___' ? (
-          <img src={LoadingSpinner} className="loading-spinner" alt="Loading..." width={50} />
+        {message === "___LOADING___" ? (
+          <img
+            src="/assets/chatbot-spinner.gif"
+            className="loading-spinner"
+            alt="Loading..."
+            width={50}
+          />
         ) : (
           message
         )}
       </div>
-      {sender === 'user' && (
+      {sender === "user" && (
         <img src={UserProfileImage} className="chat-message-profile" />
       )}
     </div>
