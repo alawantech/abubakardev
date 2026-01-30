@@ -1,6 +1,6 @@
 import RobotProfileImage from '../../assets/robot.png';
 import UserProfileImage from '../../assets/user.png';
-import LoadingSpinner from '../../assets/loading-spinner.gif';
+import LoadingSpinner from '../../assets/chatbot-spinner.gif';
 import './ChatMessage.css';
 
 export function ChatMessage({ message, sender }) {
