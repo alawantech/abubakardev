@@ -28,7 +28,7 @@ export function ChatMessage({ message, sender }) {
       <div className="chat-message-text">
         {message === "___LOADING___" ? (
           <img
-            src="/assets/chatbot-spinner.gif"
+            src={`${import.meta.env.BASE_URL}assets/chatbot-spinner.gif`}
             className="loading-spinner"
             alt="Loading..."
             width={50}
