@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Chatbot } from '@abubakardev1/chatbot';
+import { ClipLoader } from "react-spinners";
 import './ChatInput.css';
 
 export function ChatInput({ chatMessages, setChatMessages }) {
@@ -26,7 +27,7 @@ export function ChatInput({ chatMessages, setChatMessages }) {
       // Because we don't save this message in newChatMessages,
       // it will be removed later, when we add the response.
       {
-        message: '___LOADING___',
+        message: <ClipLoader size={20} />,
         sender: 'robot',
         id: crypto.randomUUID()
       }
