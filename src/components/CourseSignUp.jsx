@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, addDoc, collection } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
@@ -94,19 +94,19 @@ const CourseSignUp = () => {
         uid: user.uid,
       });
 
-      const planToSend = plan?.pricing
+      const planToSend = plan?.pricing && (plan.pricing.monthly > 0 || plan.pricing.yearly > 0)
         ? {
-            type: selectedPlan,
-            amount: plan.pricing[selectedPlan],
-            courseId: plan.courseId,
-            courseName: plan.courseName,
-          }
+          type: selectedPlan,
+          amount: plan.pricing[selectedPlan],
+          courseId: plan.courseId,
+          courseName: plan.courseName,
+        }
         : {
-            type: plan?.type || "onetime",
-            amount: plan?.amount || 49000,
-            courseId: plan?.courseId,
-            courseName: plan?.courseName,
-          };
+          type: plan?.type || "onetime",
+          amount: plan?.amount || 49000,
+          courseId: plan?.courseId,
+          courseName: plan?.courseName,
+        };
 
       // Create a pending enrollment plan and a payment record so the user can complete payment later
       try {
@@ -205,7 +205,7 @@ const CourseSignUp = () => {
             Join <span className="text-blue-500">{plan.courseName}</span>
           </h1>
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 font-bold">
-            {plan?.pricing ? (
+            {plan?.pricing && (plan.pricing.monthly > 0 || plan.pricing.yearly > 0) ? (
               <div className="flex items-center gap-4">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
                   <input
@@ -236,7 +236,7 @@ const CourseSignUp = () => {
               </div>
             ) : (
               <>
-                💎 One-Time Investment: ₦{plan?.amount || 49000} (Full Access)
+                💎 One-Time Investment: ₦{(plan?.amount || 49000).toLocaleString()} (Full Access)
               </>
             )}
           </div>

@@ -32,14 +32,47 @@ const CoursePayment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { courseId } = useParams();
-  const { plan, userId, customerName, customerEmail, customerPhone } =
+  const { plan: statePlan, userId, customerName, customerEmail, customerPhone } =
     location.state || {};
+
   const [course, setCourse] = useState(null);
   const [bankDetails, setBankDetails] = useState(null);
   const [paymentReceipt, setPaymentReceipt] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Fallback plan if navigating directly to payment page
+  const plan = React.useMemo(() => {
+    if (statePlan) return statePlan;
+    if (!course) return null;
+
+    // Determine plan type and amount based on admin's displayPricing setting
+    let planType = "onetime";
+    let planAmount = 0;
+
+    if (course.displayPricing === "monthly" && course.pricing?.monthly) {
+      planType = "monthly";
+      planAmount = course.pricing.monthly;
+    } else if (course.displayPricing === "yearly" && course.pricing?.yearly) {
+      planType = "yearly";
+      planAmount = course.pricing.yearly;
+    } else if (course.displayPricing === "one-time" && course.price) {
+      planType = "onetime";
+      planAmount = course.price;
+    } else {
+      // Fallback: use whatever is available
+      planType = "onetime";
+      planAmount = course.price || 0;
+    }
+
+    return {
+      type: planType,
+      amount: planAmount,
+      courseId: course.id,
+      courseName: course.title,
+    };
+  }, [statePlan, course]);
 
   useEffect(() => {
     if (courseId) {
@@ -217,7 +250,7 @@ const CoursePayment = () => {
           receiptURL,
         });
 
-        navigate(`/course/${courseId}/learn`, {
+        navigate("/dashboard", {
           state: {
             paymentSuccess: true,
             message:
@@ -317,14 +350,14 @@ const CoursePayment = () => {
             <div className="summary-row">
               <span className="summary-label">Plan</span>
               <span className="summary-value">
-                {plan.type === "monthly" ? "Monthly" : "One-Time"}
+                {plan?.type === "monthly" ? "Monthly" : plan?.type === "yearly" ? "Yearly" : "One-Time"}
               </span>
             </div>
           </div>
 
           <div className="amount-container">
             <div className="amount-label">Total Amount to Pay</div>
-            <div className="amount-value">₦{plan.amount.toLocaleString()}</div>
+            <div className="amount-value">₦{(plan?.amount || 0).toLocaleString()}</div>
           </div>
 
           <motion.div variants={itemVariants} className="bank-details-premium">

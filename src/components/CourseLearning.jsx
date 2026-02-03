@@ -43,12 +43,37 @@ const CourseLearning = () => {
 
   const fetchCourseAndEnrollment = async () => {
     try {
-      // Fetch course data
-      const courseDoc = await getDoc(doc(db, 'courses', courseId));
+      setLoading(true);
+
+      // Execute queries in parallel for better performance
+      const coursePromise = getDoc(doc(db, 'courses', courseId));
+
+      const enrollmentQuery = query(
+        collection(db, 'enrollments'),
+        where('customerEmail', '==', currentUser.email),
+        where('courseId', '==', courseId)
+      );
+      const enrollmentPromise = getDocs(enrollmentQuery);
+
+      const planQuery = query(
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', currentUser.uid),
+        where('courseId', '==', courseId)
+      );
+      const planPromise = getDocs(planQuery);
+
+      // Await all promises simultaneously to avoid waterfalls
+      const [courseDoc, enrollmentsSnapshot, planSnapshot] = await Promise.all([
+        coursePromise,
+        enrollmentPromise,
+        planPromise
+      ]);
+
+      // Process Course Data
       if (courseDoc.exists()) {
         const courseData = { id: courseDoc.id, ...courseDoc.data() };
         setCourse(courseData);
-        
+
         // Auto-expand first topic and select first lesson
         if (courseData.topics && courseData.topics.length > 0) {
           setExpandedTopics([0]);
@@ -58,38 +83,24 @@ const CourseLearning = () => {
         }
       }
 
-      // Fetch enrollment to get completed lessons
-      const enrollmentsSnapshot = await getDocs(
-        query(
-          collection(db, 'enrollments'),
-          where('customerEmail', '==', currentUser.email),
-          where('courseId', '==', courseId)
-        )
-      );
-
+      // Process Enrollment Data
       if (!enrollmentsSnapshot.empty) {
         const enrollmentData = enrollmentsSnapshot.docs[0].data();
         setEnrollment({ id: enrollmentsSnapshot.docs[0].id, ...enrollmentData });
         setCompletedLessons(enrollmentData.completedLessons || []);
-        
-        // Check if user is blocked
-        const planQuery = query(
-          collection(db, 'enrollmentPlans'),
-          where('userId', '==', currentUser.uid),
-          where('courseId', '==', courseId)
-        );
-        const planSnapshot = await getDocs(planQuery);
-        if (!planSnapshot.empty) {
-          const planData = planSnapshot.docs[0].data();
-          if (planData.blocked) {
-            navigate('/dashboard', { 
-              state: { 
-                message: 'Your access to this course has been blocked due to payment issues. Please renew your subscription.',
-                paymentSuccess: false 
-              } 
-            });
-            return;
-          }
+      }
+
+      // Process Plan Data (check if blocked)
+      if (!planSnapshot.empty) {
+        const planData = planSnapshot.docs[0].data();
+        if (planData.blocked) {
+          navigate('/dashboard', {
+            state: {
+              message: 'Your access to this course has been blocked due to payment issues. Please renew your subscription.',
+              paymentSuccess: false
+            }
+          });
+          return;
         }
       }
 
@@ -101,8 +112,8 @@ const CourseLearning = () => {
   };
 
   const toggleTopic = (topicIndex) => {
-    setExpandedTopics(prev => 
-      prev.includes(topicIndex) 
+    setExpandedTopics(prev =>
+      prev.includes(topicIndex)
         ? prev.filter(i => i !== topicIndex)
         : [...prev, topicIndex]
     );
@@ -143,11 +154,11 @@ const CourseLearning = () => {
 
     const { topicIndex, lessonIndex } = selectedLesson;
     const currentTopic = course.topics[topicIndex];
-    
+
     // Check if there's a next lesson in current topic
     if (lessonIndex + 1 < currentTopic.lessons.length) {
       setSelectedLesson({ topicIndex, lessonIndex: lessonIndex + 1 });
-    } 
+    }
     // Check if there's a next topic
     else if (topicIndex + 1 < course.topics.length) {
       const nextTopicIndex = topicIndex + 1;
@@ -160,11 +171,11 @@ const CourseLearning = () => {
     if (!selectedLesson || !course) return;
 
     const { topicIndex, lessonIndex } = selectedLesson;
-    
+
     // Check if there's a previous lesson in current topic
     if (lessonIndex > 0) {
       setSelectedLesson({ topicIndex, lessonIndex: lessonIndex - 1 });
-    } 
+    }
     // Check if there's a previous topic
     else if (topicIndex > 0) {
       const prevTopicIndex = topicIndex - 1;
@@ -176,13 +187,13 @@ const CourseLearning = () => {
 
   const calculateProgress = () => {
     if (!course || !course.topics) return 0;
-    
-    const totalLessons = course.topics.reduce((acc, topic) => 
+
+    const totalLessons = course.topics.reduce((acc, topic) =>
       acc + (topic.lessons?.length || 0), 0
     );
-    
+
     if (totalLessons === 0) return 0;
-    
+
     return Math.round((completedLessons.length / totalLessons) * 100);
   };
 
@@ -192,7 +203,7 @@ const CourseLearning = () => {
 
   const convertToEmbedUrl = (url) => {
     if (!url) return null;
-    
+
     // YouTube
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
@@ -202,29 +213,29 @@ const CourseLearning = () => {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
       return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0`;
     }
-    
+
     // Vimeo
     if (url.includes('vimeo.com/')) {
       const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
       return `https://player.vimeo.com/video/${videoId}?quality=1080p`;
     }
-    
+
     // If already an embed URL or other format, return as is
     return url;
   };
 
   const linkifyText = (text) => {
     if (!text) return null;
-    
+
     // First, strip any HTML tags but preserve the text content
     const div = document.createElement('div');
     div.innerHTML = text;
     const cleanText = div.textContent || div.innerText || '';
-    
+
     // Then linkify URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = cleanText.split(urlRegex);
-    
+
     return parts.map((part, index) => {
       if (part.match(urlRegex)) {
         return (
@@ -267,7 +278,7 @@ const CourseLearning = () => {
     );
   }
 
-  const currentLesson = selectedLesson 
+  const currentLesson = selectedLesson
     ? course.topics[selectedLesson.topicIndex]?.lessons[selectedLesson.lessonIndex]
     : null;
 
@@ -283,11 +294,10 @@ const CourseLearning = () => {
       {/* Success Message */}
       {showSuccessMessage && location.state?.message && (
         <div className="mb-6 animate-fade-in px-4">
-          <div className={`rounded-2xl p-6 shadow-xl ${
-            location.state.paymentSuccess 
-              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300' 
+          <div className={`rounded-2xl p-6 shadow-xl ${location.state.paymentSuccess
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300'
               : 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300'
-          }`}>
+            }`}>
             <div className="flex items-center gap-4">
               {location.state.paymentSuccess ? (
                 <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
@@ -326,10 +336,10 @@ const CourseLearning = () => {
               </svg>
               <span className="back-text">Back to Dashboard</span>
             </button>
-            
+
             {/* Mobile Hamburger Menu Button */}
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="curriculum-toggle-btn"
               aria-label="Toggle curriculum"
             >
@@ -339,9 +349,9 @@ const CourseLearning = () => {
               <span className="toggle-text">Curriculum</span>
             </button>
           </div>
-          
+
           <h1 className="course-title">{course.title}</h1>
-          
+
           <div className="progress-info">
             <span className="progress-text">{calculateProgress()}% Complete</span>
             <div className="progress-bar">
@@ -353,8 +363,8 @@ const CourseLearning = () => {
 
       {/* Mobile Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="sidebar-overlay" 
+        <div
+          className="sidebar-overlay"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
@@ -365,7 +375,7 @@ const CourseLearning = () => {
         <div className={`curriculum-sidebar ${isSidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <h2>Course Curriculum</h2>
-            <button 
+            <button
               className="close-sidebar-btn"
               onClick={() => setIsSidebarOpen(false)}
               aria-label="Close curriculum"
@@ -382,15 +392,15 @@ const CourseLearning = () => {
           <div className="topics-list">
             {course.topics && course.topics.map((topic, topicIndex) => (
               <div key={topicIndex} className="topic-item">
-                <div 
+                <div
                   className="topic-header"
                   onClick={() => toggleTopic(topicIndex)}
                 >
                   <div className="topic-info">
-                    <svg 
+                    <svg
                       className={`chevron ${expandedTopics.includes(topicIndex) ? 'expanded' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -404,9 +414,9 @@ const CourseLearning = () => {
                   <div className="lessons-list">
                     {topic.lessons.map((lesson, lessonIndex) => {
                       const isCompleted = isLessonCompleted(topicIndex, lessonIndex);
-                      const isSelected = selectedLesson?.topicIndex === topicIndex && 
-                                       selectedLesson?.lessonIndex === lessonIndex;
-                      
+                      const isSelected = selectedLesson?.topicIndex === topicIndex &&
+                        selectedLesson?.lessonIndex === lessonIndex;
+
                       return (
                         <div
                           key={lessonIndex}
@@ -416,7 +426,7 @@ const CourseLearning = () => {
                           <div className="lesson-checkbox">
                             {isCompleted ? (
                               <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                             ) : (
                               <div className="checkbox-empty"></div>
@@ -426,7 +436,7 @@ const CourseLearning = () => {
                             <span className="lesson-name">{lesson.name}</span>
                             {lesson.videoUrl && (
                               <svg className="w-4 h-4 text-red-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                               </svg>
                             )}
                           </div>
@@ -453,7 +463,7 @@ const CourseLearning = () => {
                   {isLessonCompleted(selectedLesson.topicIndex, selectedLesson.lessonIndex) ? (
                     <>
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Completed</span>
                     </>
@@ -474,6 +484,7 @@ const CourseLearning = () => {
                   <iframe
                     src={convertToEmbedUrl(currentLesson.videoUrl)}
                     title={currentLesson.name}
+                    loading="lazy"
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -481,7 +492,7 @@ const CourseLearning = () => {
                   ></iframe>
                 </div>
               )}
-              
+
               {/* Debug: Show if no video URL */}
               {!currentLesson.videoUrl && (
                 <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4">
