@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 const FloatingWhatsApp = () => {
     const location = useLocation();
 
-    if (location.pathname === '/chatbot' || location.pathname === '/dashboard') {
+    if (location.pathname === '/chatbot' || location.pathname === '/dashboard' || location.pathname.includes('/learn')) {
         return null;
     }
 
