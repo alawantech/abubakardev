@@ -67,6 +67,70 @@
     cursor: pointer;
 }
 
+/* Tabs Section */
+.inquiries-tabs {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 15px 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.tab-btn svg {
+    font-size: 1.2rem;
+}
+
+.tab-btn:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.tab-count {
+    background: #e2e8f0;
+    color: #64748b;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active .tab-count {
+    background: #3b82f6;
+    color: white;
+}
+
+.tab-btn:hover .tab-count {
+    background: #3b82f6;
+    color: white;
+}
+
+
 .inquiries-list {
     display: grid;
     grid-template-columns: 1fr;
@@ -281,6 +345,26 @@
 
     .search-box {
         width: 100%;
+    }
+
+    .inquiries-tabs {
+        flex-direction: column;
+        gap: 0;
+        border-bottom: none;
+    }
+
+    .tab-btn {
+        width: 100%;
+        justify-content: space-between;
+        border-bottom: 1px solid #e2e8f0;
+        border-left: 3px solid transparent;
+        margin-bottom: 0;
+        padding: 15px 20px;
+    }
+
+    .tab-btn.active {
+        border-bottom-color: #e2e8f0;
+        border-left-color: #3b82f6;
     }
 
     .card-header {

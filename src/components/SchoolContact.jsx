@@ -12,6 +12,8 @@ const SchoolContact = () => {
         name: '',
         email: '',
         whatsapp: '',
+        country: '',
+        budget: '',
         background: '',
         goals: '',
         message: ''
@@ -41,7 +43,7 @@ const SchoolContact = () => {
 
             setIsSubmitting(false)
             setSubmitStatus('success')
-            setFormData({ name: '', email: '', whatsapp: '', background: '', goals: '', message: '' })
+            setFormData({ name: '', email: '', whatsapp: '', country: '', budget: '', background: '', goals: '', message: '' })
             setTimeout(() => setSubmitStatus(null), 10000)
         } catch (error) {
             console.error('Error submitting inquiry:', error)
@@ -159,6 +161,18 @@ const SchoolContact = () => {
                                 <div className="input-group">
                                     <label>WhatsApp Number</label>
                                     <input type="tel" name="whatsapp" value={formData.whatsapp} onChange={handleChange} required placeholder="+234..." />
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="input-group">
+                                    <label>Country</label>
+                                    <input type="text" name="country" value={formData.country} onChange={handleChange} required placeholder="e.g., Nigeria, USA, UK" />
+                                </div>
+                                <div className="input-group">
+                                    <label>Budget (Specify Currency)</label>
+                                    <input type="text" name="budget" value={formData.budget} onChange={handleChange} required placeholder="e.g., $5000, ₦500,000, £3000" />
+                                    <small style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>e.g., $5000, ₦500,000, £3000</small>
                                 </div>
                             </div>
 
