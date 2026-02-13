@@ -248,39 +248,58 @@ exports.sendContactNotification = functions.https.onRequest({ cors: true }, asyn
       { email: "abubakarlawan671@gmail.com", name: "Lawan Abubakar" }
     ];
 
-    const results = await Promise.all(recipients.map(async (recipient) => {
-      const emailData = {
-        from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
-        to: [recipient],
-        subject: `New Form Submission: ${source}`,
-        text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #3b82f6;">New Contact Form Submission</h2>
-            <p><strong>Source:</strong> ${source}</p>
-            <p><strong>Name:</strong> ${formData.name}</p>
-            <p><strong>Email:</strong> ${formData.email}</p>
-            <p><strong>WhatsApp:</strong> ${formData.whatsapp || 'N/A'}</p>
-            <hr />
-            <p><strong>Message:</strong></p>
-            <p>${formData.message}</p>
-            <br />
-            <a href="https://zedrotech.com/dashboard" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Dashboard</a>
-          </div>
-        `
-      };
+    // Method 1: Send in a single request (Recommended by MailerSend for multiple recipients)
+    const combinedEmailData = {
+      from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
+      to: recipients,
+      subject: `New Form Submission: ${source}`,
+      text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #3b82f6;">New Contact Form Submission</h2>
+          <p><strong>Source:</strong> ${source}</p>
+          <p><strong>Name:</strong> ${formData.name}</p>
+          <p><strong>Email:</strong> ${formData.email}</p>
+          <p><strong>WhatsApp:</strong> ${formData.whatsapp || 'N/A'}</p>
+          <hr />
+          <p><strong>Message:</strong></p>
+          <p>${formData.message}</p>
+          <br />
+          <a href="https://zedrotech.com/dashboard" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Dashboard</a>
+        </div>
+      `
+    };
 
-      return axios.post(`${API_URL}/email`, emailData, {
+    try {
+      await axios.post(`${API_URL}/email`, combinedEmailData, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${API_TOKEN}`
         }
       });
-    }));
+      return res.json({ success: true, message: "Notifications sent successfully to both addresses" });
+    } catch (singleRequestError) {
+      console.warn("Single request failed, trying individual sending as fallback:", singleRequestError.message);
 
-    return res.json({ success: true, message: `Notifications sent to ${results.length} recipients` });
+      // Fallback: Individual sending
+      const results = await Promise.allSettled(recipients.map(recipient => {
+        return axios.post(`${API_URL}/email`, { ...combinedEmailData, to: [recipient] }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_TOKEN}`
+          }
+        });
+      }));
+
+      const successfulCount = results.filter(r => r.status === 'fulfilled').length;
+      return res.json({
+        success: successfulCount > 0,
+        message: `Notifications sent to ${successfulCount}/${recipients.length} recipients`,
+        details: results.map(r => r.status === 'rejected' ? r.reason?.message : 'success')
+      });
+    }
   } catch (error) {
-    console.error("Email notification error:", error.response?.data || error.message);
+    console.error("Critical email notification error:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
       message: "Failed to send notification",

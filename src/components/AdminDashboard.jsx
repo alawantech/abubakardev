@@ -5,7 +5,7 @@ import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import CourseManagement from './CourseManagement';
 import StudentManagement from './StudentManagement';
-import SchoolInquiries from './SchoolInquiries';
+import InquiriesManagement from './SchoolInquiries';
 import AdminProfile from './AdminProfile';
 import './SchoolInquiries.css';
 import './AdminDashboard.css';
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
       case 'students':
         return <StudentManagement />;
       case 'inquiries':
-        return <SchoolInquiries />;
+        return <InquiriesManagement />;
       case 'profile':
         return <AdminProfile />;
       default:
