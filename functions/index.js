@@ -245,7 +245,10 @@ exports.sendContactNotification = functions.https.onRequest({ cors: true }, asyn
 
     const emailData = {
       from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
-      to: [{ email: "info@zedrotech.com", name: "ZedroTech Admin" }],
+      to: [
+        { email: "info@zedrotech.com", name: "ZedroTech Admin" },
+        { email: "abubakarlawan671@gmail.com", name: "Lawan Abubakar" }
+      ],
       subject: `New Form Submission: ${source}`,
       text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
       html: `
