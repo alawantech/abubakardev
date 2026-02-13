@@ -46,7 +46,7 @@ const Contact = () => {
       setIsSubmitting(false)
       setSubmitStatus('success')
       setFormData({ name: '', email: '', whatsapp: '', service: '', customService: '', businessName: '', businessDescription: '', budget: '', message: '', features: '' })
-      setTimeout(() => setSubmitStatus(null), 5000)
+      setTimeout(() => setSubmitStatus(null), 10000)
     } catch (error) {
       console.error('Error submitting inquiry:', error)
       alert('Failed to send inquiry. Please try again.')
@@ -258,7 +258,7 @@ const Contact = () => {
                           className="modal-progress-bar"
                           initial={{ width: "100%" }}
                           animate={{ width: "0%" }}
-                          transition={{ duration: 5, ease: "linear" }}
+                          transition={{ duration: 10, ease: "linear" }}
                         />
                       </div>
                     </motion.div>
