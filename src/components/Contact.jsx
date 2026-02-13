@@ -2,6 +2,9 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { FaEnvelope, FaWhatsapp, FaArrowRight, FaCheckCircle, FaPaperPlane, FaClock } from 'react-icons/fa'
+import { db } from '../firebase'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { sendAdminNotification } from '../services/emailService'
 import './Contact.css'
 
 const Contact = () => {
@@ -28,13 +31,27 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    // Simulate form submission
-    setTimeout(() => {
+
+    try {
+      await addDoc(collection(db, 'inquiries'), {
+        ...formData,
+        status: 'pending',
+        submittedAt: serverTimestamp(),
+        type: 'main_website'
+      })
+
+      // Send Email Notification to Admin
+      await sendAdminNotification(formData, 'ZedroTech Main Website')
+
       setIsSubmitting(false)
       setSubmitStatus('success')
       setFormData({ name: '', email: '', whatsapp: '', service: '', customService: '', businessName: '', businessDescription: '', budget: '', message: '', features: '' })
       setTimeout(() => setSubmitStatus(null), 5000)
-    }, 1500)
+    } catch (error) {
+      console.error('Error submitting inquiry:', error)
+      alert('Failed to send inquiry. Please try again.')
+      setIsSubmitting(false)
+    }
   }
 
   const contactMethods = [

@@ -53,18 +53,6 @@ const Services = () => {
       ],
       icon: <FaCogs />,
       color: "var(--primary-purple)"
-    },
-    {
-      title: "Online Class",
-      description: "Learn from industry experts with our comprehensive online courses. Master new skills, build real-world projects, and accelerate your career with flexible, guided learning.",
-      features: [
-        "Expert-led video lessons",
-        "Hands-on projects & assignments",
-        "Certificate of completion",
-        "Full community access"
-      ],
-      icon: <FaChalkboardTeacher />,
-      color: "#f59e0b"
     }
   ]
 

@@ -8,7 +8,7 @@ admin.initializeApp();
  * Verifies Flutterwave payment and creates enrollment
  * This is a publicly accessible HTTPS function with input validation
  */
-exports.verifyPayment = functions.https.onRequest({cors: true}, async (req, res) => {
+exports.verifyPayment = functions.https.onRequest({ cors: true }, async (req, res) => {
   // Set security headers
   res.set({
     'X-Content-Type-Options': 'nosniff',
@@ -100,14 +100,14 @@ exports.verifyPayment = functions.https.onRequest({cors: true}, async (req, res)
 
     // Add timeout and retry logic for external API call
     const response = await axios.get(
-        `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
-        {
-          headers: {
-            "Authorization": `Bearer ${secretKey}`,
-            "Content-Type": "application/json",
-          },
-          timeout: 30000, // 30 second timeout
+      `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
+      {
+        headers: {
+          "Authorization": `Bearer ${secretKey}`,
+          "Content-Type": "application/json",
         },
+        timeout: 30000, // 30 second timeout
+      },
     );
 
     const paymentData = response.data.data;
@@ -121,10 +121,10 @@ exports.verifyPayment = functions.https.onRequest({cors: true}, async (req, res)
     ) {
       // Check if enrollment already exists to prevent duplicates
       const existingEnrollment = await admin.firestore()
-          .collection("enrollments")
-          .where("transactionId", "==", paymentData.tx_ref)
-          .limit(1)
-          .get();
+        .collection("enrollments")
+        .where("transactionId", "==", paymentData.tx_ref)
+        .limit(1)
+        .get();
 
       if (!existingEnrollment.empty) {
         return res.status(409).json({
@@ -135,26 +135,26 @@ exports.verifyPayment = functions.https.onRequest({cors: true}, async (req, res)
 
       // Create enrollment in Firestore with additional security fields
       const enrollmentRef = await admin.firestore()
-          .collection("enrollments")
-          .add({
-            userId: customerEmail, // Using email as userId for now
-            courseId: courseId,
-            courseName: courseName || "Unknown Course",
-            customerName: customerName || "Unknown",
-            customerEmail: customerEmail,
-            customerPhone: customerPhone || "",
-            paymentReference: paymentData.id.toString(),
-            transactionId: paymentData.tx_ref,
-            amount: paymentData.amount,
-            currency: paymentData.currency,
-            paymentType: paymentData.payment_type || "card",
-            status: "completed",
-            paymentStatus: "successful",
-            enrolledAt: admin.firestore.FieldValue.serverTimestamp(),
-            verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-            ipAddress: req.ip || req.connection.remoteAddress,
-            userAgent: req.get('User-Agent') || 'Unknown',
-          });
+        .collection("enrollments")
+        .add({
+          userId: customerEmail, // Using email as userId for now
+          courseId: courseId,
+          courseName: courseName || "Unknown Course",
+          customerName: customerName || "Unknown",
+          customerEmail: customerEmail,
+          customerPhone: customerPhone || "",
+          paymentReference: paymentData.id.toString(),
+          transactionId: paymentData.tx_ref,
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+          paymentType: paymentData.payment_type || "card",
+          status: "completed",
+          paymentStatus: "successful",
+          enrolledAt: admin.firestore.FieldValue.serverTimestamp(),
+          verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get('User-Agent') || 'Unknown',
+        });
 
       return res.json({
         success: true,
@@ -220,8 +220,70 @@ exports.verifyPayment = functions.https.onRequest({cors: true}, async (req, res)
   }
 });
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
+// Email Notification Function
+exports.sendContactNotification = functions.https.onRequest({ cors: true }, async (req, res) => {
+  // Set security headers
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block'
+  });
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, message: "Method not allowed" });
+  }
+
+  try {
+    const { formData, source } = req.body;
+    const API_TOKEN = process.env.MAILERSEND_API_TOKEN;
+    const API_URL = "https://api.mailersend.com/v1";
+
+    if (!API_TOKEN) {
+      console.error("MailerSend API token not configured in environment");
+      return res.status(500).json({ success: false, message: "Email service not configured" });
+    }
+
+    const emailData = {
+      from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
+      to: [{ email: "info@zedrotech.com", name: "ZedroTech Admin" }],
+      subject: `New Form Submission: ${source}`,
+      text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #3b82f6;">New Contact Form Submission</h2>
+          <p><strong>Source:</strong> ${source}</p>
+          <p><strong>Name:</strong> ${formData.name}</p>
+          <p><strong>Email:</strong> ${formData.email}</p>
+          <p><strong>WhatsApp:</strong> ${formData.whatsapp || 'N/A'}</p>
+          <hr />
+          <p><strong>Message:</strong></p>
+          <p>${formData.message}</p>
+          <br />
+          <a href="https://zedrotech.com/dashboard" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Dashboard</a>
+        </div>
+      `
+    };
+
+    const response = await axios.post(`${API_URL}/email`, emailData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    });
+
+    return res.json({ success: true, message: "Notification sent" });
+  } catch (error) {
+    console.error("Email notification error:", error.response?.data || error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send notification",
+      error: error.message
+    });
+  }
+});
+
+const { setGlobalOptions } = require("firebase-functions");
+const { onRequest } = require("firebase-functions/https");
 const logger = require("firebase-functions/logger");
 
 // For cost control, you can set the maximum number of containers that can be

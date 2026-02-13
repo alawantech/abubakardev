@@ -61,22 +61,15 @@ const CoursePage = () => {
   };
 
   const handleEnrollClick = () => {
-    const hasSubscriptionPricing = course.pricing && (course.pricing.monthly > 0 || course.pricing.yearly > 0);
-
     navigate(`/course/${courseId}/signup`, {
       state: {
-        plan: hasSubscriptionPricing
-          ? {
-            courseId: courseId,
-            courseName: course.title,
-            pricing: course.pricing,
-          }
-          : {
-            courseId: courseId,
-            courseName: course.title,
-            type: "onetime",
-            amount: course.price || getDisplayedPrice(),
-          },
+        plan: {
+          courseId: courseId,
+          courseName: course.title,
+          amount: course.price || 49000,
+          pricing: course.pricing,
+          displayPricing: course.displayPricing
+        },
       },
     });
     setTimeout(

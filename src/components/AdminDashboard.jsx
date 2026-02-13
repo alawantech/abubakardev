@@ -5,7 +5,9 @@ import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import CourseManagement from './CourseManagement';
 import StudentManagement from './StudentManagement';
+import SchoolInquiries from './SchoolInquiries';
 import AdminProfile from './AdminProfile';
+import './SchoolInquiries.css';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -57,6 +59,8 @@ const AdminDashboard = () => {
         return <CourseManagement />;
       case 'students':
         return <StudentManagement />;
+      case 'inquiries':
+        return <SchoolInquiries />;
       case 'profile':
         return <AdminProfile />;
       default:
@@ -73,7 +77,7 @@ const AdminDashboard = () => {
       <div className={`admin-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h2>Admin Panel</h2>
-          <button 
+          <button
             className="toggle-sidebar"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
@@ -101,6 +105,13 @@ const AdminDashboard = () => {
           >
             <span className="nav-icon">👥</span>
             {sidebarOpen && <span>Students</span>}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'inquiries' ? 'active' : ''}`}
+            onClick={() => setActiveTab('inquiries')}
+          >
+            <span className="nav-icon">📩</span>
+            {sidebarOpen && <span>Inquiries</span>}
           </button>
           <button
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}

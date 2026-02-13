@@ -35,7 +35,7 @@ const CourseSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState("monthly");
+  const [selectedPlan, setSelectedPlan] = useState(plan?.displayPricing || "monthly");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -94,10 +94,12 @@ const CourseSignUp = () => {
         uid: user.uid,
       });
 
-      const planToSend = plan?.pricing && (plan.pricing.monthly > 0 || plan.pricing.yearly > 0)
+      const isSubscription = plan?.pricing && (plan.pricing.monthly || plan.pricing.yearly);
+
+      const planToSend = isSubscription
         ? {
           type: selectedPlan,
-          amount: plan.pricing[selectedPlan],
+          amount: (selectedPlan === 'yearly' ? plan.pricing.yearly : plan.pricing.monthly) || plan.amount || 0,
           courseId: plan.courseId,
           courseName: plan.courseName,
         }
@@ -198,46 +200,50 @@ const CourseSignUp = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full background-rgba(59, 130, 246, 0.1) border border-blue-500/20 text-blue-400 font-semibold text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold text-sm mb-6">
             🚀 Start Your Journey
           </div>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-6">
             Join <span className="text-blue-500">{plan.courseName}</span>
           </h1>
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 font-bold">
-            {plan?.pricing && (plan.pricing.monthly > 0 || plan.pricing.yearly > 0) ? (
-              <div className="flex items-center gap-4">
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="plan"
-                    value="monthly"
-                    checked={selectedPlan === "monthly"}
-                    onChange={() => setSelectedPlan("monthly")}
-                  />
-                  <span className="ml-2">
-                    Monthly: ₦{(plan.pricing?.monthly || 0).toLocaleString()} /
-                    month
-                  </span>
-                </label>
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="plan"
-                    value="yearly"
-                    checked={selectedPlan === "yearly"}
-                    onChange={() => setSelectedPlan("yearly")}
-                  />
-                  <span className="ml-2">
-                    Yearly: ₦{(plan.pricing?.yearly || 0).toLocaleString()} /
-                    year
-                  </span>
-                </label>
+            {plan?.pricing && (plan.pricing.monthly || plan.pricing.yearly) ? (
+              <div className="flex items-center gap-6">
+                {plan.pricing.monthly && (
+                  <label className="inline-flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="monthly"
+                      checked={selectedPlan === "monthly"}
+                      onChange={() => setSelectedPlan("monthly")}
+                      className="accent-blue-500"
+                    />
+                    <span className={`ml-1 transition-colors ${selectedPlan === 'monthly' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                      Monthly: ₦{(plan.pricing.monthly).toLocaleString()}
+                    </span>
+                  </label>
+                )}
+                {plan.pricing.yearly && (
+                  <label className="inline-flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      name="plan"
+                      value="yearly"
+                      checked={selectedPlan === "yearly"}
+                      onChange={() => setSelectedPlan("yearly")}
+                      className="accent-blue-500"
+                    />
+                    <span className={`ml-1 transition-colors ${selectedPlan === 'yearly' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                      Yearly: ₦{(plan.pricing.yearly).toLocaleString()}
+                    </span>
+                  </label>
+                )}
               </div>
             ) : (
-              <>
-                💎 One-Time Investment: ₦{(plan?.amount || 49000).toLocaleString()} (Full Access)
-              </>
+              <div className="text-emerald-400">
+                💎 One-Time Investment: ₦{(plan?.amount || 49000).toLocaleString()}
+              </div>
             )}
           </div>
         </motion.div>

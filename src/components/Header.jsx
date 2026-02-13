@@ -70,10 +70,6 @@ const Header = () => {
         </nav>
 
         <div className="header-right">
-          <Link to="/courses" className="courses-button">
-            <FaThLarge className="btn-icon" />
-            <span>All Courses</span>
-          </Link>
 
           {currentUser ? (
             <div className="auth-group">
@@ -123,11 +119,6 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link to="/courses" onClick={() => setIsMobileMenuOpen(false)}>
-                  Courses
-                </Link>
-              </li>
               {currentUser ? (
                 <>
                   <li>

@@ -337,20 +337,20 @@ const CoursePayment = () => {
           <div className="space-y-2 mb-8">
             <div className="summary-row">
               <span className="summary-label">Course</span>
-              <span className="summary-value">{plan.courseName}</span>
+              <span className="summary-value">{plan?.courseName || "Unknown Course"}</span>
             </div>
             <div className="summary-row">
               <span className="summary-label">Student</span>
-              <span className="summary-value">{customerName}</span>
+              <span className="summary-value">{customerName || "Student"}</span>
             </div>
             <div className="summary-row">
               <span className="summary-label">Email</span>
-              <span className="summary-value">{customerEmail}</span>
+              <span className="summary-value">{customerEmail || "Not provided"}</span>
             </div>
             <div className="summary-row">
               <span className="summary-label">Plan</span>
               <span className="summary-value">
-                {plan?.type === "monthly" ? "Monthly" : plan?.type === "yearly" ? "Yearly" : "One-Time"}
+                {plan?.type === "monthly" ? "Monthly Subscription" : plan?.type === "yearly" ? "Yearly Subscription" : "Full Access (One-Time)"}
               </span>
             </div>
           </div>
