@@ -163,8 +163,8 @@ const SchoolContact = () => {
                             </div>
 
                             <div className="input-group">
-                                <label>Your Learning Goals</label>
-                                <textarea name="message" value={formData.message} onChange={handleChange} rows="4" placeholder="What do you hope to achieve by taking this course?" required></textarea>
+                                <label>Your Message</label>
+                                <textarea name="message" value={formData.message} onChange={handleChange} rows="4" placeholder="Tell us how we can help you..." required></textarea>
                             </div>
 
                             <motion.button
@@ -205,8 +205,8 @@ const SchoolContact = () => {
                                             <div className="success-icon-check">
                                                 <FaCheckCircle />
                                             </div>
-                                            <h2>Great Choice!</h2>
-                                            <p>Your message has been sent successfully. I will get back to you shortly to discuss your learning goals.</p>
+                                            <h2>Message Received!</h2>
+                                            <p>Thank you for reaching out. We have received your message and will respond as soon as possible.</p>
                                             <button
                                                 className="modal-ok-btn"
                                                 onClick={() => setSubmitStatus(null)}
