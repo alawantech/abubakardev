@@ -230,13 +230,38 @@ const Contact = () => {
               <AnimatePresence>
                 {submitStatus === 'success' && (
                   <motion.div
-                    className="form-success-alert"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    className="success-modal-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    <FaCheckCircle className="success-check" />
-                    <p>Message sent! We'll reach out shortly.</p>
+                    <motion.div
+                      className="success-modal-content"
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    >
+                      <div className="success-icon-check">
+                        <FaCheckCircle />
+                      </div>
+                      <h2>Message Sent!</h2>
+                      <p>Thank you for reaching out to ZedroTech. Our team has received your inquiry and will get back to you shortly.</p>
+                      <button
+                        className="modal-ok-btn"
+                        onClick={() => setSubmitStatus(null)}
+                      >
+                        Awesome!
+                      </button>
+                      <div className="modal-progress-container">
+                        <motion.div
+                          className="modal-progress-bar"
+                          initial={{ width: "100%" }}
+                          animate={{ width: "0%" }}
+                          transition={{ duration: 5, ease: "linear" }}
+                        />
+                      </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
