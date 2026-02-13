@@ -243,38 +243,42 @@ exports.sendContactNotification = functions.https.onRequest({ cors: true }, asyn
       return res.status(500).json({ success: false, message: "Email service not configured" });
     }
 
-    const emailData = {
-      from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
-      to: [
-        { email: "info@zedrotech.com", name: "ZedroTech Admin" },
-        { email: "abubakarlawan671@gmail.com", name: "Lawan Abubakar" }
-      ],
-      subject: `New Form Submission: ${source}`,
-      text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #3b82f6;">New Contact Form Submission</h2>
-          <p><strong>Source:</strong> ${source}</p>
-          <p><strong>Name:</strong> ${formData.name}</p>
-          <p><strong>Email:</strong> ${formData.email}</p>
-          <p><strong>WhatsApp:</strong> ${formData.whatsapp || 'N/A'}</p>
-          <hr />
-          <p><strong>Message:</strong></p>
-          <p>${formData.message}</p>
-          <br />
-          <a href="https://zedrotech.com/dashboard" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Dashboard</a>
-        </div>
-      `
-    };
+    const recipients = [
+      { email: "info@zedrotech.com", name: "ZedroTech Admin" },
+      { email: "abubakarlawan671@gmail.com", name: "Lawan Abubakar" }
+    ];
 
-    const response = await axios.post(`${API_URL}/email`, emailData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_TOKEN}`
-      }
-    });
+    const results = await Promise.all(recipients.map(async (recipient) => {
+      const emailData = {
+        from: { email: "notifications@zedrotech.com", name: "ZedroTech System" },
+        to: [recipient],
+        subject: `New Form Submission: ${source}`,
+        text: `New message from ${formData.name} (${formData.email}).\nSource: ${source}\nMessage: ${formData.message}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #3b82f6;">New Contact Form Submission</h2>
+            <p><strong>Source:</strong> ${source}</p>
+            <p><strong>Name:</strong> ${formData.name}</p>
+            <p><strong>Email:</strong> ${formData.email}</p>
+            <p><strong>WhatsApp:</strong> ${formData.whatsapp || 'N/A'}</p>
+            <hr />
+            <p><strong>Message:</strong></p>
+            <p>${formData.message}</p>
+            <br />
+            <a href="https://zedrotech.com/dashboard" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View in Dashboard</a>
+          </div>
+        `
+      };
 
-    return res.json({ success: true, message: "Notification sent" });
+      return axios.post(`${API_URL}/email`, emailData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`
+        }
+      });
+    }));
+
+    return res.json({ success: true, message: `Notifications sent to ${results.length} recipients` });
   } catch (error) {
     console.error("Email notification error:", error.response?.data || error.message);
     return res.status(500).json({
