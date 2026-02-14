@@ -7,6 +7,7 @@ import CourseManagement from './CourseManagement';
 import StudentManagement from './StudentManagement';
 import InquiriesManagement from './SchoolInquiries';
 import AdminProfile from './AdminProfile';
+import LinksManagement from './LinksManagement';
 import './SchoolInquiries.css';
 import './AdminDashboard.css';
 
@@ -63,6 +64,8 @@ const AdminDashboard = () => {
         return <InquiriesManagement />;
       case 'profile':
         return <AdminProfile />;
+      case 'links':
+        return <LinksManagement />;
       default:
         return (
           <div className="dashboard-home">
@@ -119,6 +122,13 @@ const AdminDashboard = () => {
           >
             <span className="nav-icon">⚙️</span>
             {sidebarOpen && <span>Profile</span>}
+          </button>
+          <button
+            className={`nav-item ${activeTab === 'links' ? 'active' : ''}`}
+            onClick={() => setActiveTab('links')}
+          >
+            <span className="nav-icon">🔗</span>
+            {sidebarOpen && <span>Links</span>}
           </button>
         </nav>
       </div>
