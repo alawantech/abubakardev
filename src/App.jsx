@@ -1,25 +1,27 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Header from './components/Header';
-import SchoolHeader from './components/SchoolHeader';
-import Footer from './components/Footer';
-import SchoolFooter from './components/SchoolFooter';
-import Contact from './components/Contact';
-import SchoolContact from './components/SchoolContact';
-import About from './components/About';
-import SchoolAbout from './components/SchoolAbout';
-import SchoolLanding from './components/SchoolLanding';
-import Links from './components/Links';
-import Chatbot from './components/chatbot/Chatbot';
-import FloatingWhatsApp from './components/FloatingWhatsApp';
-import Hero from './components/Hero';
-import Services from './components/Services';
-import Portfolio from './components/Portfolio';
 import { isSchoolSubdomain } from './utils/hostname';
+import ScrollToTop from './components/ScrollToTop';
 import './App.css';
 
 // Lazy load pages for better performance
+const Header = React.lazy(() => import('./components/Header'));
+const SchoolHeader = React.lazy(() => import('./components/SchoolHeader'));
+const Footer = React.lazy(() => import('./components/Footer'));
+const SchoolFooter = React.lazy(() => import('./components/SchoolFooter'));
+const Contact = React.lazy(() => import('./components/Contact'));
+const SchoolContact = React.lazy(() => import('./components/SchoolContact'));
+const About = React.lazy(() => import('./components/About'));
+const SchoolAbout = React.lazy(() => import('./components/SchoolAbout'));
+const SchoolLanding = React.lazy(() => import('./components/SchoolLanding'));
+const Links = React.lazy(() => import('./components/Links'));
+const Chatbot = React.lazy(() => import('./components/chatbot/Chatbot'));
+const FloatingWhatsApp = React.lazy(() => import('./components/FloatingWhatsApp'));
+const Hero = React.lazy(() => import('./components/Hero'));
+const Services = React.lazy(() => import('./components/Services'));
+const Portfolio = React.lazy(() => import('./components/Portfolio'));
+
 const Courses = React.lazy(() => import('./components/Courses'));
 const CoursePage = React.lazy(() => import('./components/CoursePage'));
 const CourseLearning = React.lazy(() => import('./components/CourseLearning'));
@@ -41,6 +43,19 @@ function App() {
   const NavContact = isSchool ? SchoolContact : Contact;
   const NavAbout = isSchool ? SchoolAbout : About;
 
+  // Prefetch critical routes
+  React.useEffect(() => {
+    // Small delay to prioritize initial render
+    const timer = setTimeout(() => {
+      import('./components/Login');
+      if (isSchool) {
+        import('./components/Dashboard');
+        import('./components/Courses');
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [isSchool]);
+
   // School-only routes protector
   const SchoolRoute = ({ children }) => {
     if (!isSchool && !window.location.hostname.includes('localhost')) {
@@ -54,6 +69,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <React.Suspense fallback={
           <div className="flex items-center justify-center min-h-screen bg-gray-50">
             <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -259,8 +275,8 @@ function App() {
               }
             />
           </Routes>
+          <FloatingWhatsApp />
         </React.Suspense>
-        <FloatingWhatsApp />
       </Router>
     </AuthProvider>
   );

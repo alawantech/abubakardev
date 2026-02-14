@@ -143,19 +143,16 @@ const SchoolLanding = () => {
             {/* Hero Section */}
             <section className="school-hero" ref={heroRef}>
                 <div className="video-background-container">
-                    <motion.video
+                    <video
                         autoPlay
                         muted
                         loop
                         playsInline
-                        preload="auto"
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 2, ease: "easeOut" }}
+                        preload="metadata"
                         className="hero-video"
                     >
                         <source src="/assets/video2.mp4" type="video/mp4" />
-                    </motion.video>
+                    </video>
                     <div className="hero-overlay"></div>
                 </div>
 
@@ -280,47 +277,39 @@ const SchoolLanding = () => {
                         <motion.div
                             key={index}
                             className="stat-card"
-                            initial={{ opacity: 0, y: 50, rotateX: -15 }}
-                            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{
                                 duration: 0.8,
-                                delay: 1 + (index * 0.15),
-                                ease: [0.6, 0.05, 0.01, 0.9]
+                                delay: 0.8 + (index * 0.1),
+                                ease: "easeOut"
                             }}
                             whileHover={{
                                 y: -10,
-                                boxShadow: `0 20px 60px ${stat.color}40`,
+                                boxShadow: `0 20px 60px ${stat.color}30`,
                                 borderColor: stat.color,
-                                transition: { duration: 0.3 }
                             }}
                         >
                             <motion.div
                                 className="stat-icon"
+                                style={{ color: stat.color }}
                                 whileHover={{
+                                    scale: 1.2,
                                     rotate: [0, -10, 10, 0],
-                                    scale: 1.2
                                 }}
-                                transition={{ duration: 0.5 }}
                             >
                                 {stat.icon}
                             </motion.div>
                             <div className="stat-info">
                                 <motion.span
                                     className="stat-value"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 1.2 + (index * 0.15), duration: 0.5 }}
+                                    style={{ color: stat.color }}
                                 >
                                     {stat.value}
                                 </motion.span>
-                                <motion.span
-                                    className="stat-label"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 1.3 + (index * 0.15) }}
-                                >
+                                <span className="stat-label">
                                     {stat.label}
-                                </motion.span>
+                                </span>
                             </div>
                         </motion.div>
                     ))}

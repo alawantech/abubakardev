@@ -73,6 +73,68 @@ const Dashboard = () => {
     const [paymentHistory, setPaymentHistory] = useState([]);
     const [loadingPayments, setLoadingPayments] = useState(false);
 
+    const fetchData = async () => {
+        if (!currentUser) return;
+        setDashboardLoading(true);
+        setLoadingPayments(true);
+
+        try {
+            // 1. Fetch enrollments and payments in parallel
+            const [enrollmentsSnapshot, paymentsSnapshot, bankDoc] = await Promise.all([
+                getDocs(query(collection(db, "enrollmentPlans"), where("userId", "==", currentUser.uid))),
+                getDocs(query(collection(db, "payments"), where("userId", "==", currentUser.uid))),
+                getDoc(doc(db, "admin", "bankDetails"))
+            ]);
+
+            // 2. Process payments (shared for dashboard and history)
+            const allPayments = paymentsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                submittedAt: doc.data().submittedAt?.toDate(),
+            })).sort((a, b) => (b.submittedAt || 0) - (a.submittedAt || 0));
+
+            setPaymentHistory(allPayments);
+            if (bankDoc.exists()) setBankDetails(bankDoc.data());
+
+            // 3. Batch course fetches (to avoid N+1)
+            const enrollmentDocs = enrollmentsSnapshot.docs;
+            const uniqueCourseIds = [...new Set(enrollmentDocs.map(d => d.data().courseId))];
+
+            const courseDocs = await Promise.all(
+                uniqueCourseIds.map(id => getDoc(doc(db, "courses", id)))
+            );
+
+            const coursesMap = {};
+            courseDocs.forEach(d => {
+                if (d.exists()) coursesMap[d.id] = d.data();
+            });
+
+            // 4. Assemble enrollment data
+            const enrollmentsData = enrollmentDocs.map(enrollmentDoc => {
+                const enrollmentData = enrollmentDoc.data();
+                const courseData = coursesMap[enrollmentData.courseId] || null;
+                const paymentData = allPayments.find(p => p.courseId === enrollmentData.courseId);
+
+                return {
+                    id: enrollmentDoc.id,
+                    ...enrollmentData,
+                    course: courseData,
+                    payment: paymentData || null,
+                    courseName: courseData?.title || "Unknown Course",
+                    blocked: enrollmentData.blocked || false,
+                };
+            });
+
+            setEnrollments(enrollmentsData);
+            setDashboardLoading(false);
+            setLoadingPayments(false);
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            setDashboardLoading(false);
+            setLoadingPayments(false);
+        }
+    };
+
     useEffect(() => {
         if (location.state?.paymentSuccess) {
             setShowSuccessMessage(true);
@@ -82,10 +144,8 @@ const Dashboard = () => {
 
         if (!loading) {
             if (currentUser) {
-                fetchEnrollments();
-                fetchPaymentHistory();
+                fetchData();
                 loadProfileData();
-                fetchBankDetails();
             } else {
                 navigate("/login", { state: { from: "/dashboard" } });
             }
@@ -105,104 +165,6 @@ const Dashboard = () => {
                 newPassword: "",
                 confirmPassword: "",
             });
-        }
-    };
-
-    const fetchBankDetails = async () => {
-        try {
-            const bankDoc = await getDoc(doc(db, "admin", "bankDetails"));
-            if (bankDoc.exists()) {
-                setBankDetails(bankDoc.data());
-            }
-        } catch (error) {
-            console.error("Error fetching bank details:", error);
-        }
-    };
-
-    const fetchEnrollments = async () => {
-        try {
-            // Fetch enrollments and all user payments in parallel
-            // This avoids N+1 queries for payments and speeds up loading
-            const enrollmentsPromise = getDocs(query(
-                collection(db, "enrollmentPlans"),
-                where("userId", "==", currentUser.uid)
-            ));
-
-            const paymentsPromise = getDocs(query(
-                collection(db, "payments"),
-                where("userId", "==", currentUser.uid)
-            ));
-
-            const [enrollmentsSnapshot, paymentsSnapshot] = await Promise.all([
-                enrollmentsPromise,
-                paymentsPromise
-            ]);
-
-            // Cache payments map for faster lookup
-            const allPayments = paymentsSnapshot.docs.map(doc => doc.data());
-
-            const enrollmentsData = await Promise.all(
-                enrollmentsSnapshot.docs.map(async (enrollmentDoc) => {
-                    const enrollmentData = enrollmentDoc.data();
-
-                    // Fetch course data
-                    const courseDoc = await getDoc(
-                        doc(db, "courses", enrollmentData.courseId)
-                    );
-                    const courseData = courseDoc.exists() ? courseDoc.data() : null;
-
-                    // Match payment from the pre-fetched list
-                    // Find the most relevant payment for this course (submitted/approved)
-                    const paymentData = allPayments.find(p => p.courseId === enrollmentData.courseId);
-
-                    return {
-                        id: enrollmentDoc.id,
-                        ...enrollmentData,
-                        course: courseData,
-                        payment: paymentData || null,
-                        courseName: courseData?.title || "Unknown Course",
-                        blocked: enrollmentData.blocked || false,
-                    };
-                })
-            );
-
-            setEnrollments(enrollmentsData);
-            setDashboardLoading(false);
-        } catch (error) {
-            console.error("Error fetching enrollments:", error);
-            setDashboardLoading(false);
-        }
-    };
-
-    const fetchPaymentHistory = async () => {
-        if (!currentUser) return;
-
-        setLoadingPayments(true);
-        try {
-            const paymentsQuery = query(
-                collection(db, "payments"),
-                where("userId", "==", currentUser.uid)
-            );
-
-            const paymentsSnapshot = await getDocs(paymentsQuery);
-            const paymentsData = paymentsSnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                submittedAt: doc.data().submittedAt?.toDate(),
-            }));
-
-            paymentsData.sort((a, b) => {
-                if (!a.submittedAt && !b.submittedAt) return 0;
-                if (!a.submittedAt) return 1;
-                if (!b.submittedAt) return -1;
-                return b.submittedAt - a.submittedAt;
-            });
-
-            setPaymentHistory(paymentsData);
-        } catch (error) {
-            console.error("Error fetching payment history:", error);
-        } finally {
-            setLoadingPayments(false);
         }
     };
 
@@ -339,7 +301,7 @@ const Dashboard = () => {
             );
             setPaymentReceipt(null);
             setReceiptPreview(null);
-            fetchEnrollments();
+            fetchData();
         } catch (error) {
             console.error("Error submitting renewal:", error);
             alert("Failed to submit renewal payment. Please try again.");

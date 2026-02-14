@@ -21,19 +21,19 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let unsubscribe;
-    
+
     // Check if Firebase auth is available
     if (!auth) {
       console.warn('Firebase auth not available, skipping auth initialization');
       setLoading(false);
       return;
     }
-    
+
     try {
       unsubscribe = onAuthStateChanged(auth, async (user) => {
         try {
           setCurrentUser(user);
-          
+
           if (user && db) {
             // Fetch additional user data from Firestore
             try {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
           } else {
             setUserData(null);
           }
-          
+
           setLoading(false);
         } catch (authError) {
           console.error('Auth state change error:', authError);
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       }
       clearTimeout(timeout);
     };
-  }, [loading]);
+  }, []);
 
   const signOut = async () => {
     try {

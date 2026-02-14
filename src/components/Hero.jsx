@@ -11,18 +11,10 @@ const Hero = () => {
   const videoRef = React.useRef(null)
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentVideo((prev) => (prev === 1 ? 2 : 1))
-    }, 10000) // Increased to 10s to allow for loading
-    return () => clearInterval(interval)
-  }, [])
-
-  // Force play on video change
-  useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(err => console.log("Autoplay prevented:", err))
     }
-  }, [currentVideo])
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -43,24 +35,18 @@ const Hero = () => {
   return (
     <section id="home" className="hero-section">
       <div className="video-background-container">
-        <AnimatePresence mode="wait">
-          <motion.video
-            ref={videoRef}
-            key={currentVideo}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }} // Increased opacity for better visibility
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="hero-video"
-          >
-            <source src={currentVideo === 1 ? '/assets/video2.mp4' : '/assets/video2.mp4'} type="video/mp4" />
-          </motion.video>
-        </AnimatePresence>
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="hero-video"
+          style={{ opacity: 1 }}
+        >
+          <source src="/assets/video2.mp4" type="video/mp4" />
+        </video>
         <div className="hero-overlay"></div>
         <div className="glass-morphism-bg"></div>
       </div>
