@@ -91,20 +91,26 @@
   gap: 8px;
   background: #3b82f6;
   color: white;
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   flex-shrink: 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .courses-button:hover {
-  background: #0284c7;
+  background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.courses-button .btn-icon {
+  font-size: 1.1rem;
 }
 
 .login-pill,

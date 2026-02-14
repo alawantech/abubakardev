@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { FaUser, FaSignOutAlt, FaThLarge, FaBars, FaTimes } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
 
@@ -36,7 +36,6 @@ const SchoolHeader = () => {
 
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'All Courses', path: '/courses' },
         { name: 'About', path: '/about' },
         { name: 'Contact', path: '/contact' },
     ]
@@ -85,6 +84,11 @@ const SchoolHeader = () => {
                             <span>Login</span>
                         </Link>
                     )}
+
+                    <Link to="/courses" className="courses-button">
+                        <FaTh className="btn-icon" />
+                        <span>All Courses</span>
+                    </Link>
 
                     <button
                         className="mobile-toggle"

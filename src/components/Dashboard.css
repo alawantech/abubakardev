@@ -209,13 +209,17 @@
 }
 
 .profile-edit-card h2 {
-  color: #1f2937;
-  font-size: 24px;
-  font-weight: 700;
+  color: #111827;
+  font-size: 28px;
+  font-weight: 800;
   margin: 0 0 24px 0;
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.profile-edit-card h2 svg {
+  color: #4f46e5;
 }
 
 .error-message,
@@ -438,13 +442,18 @@
 }
 
 .section-header h2 {
-  color: #1f2937;
-  font-size: 24px;
-  font-weight: 700;
+  color: #111827;
+  font-size: 28px;
+  font-weight: 800;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.section-header h2 svg {
+  color: #4f46e5;
+  font-size: 0.9em;
 }
 
 /* Empty State */
@@ -545,9 +554,9 @@
 }
 
 .course-content h3 {
-  color: #1f2937;
-  font-size: 18px;
-  font-weight: 700;
+  color: #111827;
+  font-size: 1.2rem;
+  font-weight: 800;
   margin: 0 0 12px 0;
   line-height: 1.4;
 }

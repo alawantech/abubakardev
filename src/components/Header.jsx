@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { FaUser, FaSignOutAlt, FaThLarge, FaBars, FaTimes } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
 
@@ -88,6 +88,11 @@ const Header = () => {
               <span>Login</span>
             </Link>
           )}
+
+          <Link to="/courses" className="courses-button">
+            <FaTh className="btn-icon" />
+            <span>All Courses</span>
+          </Link>
 
           <button
             className="mobile-toggle"
