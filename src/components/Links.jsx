@@ -1,69 +1,89 @@
-import React from "react";
-import Header from "./Header";
+import { useNavigate } from "react-router-dom";
+import { FaGlobe, FaServicestack, FaWhatsapp, FaLightbulb, FaBusinessTime, FaChevronRight } from "react-icons/fa";
 import "./Links.css";
-import { FaLaptopCode, FaGlobe, FaServicestack, FaWhatsapp, FaLightbulb, FaBusinessTime } from "react-icons/fa";
 
 const links = [
   {
-    label: "Visit Our website.",
+    label: "Visit Our Website",
     icon: <FaGlobe />,
-    url: "/"
+    url: "/",
+    description: "Explore our main digital home"
   },
   {
-    label: "View our services.",
+    label: "Our Services",
     icon: <FaServicestack />,
-    url: "/services"
+    url: "/services",
+    description: "What we can build for you"
   },
   {
-    label: "Chat on Whatsapp",
+    label: "Chat on WhatsApp",
     icon: <FaWhatsapp />,
-    url: "https://wa.me/2348155885678"
+    url: "https://wa.me/2348156853636",
+    description: "Get instant support & consultation"
   },
   {
-    label: "I need a website.",
+    label: "Request a Website",
     icon: <FaLightbulb />,
-    url: "/contact"
+    url: "/contact",
+    description: "Let's bring your idea to life"
   },
   {
-    label: "I need software for my business.",
+    label: "Business Software",
     icon: <FaBusinessTime />,
-    url: "/contact"
+    url: "/contact",
+    description: "Custom solutions for your growth"
   }
 ];
 
 const Links = () => {
+  const navigate = useNavigate();
+
+  const handleNavigation = (url) => {
+    if (url.startsWith('http')) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(url);
+    }
+  };
+
   return (
-    <>
-      <Header />
+    <div className="links-page">
+      <div className="links-background">
+        <div className="blob"></div>
+        <div className="blob"></div>
+      </div>
+
       <div className="links-container">
-        <h2 className="links-title">Quick Actions</h2>
+        <header className="links-profile">
+          <div className="profile-image-container">
+            <img src="/logo2.png" alt="ZedroTech" className="profile-logo" />
+          </div>
+          <h1 className="profile-name">ZedroTech</h1>
+          <p className="profile-bio">Innovating the Digital Future through Premium Software Solutions</p>
+        </header>
+
         <div className="links-list">
           {links.map((link, idx) => (
-            link.url.startsWith("http") ? (
-              <a
-                key={idx}
-                href={link.url}
-                className="links-btn"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="links-icon">{link.icon}</span>
-                {link.label}
-              </a>
-            ) : (
-              <a
-                key={idx}
-                href={link.url}
-                className="links-btn"
-              >
-                <span className="links-icon">{link.icon}</span>
-                {link.label}
-              </a>
-            )
+            <button
+              key={idx}
+              onClick={() => handleNavigation(link.url)}
+              className="links-btn"
+            >
+              <span className="links-icon-wrapper">{link.icon}</span>
+              <div className="links-text">
+                <span className="links-label">{link.label}</span>
+                <span className="links-description">{link.description}</span>
+              </div>
+              <FaChevronRight className="chevron-icon" />
+            </button>
           ))}
         </div>
+
+        <footer className="links-footer">
+          <p>&copy; {new Date().getFullYear()} ZedroTech. All rights reserved.</p>
+        </footer>
       </div>
-    </>
+    </div>
   );
 };
 

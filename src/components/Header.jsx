@@ -89,11 +89,6 @@ const Header = () => {
             </Link>
           )}
 
-          <Link to="/courses" className="courses-button">
-            <FaTh className="btn-icon" />
-            <span>All Courses</span>
-          </Link>
-
           <button
             className="mobile-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

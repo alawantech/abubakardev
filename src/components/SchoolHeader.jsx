@@ -53,15 +53,25 @@ const SchoolHeader = () => {
 
                 <nav className="desktop-nav">
                     <ul className="nav-list">
-                        {navLinks.map((link) => (
-                            <li key={link.path}>
-                                <Link
-                                    to={link.path}
-                                    className={location.pathname === link.path ? 'active' : ''}
-                                >
-                                    {link.name}
-                                </Link>
-                            </li>
+                        {navLinks.map((link, index) => (
+                            <React.Fragment key={link.path}>
+                                <li>
+                                    <Link
+                                        to={link.path}
+                                        className={location.pathname === link.path ? 'active' : ''}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                </li>
+                                {index === 0 && (
+                                    <li className="nav-courses-item">
+                                        <Link to="/courses" className="courses-button nav-courses-btn">
+                                            <FaTh className="btn-icon" />
+                                            <span>All Courses</span>
+                                        </Link>
+                                    </li>
+                                )}
+                            </React.Fragment>
                         ))}
                     </ul>
                 </nav>
@@ -85,7 +95,7 @@ const SchoolHeader = () => {
                         </Link>
                     )}
 
-                    <Link to="/courses" className="courses-button">
+                    <Link to="/courses" className="courses-button mobile-courses-btn">
                         <FaTh className="btn-icon" />
                         <span>All Courses</span>
                     </Link>
