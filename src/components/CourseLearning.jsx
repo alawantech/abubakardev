@@ -509,7 +509,18 @@ const CourseLearning = () => {
                       allowFullScreen
                       className="video-iframe"
                     ></iframe>
-                    {/* Expand button — same icon on ALL devices */}
+
+                    {/* Mobile tap-interceptor: sits on top of the iframe on touch devices.
+                        Catches ALL taps (including YouTube's own arrows) and opens our
+                        landscape overlay instead. Hidden on desktop so mouse clicks pass
+                        through to the iframe normally. */}
+                    <div
+                      className="video-touch-interceptor"
+                      onClick={handleFullscreen}
+                      aria-label="Open fullscreen"
+                    />
+
+                    {/* Expand button — same square icon on ALL devices */}
                     <button
                       className="video-fullscreen-btn"
                       onClick={handleFullscreen}
@@ -522,7 +533,7 @@ const CourseLearning = () => {
                     </button>
                   </div>
 
-                  {/* Fullscreen overlay — covers entire viewport, same on all devices */}
+                  {/* Fullscreen overlay — covers entire viewport in landscape */}
                   {isVideoFullscreen && (
                     <div className="video-overlay" onClick={handleFullscreen}>
                       <div className="video-overlay-inner" onClick={e => e.stopPropagation()}>
@@ -533,6 +544,7 @@ const CourseLearning = () => {
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                           className="video-overlay-iframe"
+                          autoPlay
                         ></iframe>
                         {/* Close button */}
                         <button

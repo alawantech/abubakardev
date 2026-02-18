@@ -418,8 +418,31 @@
   background: rgba(102, 126, 234, 0.9);
 }
 
-/* ===== Fullscreen Overlay ===== */
-/* Covers the entire viewport — works identically on desktop, tablet, and mobile */
+/* ===== Mobile tap interceptor =====
+   Sits on top of the iframe on touch devices so any tap (including
+   YouTube's own fullscreen arrows) opens our landscape overlay.
+   On desktop: pointer-events:none so mouse clicks reach the iframe. */
+.video-touch-interceptor {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  /* Desktop: completely transparent — let mouse events through */
+  pointer-events: none;
+  background: transparent;
+}
+
+/* Touch devices: capture all taps */
+@media (hover: none) {
+  .video-touch-interceptor {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+}
+
+/* ===== Fullscreen Overlay =====
+   Covers the entire viewport. On landscape (desktop/rotated tablet/phone)
+   the iframe fills the screen. On portrait mobile we rotate the iframe
+   90deg so it appears horizontal without the user needing to rotate. */
 .video-overlay {
   position: fixed;
   inset: 0;
@@ -428,6 +451,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Prevent page scroll while overlay is open */
+  overflow: hidden;
 }
 
 .video-overlay-inner {
@@ -439,21 +464,28 @@
   justify-content: center;
 }
 
+/* Landscape (desktop, tablet, rotated phone) — fill the full screen */
 .video-overlay-iframe {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   border: none;
-  /* On landscape screens (desktop/tablet rotated) fill the full area */
-  max-width: 100vw;
-  max-height: 100vh;
 }
 
-/* On portrait mobile, show video in 16:9 centred */
-@media (orientation: portrait) {
+/* Portrait mobile — rotate the iframe 90deg so video is horizontal.
+   We swap width/height so it fills the rotated space correctly. */
+@media (orientation: portrait) and (max-width: 768px) {
+  .video-overlay-inner {
+    /* Rotate the whole inner container */
+    transform: rotate(90deg);
+    /* After rotation width becomes height and vice versa */
+    width: 100vh;
+    height: 100vw;
+    transform-origin: center center;
+  }
+
   .video-overlay-iframe {
-    width: 100vw;
-    height: calc(100vw * 9 / 16);
-    max-height: 100vh;
+    width: 100vh;
+    height: 100vw;
   }
 }
 
