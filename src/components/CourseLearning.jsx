@@ -567,6 +567,15 @@ const CourseLearning = () => {
                     allowFullScreen
                     className="video-iframe"
                   ></iframe>
+
+                  {/* Corner interceptor: only catches taps on the bottom-right corner 
+                      (where the YouTube fullscreen button usually is) on mobile. */}
+                  <div
+                    className="video-corner-interceptor"
+                    onClick={handleFullscreen}
+                    aria-label="Expand video"
+                  />
+
                   {/* Fullscreen toggle button — same icon on ALL devices */}
                   <button
                     className="video-fullscreen-btn"
