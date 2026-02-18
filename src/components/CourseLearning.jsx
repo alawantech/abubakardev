@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -20,6 +20,7 @@ const CourseLearning = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
+  const playerWrapperRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -221,25 +222,83 @@ const CourseLearning = () => {
       return `https://player.vimeo.com/video/${videoId}?quality=1080p`;
     }
 
-    // If already an embed URL or other format, return as is
+    // Already an embed URL or other format
     return url;
   };
 
-  // Toggle our custom fullscreen overlay
+  // Alias for compatibility
+  const getVideoUrl = (url) => convertToEmbedUrl(url);
+
+  // Enter fullscreen on the player wrapper div using the Fullscreen API.
+  // This gives us a real OS-level fullscreen that works on all devices.
   const handleFullscreen = useCallback(() => {
-    setIsVideoFullscreen(prev => !prev);
+    const wrapper = playerWrapperRef.current;
+    if (!wrapper) return;
+
+    const isCurrentlyFullscreen =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement;
+
+    if (isCurrentlyFullscreen) {
+      // Exit fullscreen
+      const exit =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen;
+      if (exit) exit.call(document).catch(() => { });
+    } else {
+      // Enter fullscreen on our wrapper div (not the iframe)
+      const enter =
+        wrapper.requestFullscreen ||
+        wrapper.webkitRequestFullscreen ||
+        wrapper.mozRequestFullScreen ||
+        wrapper.msRequestFullscreen;
+      if (enter) {
+        enter.call(wrapper).then(() => {
+          // Lock to landscape on mobile
+          if (screen.orientation?.lock) {
+            screen.orientation.lock('landscape').catch(() => { });
+          }
+        }).catch(() => { });
+      }
+    }
   }, []);
 
-  // Close fullscreen overlay on ESC key
+  // Sync fullscreen state and unlock orientation on exit
+  useEffect(() => {
+    const onFSChange = () => {
+      const inFS = !!(document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement);
+      setIsVideoFullscreen(inFS);
+      if (!inFS && screen.orientation?.unlock) {
+        screen.orientation.unlock();
+      }
+    };
+    document.addEventListener('fullscreenchange', onFSChange);
+    document.addEventListener('webkitfullscreenchange', onFSChange);
+    document.addEventListener('mozfullscreenchange', onFSChange);
+    document.addEventListener('MSFullscreenChange', onFSChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFSChange);
+      document.removeEventListener('webkitfullscreenchange', onFSChange);
+      document.removeEventListener('mozfullscreenchange', onFSChange);
+      document.removeEventListener('MSFullscreenChange', onFSChange);
+    };
+  }, []);
+
+  // ESC key fallback
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isVideoFullscreen) {
-        setIsVideoFullscreen(false);
-      }
+      if (e.key === 'Escape') setIsVideoFullscreen(false);
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isVideoFullscreen]);
+  }, []);
 
   const linkifyText = (text) => {
     if (!text) return null;
@@ -299,13 +358,11 @@ const CourseLearning = () => {
     ? course.topics[selectedLesson.topicIndex]?.lessons[selectedLesson.lessonIndex]
     : null;
 
-  // Debug logging
-  if (currentLesson) {
-    console.log('Current Lesson:', currentLesson);
-    console.log('Video URL:', currentLesson.videoUrl);
-    console.log('Converted URL:', convertToEmbedUrl(currentLesson.videoUrl));
+  // Debug video info
+  if (currentLesson?.videoUrl) {
+    console.log('[Video Debug] Original:', currentLesson.videoUrl);
+    console.log('[Video Debug] Transformed:', getVideoUrl(currentLesson.videoUrl));
   }
-
   return (
     <div className="course-learning-container pt-48">
       {/* Success Message */}
@@ -497,70 +554,37 @@ const CourseLearning = () => {
 
               {/* Video Player */}
               {currentLesson.videoUrl && (
-                <>
-                  {/* Normal (inline) video with expand button */}
-                  <div className="video-container">
-                    <iframe
-                      src={convertToEmbedUrl(currentLesson.videoUrl)}
-                      title={currentLesson.name}
-                      loading="lazy"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="video-iframe"
-                    ></iframe>
-
-                    {/* Mobile tap-interceptor: sits on top of the iframe on touch devices.
-                        Catches ALL taps (including YouTube's own arrows) and opens our
-                        landscape overlay instead. Hidden on desktop so mouse clicks pass
-                        through to the iframe normally. */}
-                    <div
-                      className="video-touch-interceptor"
-                      onClick={handleFullscreen}
-                      aria-label="Open fullscreen"
-                    />
-
-                    {/* Expand button — same square icon on ALL devices */}
-                    <button
-                      className="video-fullscreen-btn"
-                      onClick={handleFullscreen}
-                      aria-label="Open fullscreen"
-                      title="Open fullscreen"
-                    >
+                <div
+                  className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''}`}
+                  ref={playerWrapperRef}
+                >
+                  <iframe
+                    src={convertToEmbedUrl(currentLesson.videoUrl)}
+                    title={currentLesson.name}
+                    loading="lazy"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    className="video-iframe"
+                  ></iframe>
+                  {/* Fullscreen toggle button — same icon on ALL devices */}
+                  <button
+                    className="video-fullscreen-btn"
+                    onClick={handleFullscreen}
+                    aria-label={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                    title={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  >
+                    {isVideoFullscreen ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                      </svg>
+                    ) : (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                       </svg>
-                    </button>
-                  </div>
-
-                  {/* Fullscreen overlay — covers entire viewport in landscape */}
-                  {isVideoFullscreen && (
-                    <div className="video-overlay" onClick={handleFullscreen}>
-                      <div className="video-overlay-inner" onClick={e => e.stopPropagation()}>
-                        <iframe
-                          src={convertToEmbedUrl(currentLesson.videoUrl)}
-                          title={currentLesson.name}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="video-overlay-iframe"
-                          autoPlay
-                        ></iframe>
-                        {/* Close button */}
-                        <button
-                          className="video-overlay-close"
-                          onClick={handleFullscreen}
-                          aria-label="Close fullscreen"
-                          title="Close fullscreen"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
+                    )}
+                  </button>
+                </div>
               )}
 
               {/* Debug: Show if no video URL */}

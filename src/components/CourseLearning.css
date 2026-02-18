@@ -356,12 +356,12 @@
   transform: scale(1.02);
 }
 
-/* Video Container */
-.video-container {
+/* ===== Video Player (ReactPlayer wrapper) ===== */
+.video-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%;
-  /* 16:9 Aspect Ratio */
+  /* 16:9 aspect ratio fallback using padding hack */
+  padding-top: 56.25%;
   background: #000;
   border-radius: 1rem;
   overflow: hidden;
@@ -369,21 +369,73 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.video-iframe {
-  position: absolute;
+/* ReactPlayer/Iframe container — make it fill the relative wrapper */
+.video-wrapper>div,
+.video-wrapper .video-iframe {
+  position: absolute !important;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
   border: none;
 }
 
-/* Expand button — same square icon on ALL screen sizes */
+/* If the browser supports aspect-ratio, use it to clean up the padding hack */
+@supports (aspect-ratio: 16 / 9) {
+  .video-wrapper {
+    padding-top: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* Fullscreen state: fill the entire screen */
+.video-wrapper--fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  z-index: 9999 !important;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* On portrait mobile, rotate the entire wrapper 90deg to force landscape view */
+@media (orientation: portrait) and (max-width: 1024px) {
+  .video-wrapper--fullscreen {
+    transform: rotate(90deg);
+    width: 100vh !important;
+    height: 100vw !important;
+    transform-origin: center;
+    /* Recenter after rotation */
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    margin-top: -50vw !important;
+    margin-left: -50vh !important;
+  }
+}
+
+/* Ensure iframe fills rotated container */
+.video-wrapper--fullscreen .video-iframe {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Hide padding-top hack in fullscreen */
+.video-wrapper--fullscreen {
+  padding-top: 0 !important;
+}
+
+/* Expand / compress button — same square icon on ALL devices */
 .video-fullscreen-btn {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  z-index: 10;
+  z-index: 20;
   background: rgba(0, 0, 0, 0.7);
   border: none;
   border-radius: 6px;
@@ -403,7 +455,7 @@
 }
 
 /* Show on hover (desktop) */
-.video-container:hover .video-fullscreen-btn {
+.video-wrapper:hover .video-fullscreen-btn {
   opacity: 1;
 }
 
@@ -414,105 +466,16 @@
   }
 }
 
-.video-fullscreen-btn:hover {
-  background: rgba(102, 126, 234, 0.9);
-}
-
-/* ===== Mobile tap interceptor =====
-   Sits on top of the iframe on touch devices so any tap (including
-   YouTube's own fullscreen arrows) opens our landscape overlay.
-   On desktop: pointer-events:none so mouse clicks reach the iframe. */
-.video-touch-interceptor {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  /* Desktop: completely transparent — let mouse events through */
-  pointer-events: none;
-  background: transparent;
-}
-
-/* Touch devices: capture all taps */
-@media (hover: none) {
-  .video-touch-interceptor {
-    pointer-events: auto;
-    cursor: pointer;
-  }
-}
-
-/* ===== Fullscreen Overlay =====
-   Covers the entire viewport. On landscape (desktop/rotated tablet/phone)
-   the iframe fills the screen. On portrait mobile we rotate the iframe
-   90deg so it appears horizontal without the user needing to rotate. */
-.video-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Prevent page scroll while overlay is open */
-  overflow: hidden;
-}
-
-.video-overlay-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Landscape (desktop, tablet, rotated phone) — fill the full screen */
-.video-overlay-iframe {
-  width: 100vw;
-  height: 100vh;
-  border: none;
-}
-
-/* Portrait mobile — rotate the iframe 90deg so video is horizontal.
-   We swap width/height so it fills the rotated space correctly. */
-@media (orientation: portrait) and (max-width: 768px) {
-  .video-overlay-inner {
-    /* Rotate the whole inner container */
-    transform: rotate(90deg);
-    /* After rotation width becomes height and vice versa */
-    width: 100vh;
-    height: 100vw;
-    transform-origin: center center;
-  }
-
-  .video-overlay-iframe {
-    width: 100vh;
-    height: 100vw;
-  }
-}
-
-/* Close (compress) button inside overlay */
-.video-overlay-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10000;
-  background: rgba(0, 0, 0, 0.7);
-  border: none;
-  border-radius: 6px;
+/* In fullscreen: always show the exit button */
+.video-wrapper--fullscreen .video-fullscreen-btn {
+  opacity: 1;
+  background: rgba(102, 126, 234, 0.85);
+  bottom: 16px;
+  right: 16px;
   padding: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
 }
 
-.video-overlay-close svg {
-  width: 22px;
-  height: 22px;
-  stroke: #fff;
-}
-
-.video-overlay-close:hover {
+.video-fullscreen-btn:hover {
   background: rgba(102, 126, 234, 0.9);
 }
 
