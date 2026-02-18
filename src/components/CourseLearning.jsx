@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -20,8 +20,6 @@ const CourseLearning = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
-  const videoContainerRef = useRef(null);
-  const iframeRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -227,79 +225,21 @@ const CourseLearning = () => {
     return url;
   };
 
-  // Handle fullscreen toggle + force landscape on mobile
+  // Toggle our custom fullscreen overlay
   const handleFullscreen = useCallback(() => {
-    const container = videoContainerRef.current;
-    if (!container) return;
-
-    const currentlyFullscreen =
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement;
-
-    if (currentlyFullscreen) {
-      // EXIT fullscreen
-      const exitFS =
-        document.exitFullscreen ||
-        document.webkitExitFullscreen ||
-        document.mozCancelFullScreen ||
-        document.msExitFullscreen;
-      if (exitFS) {
-        exitFS.call(document).catch(() => { });
-      }
-    } else {
-      // ENTER fullscreen
-      const requestFS =
-        container.requestFullscreen ||
-        container.webkitRequestFullscreen ||
-        container.mozRequestFullScreen ||
-        container.msRequestFullscreen;
-
-      if (requestFS) {
-        requestFS.call(container).then(() => {
-          // Force landscape orientation on mobile devices
-          if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape').catch(() => {
-              // Silently ignore if orientation lock is not supported
-            });
-          }
-        }).catch(() => {
-          // Silently ignore fullscreen errors
-        });
-      }
-    }
+    setIsVideoFullscreen(prev => !prev);
   }, []);
 
-  // Listen for fullscreen change to sync state and unlock orientation on exit
+  // Close fullscreen overlay on ESC key
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isFullscreen = !!(
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement
-      );
-
-      setIsVideoFullscreen(isFullscreen);
-
-      if (!isFullscreen && screen.orientation && screen.orientation.unlock) {
-        screen.orientation.unlock();
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isVideoFullscreen) {
+        setIsVideoFullscreen(false);
       }
     };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-    };
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVideoFullscreen]);
 
   const linkifyText = (text) => {
     if (!text) return null;
@@ -557,36 +497,58 @@ const CourseLearning = () => {
 
               {/* Video Player */}
               {currentLesson.videoUrl && (
-                <div className="video-container" ref={videoContainerRef}>
-                  <iframe
-                    ref={iframeRef}
-                    src={convertToEmbedUrl(currentLesson.videoUrl)}
-                    title={currentLesson.name}
-                    loading="lazy"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    className="video-iframe"
-                  ></iframe>
-                  {/* Custom fullscreen button - handles enter AND exit, forces landscape on mobile */}
-                  <button
-                    className={`video-fullscreen-btn ${isVideoFullscreen ? 'is-fullscreen' : ''}`}
-                    onClick={handleFullscreen}
-                    aria-label={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                    title={isVideoFullscreen ? 'Exit fullscreen' : 'Fullscreen (landscape)'}
-                  >
-                    {isVideoFullscreen ? (
-                      /* Exit fullscreen icon */
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                      </svg>
-                    ) : (
-                      /* Enter fullscreen icon */
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <>
+                  {/* Normal (inline) video with expand button */}
+                  <div className="video-container">
+                    <iframe
+                      src={convertToEmbedUrl(currentLesson.videoUrl)}
+                      title={currentLesson.name}
+                      loading="lazy"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="video-iframe"
+                    ></iframe>
+                    {/* Expand button — same icon on ALL devices */}
+                    <button
+                      className="video-fullscreen-btn"
+                      onClick={handleFullscreen}
+                      aria-label="Open fullscreen"
+                      title="Open fullscreen"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                       </svg>
-                    )}
-                  </button>
-                </div>
+                    </button>
+                  </div>
+
+                  {/* Fullscreen overlay — covers entire viewport, same on all devices */}
+                  {isVideoFullscreen && (
+                    <div className="video-overlay" onClick={handleFullscreen}>
+                      <div className="video-overlay-inner" onClick={e => e.stopPropagation()}>
+                        <iframe
+                          src={convertToEmbedUrl(currentLesson.videoUrl)}
+                          title={currentLesson.name}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="video-overlay-iframe"
+                        ></iframe>
+                        {/* Close button */}
+                        <button
+                          className="video-overlay-close"
+                          onClick={handleFullscreen}
+                          aria-label="Close fullscreen"
+                          title="Close fullscreen"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Debug: Show if no video URL */}
