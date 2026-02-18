@@ -4,7 +4,6 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, whe
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDescription } from '../utils/formatDescription';
-import ReactPlayer from 'react-player';
 import './CourseLearning.css';
 
 const CourseLearning = () => {
@@ -204,11 +203,31 @@ const CourseLearning = () => {
     return completedLessons.includes(`${topicIndex}-${lessonIndex}`);
   };
 
-  // ReactPlayer cleans up URLs automatically.
-  const getVideoUrl = (url) => {
+  const convertToEmbedUrl = (url) => {
     if (!url) return null;
-    return url.trim();
+
+    // YouTube
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=0`;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=0`;
+    }
+
+    // Vimeo
+    if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+      return `https://player.vimeo.com/video/${videoId}?quality=1080p`;
+    }
+
+    // Already an embed URL or other format
+    return url;
   };
+
+  // Alias for compatibility
+  const getVideoUrl = (url) => convertToEmbedUrl(url);
 
   // Enter fullscreen on the player wrapper div using the Fullscreen API.
   // This gives us a real OS-level fullscreen that works on all devices.
@@ -539,23 +558,15 @@ const CourseLearning = () => {
                   className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''}`}
                   ref={playerWrapperRef}
                 >
-                  <ReactPlayer
-                    url={getVideoUrl(currentLesson.videoUrl)}
-                    width="100%"
-                    height="100%"
-                    controls={true}
-                    playing={isVideoFullscreen} // Autoplay when expanding
-                    playsinline={true}
-                    config={{
-                      youtube: {
-                        playerVars: {
-                          modestbranding: 1,
-                          rel: 0,
-                          fs: 0, // Hides YouTube's "up and down arrow" fullscreen button
-                        },
-                      },
-                    }}
-                  />
+                  <iframe
+                    src={convertToEmbedUrl(currentLesson.videoUrl)}
+                    title={currentLesson.name}
+                    loading="lazy"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    className="video-iframe"
+                  ></iframe>
 
                   {/* Fullscreen toggle button — same icon on ALL devices */}
                   <button
