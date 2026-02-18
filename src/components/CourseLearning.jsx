@@ -20,9 +20,20 @@ const CourseLearning = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const playerWrapperRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+
+  // Check if we are on a mobile/tablet device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 1024px)').matches || ('ontouchstart' in window));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Auto-hide controls on mobile after 3 seconds
   // Auto-hide controls on mobile after 3 seconds
@@ -35,13 +46,13 @@ const CourseLearning = () => {
     }, 3000);
   }, []);
 
-  // Initialize hide timer on mount
+  // On mount, we don't trigger handleInteraction so it stays hidden initially.
+  // The user must tap to see controls.
   useEffect(() => {
-    handleInteraction();
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
-  }, [handleInteraction]);
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
@@ -589,9 +600,23 @@ const CourseLearning = () => {
                     allowFullScreen
                     className="video-iframe"
                     style={{
-                      pointerEvents: showControls ? 'auto' : 'none'
+                      pointerEvents: (showControls || !isMobile) ? 'auto' : 'none'
                     }}
                   ></iframe>
+
+                  {/* Interaction layer for mobile to catch the first tap */}
+                  {isMobile && !showControls && (
+                    <div
+                      className="video-mobile-tap-layer"
+                      onPointerDown={handleInteraction}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 10,
+                        background: 'transparent'
+                      }}
+                    />
+                  )}
 
                   {/* Fullscreen toggle button — YouTube-style Square Icon */}
                   <button

@@ -455,19 +455,21 @@
   stroke: #fff;
 }
 
-/* Visibility handling via classes (primarily for mobile auto-hide) */
+/* Visibility handling via classes (Mobile Tap) */
 .video-fullscreen-btn.is-visible {
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-/* On desktop, always show on hover */
-.video-wrapper:hover .video-fullscreen-btn {
-  opacity: 1 !important;
-  visibility: visible !important;
+/* Visibility for Laptop/Desktop (Mouse Hover) */
+@media (hover: hover) {
+  .video-wrapper:hover .video-fullscreen-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
 }
 
-/* Ensure icons are sized and colored correctly */
+/* Icons sizing and color */
 .video-fullscreen-btn svg {
   width: 20px !important;
   height: 20px !important;
