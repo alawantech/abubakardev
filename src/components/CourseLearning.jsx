@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -19,6 +19,8 @@ const CourseLearning = () => {
   const [completedLessons, setCompletedLessons] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const videoContainerRef = useRef(null);
+  const iframeRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -207,11 +209,11 @@ const CourseLearning = () => {
     // YouTube
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0`;
+      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=1`;
     }
     if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0`;
+      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=1`;
     }
 
     // Vimeo
@@ -223,6 +225,58 @@ const CourseLearning = () => {
     // If already an embed URL or other format, return as is
     return url;
   };
+
+  // Handle fullscreen + force landscape on mobile
+  const handleFullscreen = useCallback(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+
+    const requestFS =
+      container.requestFullscreen ||
+      container.webkitRequestFullscreen ||
+      container.mozRequestFullScreen ||
+      container.msRequestFullscreen;
+
+    if (requestFS) {
+      requestFS.call(container).then(() => {
+        // Force landscape orientation on mobile devices
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {
+            // Silently ignore if orientation lock is not supported
+          });
+        }
+      }).catch(() => {
+        // Silently ignore fullscreen errors
+      });
+    }
+  }, []);
+
+  // Listen for fullscreen exit to unlock orientation
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFullscreen =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+
+      if (!isFullscreen && screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   const linkifyText = (text) => {
     if (!text) return null;
@@ -295,8 +349,8 @@ const CourseLearning = () => {
       {showSuccessMessage && location.state?.message && (
         <div className="mb-6 animate-fade-in px-4">
           <div className={`rounded-2xl p-6 shadow-xl ${location.state.paymentSuccess
-              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300'
-              : 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300'
+            ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300'
+            : 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300'
             }`}>
             <div className="flex items-center gap-4">
               {location.state.paymentSuccess ? (
@@ -480,16 +534,28 @@ const CourseLearning = () => {
 
               {/* Video Player */}
               {currentLesson.videoUrl && (
-                <div className="video-container">
+                <div className="video-container" ref={videoContainerRef}>
                   <iframe
+                    ref={iframeRef}
                     src={convertToEmbedUrl(currentLesson.videoUrl)}
                     title={currentLesson.name}
                     loading="lazy"
                     frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     className="video-iframe"
                   ></iframe>
+                  {/* Fullscreen button for mobile - forces landscape */}
+                  <button
+                    className="video-fullscreen-btn"
+                    onClick={handleFullscreen}
+                    aria-label="Open fullscreen"
+                    title="Fullscreen (landscape)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                    </svg>
+                  </button>
                 </div>
               )}
 
