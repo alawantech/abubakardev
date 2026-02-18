@@ -463,16 +463,8 @@
 
 /* On desktop, always show on hover */
 .video-wrapper:hover .video-fullscreen-btn {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Force visibility if it shouldn't be hidden by state on desktop */
-@media (hover: hover) {
-  .video-wrapper:hover .video-fullscreen-btn {
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Ensure icons are sized and colored correctly */
@@ -483,25 +475,7 @@
   display: block !important;
 }
 
-/* Touch interceptor for mobile to catch taps over the iframe */
-.video-touch-interceptor {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: transparent;
-  pointer-events: none;
-  /* Only active on mobile */
-}
 
-@media (hover: none) {
-  .video-touch-interceptor {
-    pointer-events: auto;
-  }
-}
-
-.video-touch-interceptor.is-passing {
-  pointer-events: none !important;
-}
 
 .video-fullscreen-btn:hover {
   background: rgba(102, 126, 234, 0.9);

@@ -21,21 +21,17 @@ const CourseLearning = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [isInteracting, setIsInteracting] = useState(false);
   const playerWrapperRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
 
   // Auto-hide controls on mobile after 3 seconds
-  // We use isInteracting to temporarily block the touch-interceptor 
-  // so the user can tap the actual video controls after revealing our icon.
+  // Auto-hide controls on mobile after 3 seconds
   const handleInteraction = useCallback((e) => {
     setShowControls(true);
-    setIsInteracting(true);
 
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false);
-      setIsInteracting(false);
     }, 3000);
   }, []);
 
@@ -582,6 +578,7 @@ const CourseLearning = () => {
                 <div
                   className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''} ${showControls ? 'show-controls' : ''}`}
                   ref={playerWrapperRef}
+                  onPointerDown={handleInteraction}
                 >
                   <iframe
                     src={convertToEmbedUrl(currentLesson.videoUrl)}
@@ -591,14 +588,10 @@ const CourseLearning = () => {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowFullScreen
                     className="video-iframe"
+                    style={{
+                      pointerEvents: showControls ? 'auto' : 'none'
+                    }}
                   ></iframe>
-
-                  {/* Touch Interceptor: catches the first tap on mobile to show icons.
-                      It is invisible and covers the iframe initially. */}
-                  <div
-                    className={`video-touch-interceptor ${isInteracting ? 'is-passing' : ''}`}
-                    onPointerDown={handleInteraction}
-                  />
 
                   {/* Fullscreen toggle button — YouTube-style Square Icon */}
                   <button
