@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, whe
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDescription } from '../utils/formatDescription';
+import ReactPlayer from 'react-player';
 import './CourseLearning.css';
 
 const CourseLearning = () => {
@@ -203,31 +204,11 @@ const CourseLearning = () => {
     return completedLessons.includes(`${topicIndex}-${lessonIndex}`);
   };
 
-  const convertToEmbedUrl = (url) => {
+  // ReactPlayer cleans up URLs automatically.
+  const getVideoUrl = (url) => {
     if (!url) return null;
-
-    // YouTube
-    if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=1`;
-    }
-    if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?vq=hd1080&hd=1&modestbranding=1&rel=0&fs=1`;
-    }
-
-    // Vimeo
-    if (url.includes('vimeo.com/')) {
-      const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
-      return `https://player.vimeo.com/video/${videoId}?quality=1080p`;
-    }
-
-    // Already an embed URL or other format
-    return url;
+    return url.trim();
   };
-
-  // Alias for compatibility
-  const getVideoUrl = (url) => convertToEmbedUrl(url);
 
   // Enter fullscreen on the player wrapper div using the Fullscreen API.
   // This gives us a real OS-level fullscreen that works on all devices.
@@ -558,25 +539,23 @@ const CourseLearning = () => {
                   className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''}`}
                   ref={playerWrapperRef}
                 >
-                  <iframe
-                    src={convertToEmbedUrl(currentLesson.videoUrl)}
-                    title={currentLesson.name}
-                    loading="lazy"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    allowFullScreen
-                    className="video-iframe"
-                  ></iframe>
-
-                  {/* Corner interceptor: only catches taps when NOT in fullscreen.
-                      Once in fullscreen, we disable it so user can tap YouTube's play controls. */}
-                  {!isVideoFullscreen && (
-                    <div
-                      className="video-corner-interceptor"
-                      onClick={handleFullscreen}
-                      aria-label="Expand video"
-                    />
-                  )}
+                  <ReactPlayer
+                    url={getVideoUrl(currentLesson.videoUrl)}
+                    width="100%"
+                    height="100%"
+                    controls={true}
+                    playing={isVideoFullscreen} // Autoplay when expanding
+                    playsinline={true}
+                    config={{
+                      youtube: {
+                        playerVars: {
+                          modestbranding: 1,
+                          rel: 0,
+                          fs: 0, // Hides YouTube's "up and down arrow" fullscreen button
+                        },
+                      },
+                    }}
+                  />
 
                   {/* Fullscreen toggle button — same icon on ALL devices */}
                   <button
@@ -586,12 +565,15 @@ const CourseLearning = () => {
                     title={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                   >
                     {isVideoFullscreen ? (
+                      /* Close icon for exit */
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
                       </svg>
                     ) : (
+                      /* Expand icon for enter */
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
                       </svg>
                     )}
                   </button>
