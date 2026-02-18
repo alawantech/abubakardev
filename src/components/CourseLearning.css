@@ -445,7 +445,8 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease, background 0.2s ease;
 }
 
 .video-fullscreen-btn svg {
@@ -454,25 +455,52 @@
   stroke: #fff;
 }
 
-/* Show on hover (desktop) */
-.video-wrapper:hover .video-fullscreen-btn {
-  opacity: 1;
+/* Visibility handling via classes (primarily for mobile auto-hide) */
+.video-fullscreen-btn.is-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
-/* Always visible on touch devices */
-@media (hover: none) {
-  .video-fullscreen-btn {
-    opacity: 1;
+/* On desktop, always show on hover */
+.video-wrapper:hover .video-fullscreen-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Force visibility if it shouldn't be hidden by state on desktop */
+@media (hover: hover) {
+  .video-wrapper:hover .video-fullscreen-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 }
 
-/* In fullscreen: always show the exit button */
-.video-wrapper--fullscreen .video-fullscreen-btn {
-  opacity: 1;
-  background: rgba(102, 126, 234, 0.85);
-  bottom: 16px;
-  right: 16px;
-  padding: 10px;
+/* Ensure icons are sized and colored correctly */
+.video-fullscreen-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke: #fff !important;
+  display: block !important;
+}
+
+/* Touch interceptor for mobile to catch taps over the iframe */
+.video-touch-interceptor {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
+  pointer-events: none;
+  /* Only active on mobile */
+}
+
+@media (hover: none) {
+  .video-touch-interceptor {
+    pointer-events: auto;
+  }
+}
+
+.video-touch-interceptor.is-passing {
+  pointer-events: none !important;
 }
 
 .video-fullscreen-btn:hover {

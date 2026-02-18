@@ -20,7 +20,32 @@ const CourseLearning = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isInteracting, setIsInteracting] = useState(false);
   const playerWrapperRef = useRef(null);
+  const controlsTimeoutRef = useRef(null);
+
+  // Auto-hide controls on mobile after 3 seconds
+  // We use isInteracting to temporarily block the touch-interceptor 
+  // so the user can tap the actual video controls after revealing our icon.
+  const handleInteraction = useCallback((e) => {
+    setShowControls(true);
+    setIsInteracting(true);
+
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+      setIsInteracting(false);
+    }, 3000);
+  }, []);
+
+  // Initialize hide timer on mount
+  useEffect(() => {
+    handleInteraction();
+    return () => {
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    };
+  }, [handleInteraction]);
 
   useEffect(() => {
     if (currentUser) {
@@ -555,7 +580,7 @@ const CourseLearning = () => {
               {/* Video Player */}
               {currentLesson.videoUrl && (
                 <div
-                  className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''}`}
+                  className={`video-wrapper ${isVideoFullscreen ? 'video-wrapper--fullscreen' : ''} ${showControls ? 'show-controls' : ''}`}
                   ref={playerWrapperRef}
                 >
                   <iframe
@@ -568,23 +593,32 @@ const CourseLearning = () => {
                     className="video-iframe"
                   ></iframe>
 
-                  {/* Fullscreen toggle button — same icon on ALL devices */}
+                  {/* Touch Interceptor: catches the first tap on mobile to show icons.
+                      It is invisible and covers the iframe initially. */}
+                  <div
+                    className={`video-touch-interceptor ${isInteracting ? 'is-passing' : ''}`}
+                    onPointerDown={handleInteraction}
+                  />
+
+                  {/* Fullscreen toggle button — YouTube-style Square Icon */}
                   <button
-                    className="video-fullscreen-btn"
-                    onClick={handleFullscreen}
+                    className={`video-fullscreen-btn ${showControls ? 'is-visible' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFullscreen();
+                    }}
                     aria-label={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                     title={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                   >
                     {isVideoFullscreen ? (
-                      /* Close icon for exit */
+                      /* Square Shrink icon (Close/Standard Exit) */
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
                       </svg>
                     ) : (
-                      /* Expand icon for enter */
+                      /* Square Expand icon (YouTube style) */
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                       </svg>
                     )}
                   </button>
