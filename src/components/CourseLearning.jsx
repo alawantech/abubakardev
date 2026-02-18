@@ -19,6 +19,7 @@ const CourseLearning = () => {
   const [completedLessons, setCompletedLessons] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isVideoFullscreen, setIsVideoFullscreen] = useState(false);
   const videoContainerRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -226,39 +227,61 @@ const CourseLearning = () => {
     return url;
   };
 
-  // Handle fullscreen + force landscape on mobile
+  // Handle fullscreen toggle + force landscape on mobile
   const handleFullscreen = useCallback(() => {
     const container = videoContainerRef.current;
     if (!container) return;
 
-    const requestFS =
-      container.requestFullscreen ||
-      container.webkitRequestFullscreen ||
-      container.mozRequestFullScreen ||
-      container.msRequestFullscreen;
+    const currentlyFullscreen =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement;
 
-    if (requestFS) {
-      requestFS.call(container).then(() => {
-        // Force landscape orientation on mobile devices
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {
-            // Silently ignore if orientation lock is not supported
-          });
-        }
-      }).catch(() => {
-        // Silently ignore fullscreen errors
-      });
+    if (currentlyFullscreen) {
+      // EXIT fullscreen
+      const exitFS =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.mozCancelFullScreen ||
+        document.msExitFullscreen;
+      if (exitFS) {
+        exitFS.call(document).catch(() => { });
+      }
+    } else {
+      // ENTER fullscreen
+      const requestFS =
+        container.requestFullscreen ||
+        container.webkitRequestFullscreen ||
+        container.mozRequestFullScreen ||
+        container.msRequestFullscreen;
+
+      if (requestFS) {
+        requestFS.call(container).then(() => {
+          // Force landscape orientation on mobile devices
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {
+              // Silently ignore if orientation lock is not supported
+            });
+          }
+        }).catch(() => {
+          // Silently ignore fullscreen errors
+        });
+      }
     }
   }, []);
 
-  // Listen for fullscreen exit to unlock orientation
+  // Listen for fullscreen change to sync state and unlock orientation on exit
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const isFullscreen =
+      const isFullscreen = !!(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
         document.mozFullScreenElement ||
-        document.msFullscreenElement;
+        document.msFullscreenElement
+      );
+
+      setIsVideoFullscreen(isFullscreen);
 
       if (!isFullscreen && screen.orientation && screen.orientation.unlock) {
         screen.orientation.unlock();
@@ -541,20 +564,27 @@ const CourseLearning = () => {
                     title={currentLesson.name}
                     loading="lazy"
                     frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     className="video-iframe"
                   ></iframe>
-                  {/* Fullscreen button for mobile - forces landscape */}
+                  {/* Custom fullscreen button - handles enter AND exit, forces landscape on mobile */}
                   <button
-                    className="video-fullscreen-btn"
+                    className={`video-fullscreen-btn ${isVideoFullscreen ? 'is-fullscreen' : ''}`}
                     onClick={handleFullscreen}
-                    aria-label="Open fullscreen"
-                    title="Fullscreen (landscape)"
+                    aria-label={isVideoFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                    title={isVideoFullscreen ? 'Exit fullscreen' : 'Fullscreen (landscape)'}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                    </svg>
+                    {isVideoFullscreen ? (
+                      /* Exit fullscreen icon */
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                      </svg>
+                    ) : (
+                      /* Enter fullscreen icon */
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               )}

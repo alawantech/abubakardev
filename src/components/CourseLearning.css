@@ -378,7 +378,7 @@
   border: none;
 }
 
-/* Custom fullscreen button (visible on mobile, subtle on desktop) */
+/* Custom fullscreen button (always visible on mobile, appears on hover on desktop) */
 .video-fullscreen-btn {
   position: absolute;
   bottom: 12px;
@@ -419,6 +419,20 @@
 
 .video-fullscreen-btn:hover {
   background: rgba(102, 126, 234, 0.85);
+}
+
+/* Exit fullscreen state - always visible so user can exit */
+.video-fullscreen-btn.is-fullscreen {
+  opacity: 1;
+  background: rgba(102, 126, 234, 0.85);
+  bottom: 16px;
+  right: 16px;
+  padding: 10px;
+}
+
+.video-fullscreen-btn.is-fullscreen svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* Fullscreen mode: video fills entire screen */
