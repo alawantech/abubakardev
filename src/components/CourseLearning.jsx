@@ -127,14 +127,8 @@ const CourseLearning = () => {
       // Process Plan Data (check if blocked or unapproved)
       if (!planSnapshot.empty) {
         const planData = planSnapshot.docs[0].data();
-        const paymentsQuery = query(
-          collection(db, 'payments'),
-          where('userId', '==', currentUser.uid),
-          where('courseId', '==', courseId),
-          where('status', '==', 'approved')
-        );
-        const approvedPayments = await getDocs(paymentsQuery);
 
+        // 1. Check if user or plan is explicitly blocked
         if (planData.blocked || userData?.blocked) {
           navigate('/dashboard', {
             state: {
@@ -145,7 +139,27 @@ const CourseLearning = () => {
           return;
         }
 
-        if (approvedPayments.empty) {
+        // 2. Access Check: We allow access if:
+        // - planData.paymentStatus is 'paid' (often set for seeded/approved users)
+        // - OR there is an approved payment in the payments collection
+        // - OR there is NO payment record at all (typical for seeded users)
+        // We ONLY redirect if there is a payment record and its status is 'pending' or similar.
+
+        const isMarkedPaid = planData.paymentStatus === 'paid';
+
+        // Fetch all payments for this course to check for pending status
+        const paymentsQuery = query(
+          collection(db, 'payments'),
+          where('userId', '==', currentUser.uid),
+          where('courseId', '==', courseId)
+        );
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+
+        const hasApprovedPayment = paymentsSnapshot.docs.some(d => d.data().status === 'approved');
+        const hasPendingPayment = paymentsSnapshot.docs.some(d => ['pending', 'receipt_pending_upload', 'receipt_required'].includes(d.data().status));
+
+        // If not marked paid and no approved payment, but has a pending payment, then redirect
+        if (!isMarkedPaid && !hasApprovedPayment && hasPendingPayment) {
           navigate('/dashboard', {
             state: {
               message: 'Your payment is still pending approval. You will gain access once the admin verifies your receipt.',
@@ -154,6 +168,9 @@ const CourseLearning = () => {
           });
           return;
         }
+
+        // Otherwise, if they have a plan and it's not blocked, and they don't have a pending block, let them in.
+        // This covers the case of seeded users (no payment doc) and approved users.
       } else {
         // No enrollment plan found at all
         navigate('/courses');
