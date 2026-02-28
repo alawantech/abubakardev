@@ -61,12 +61,17 @@ const CoursePage = () => {
   };
 
   const handleEnrollClick = () => {
+    const displayedPrice = getDisplayedPrice();
+    const planType = course.displayPricing === "yearly" ? "yearly" :
+      course.displayPricing === "monthly" ? "monthly" : "onetime";
+
     navigate(`/course/${courseId}/signup`, {
       state: {
         plan: {
           courseId: courseId,
           courseName: course.title,
-          amount: course.price || 49000,
+          amount: displayedPrice,
+          type: planType,
           pricing: course.pricing,
           displayPricing: course.displayPricing
         },
@@ -146,7 +151,7 @@ const CoursePage = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold text-sm">
               <FaAward /> Featured Specialization
             </div>
-            <h1 className="text-3xl lg:text-5xl font-extrabold text-white leading-tight">
+            <h1 className="text-3xl lg:text-5xl font-extrabold text-white leading-tight course-main-title">
               {course.title}
             </h1>
 

@@ -35,7 +35,10 @@ const CourseSignUp = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(plan?.displayPricing || "monthly");
+  // Initialize plan selection: prefer specific type from state, then course default, then fall back to monthly
+  const [selectedPlan, setSelectedPlan] = useState(
+    plan?.type || plan?.displayPricing || "monthly"
+  );
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -96,19 +99,25 @@ const CourseSignUp = () => {
 
       const isSubscription = plan?.pricing && (plan.pricing.monthly || plan.pricing.yearly);
 
-      const planToSend = isSubscription
-        ? {
-          type: selectedPlan,
-          amount: (selectedPlan === 'yearly' ? plan.pricing.yearly : plan.pricing.monthly) || plan.amount || 0,
-          courseId: plan.courseId,
-          courseName: plan.courseName,
+      let finalAmount = 0;
+      if (isSubscription) {
+        if (selectedPlan === 'yearly') {
+          finalAmount = plan.pricing.yearly || plan.amount;
+        } else if (selectedPlan === 'monthly') {
+          finalAmount = plan.pricing.monthly || plan.amount;
+        } else {
+          finalAmount = plan.amount || 0;
         }
-        : {
-          type: plan?.type || "onetime",
-          amount: plan?.amount || 49000,
-          courseId: plan?.courseId,
-          courseName: plan?.courseName,
-        };
+      } else {
+        finalAmount = plan?.amount || 49000;
+      }
+
+      const planToSend = {
+        type: selectedPlan || plan?.type || (isSubscription ? "monthly" : "onetime"),
+        amount: finalAmount,
+        courseId: plan.courseId,
+        courseName: plan.courseName,
+      };
 
       // Create a pending enrollment plan and a payment record so the user can complete payment later
       try {

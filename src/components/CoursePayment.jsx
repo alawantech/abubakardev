@@ -16,6 +16,7 @@ import { db, storage } from "../firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCloudUploadAlt,
+  FaFileUpload,
   FaHistory,
   FaCheckCircle,
   FaExclamationTriangle,
@@ -214,17 +215,10 @@ const CoursePayment = () => {
 
         const enrollmentSnapshot = await getDocs(enrollmentQuery);
 
-        if (!enrollmentSnapshot.empty) {
-          const enrollmentDoc = enrollmentSnapshot.docs[0];
-          await updateDoc(doc(db, "enrollmentPlans", enrollmentDoc.id), {
-            planType: plan.type,
-            planAmount: plan.amount,
-            paymentStatus: "paid",
-            blocked: false,
-            nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          });
-        } else {
+        if (enrollmentSnapshot.empty) {
+          const daysToAdd = plan.type === "yearly" ? 365 : 30;
+          const nextDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
+
           await setDoc(doc(db, "enrollmentPlans", `${userId}_${courseId}`), {
             userId,
             courseId,
@@ -233,8 +227,21 @@ const CoursePayment = () => {
             paymentStatus: "paid",
             blocked: false,
             createdAt: new Date(),
-            nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            nextPaymentDate: nextDate,
+            dueDate: nextDate,
+          });
+        } else {
+          const enrollmentDoc = enrollmentSnapshot.docs[0];
+          const daysToAdd = plan.type === "yearly" ? 365 : 30;
+          const nextDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
+
+          await updateDoc(doc(db, "enrollmentPlans", enrollmentDoc.id), {
+            planType: plan.type,
+            planAmount: plan.amount,
+            paymentStatus: "paid",
+            blocked: false,
+            nextPaymentDate: nextDate,
+            dueDate: nextDate,
           });
         }
 
@@ -388,16 +395,13 @@ const CoursePayment = () => {
             )}
           </motion.div>
 
-          <motion.div
-            variants={itemVariants}
-            className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mb-8"
-          >
-            <h3 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2">
-              <FaCloudUploadAlt /> Upload Receipt
+          <motion.div variants={itemVariants} className="payment-section-card upload-receipt-section">
+            <h3 className="section-title-premium">
+              <FaFileUpload className="icon-glow" />
+              Upload Payment Receipt
             </h3>
-            <p className="text-sm text-slate-400 mb-6">
-              Please upload a clear screenshot of your bank transfer receipt for
-              verification.
+            <p className="section-description-premium">
+              After making the bank transfer, please take a screenshot or photo of your payment receipt and upload it here for verification.
             </p>
 
             <div
@@ -456,9 +460,9 @@ const CoursePayment = () => {
           </button>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="steps-container">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-            <FaInfoCircle className="text-blue-500" /> What Happens Next?
+        <motion.div variants={itemVariants} className="payment-section-card what-next-section">
+          <h3 className="section-title-premium">
+            <FaInfoCircle className="icon-glow" /> What Happens Next?
           </h3>
           <div className="space-y-4">
             {[

@@ -1,3 +1,8 @@
+.course-main-title {
+  color: #ffffff !important;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 /* CoursePage Premium Design */
 
 .course-page-wrapper {
@@ -51,7 +56,7 @@
   z-index: 10;
 }
 
-.course-breadcrumb > div {
+.course-breadcrumb>div {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -69,11 +74,9 @@
 }
 
 .pricing-card-full {
-  background: linear-gradient(
-    135deg,
-    rgba(30, 41, 59, 0.9) 0%,
-    rgba(15, 23, 42, 0.95) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.9) 0%,
+      rgba(15, 23, 42, 0.95) 100%);
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 24px;
   padding: 32px;
@@ -113,7 +116,8 @@
 /* Small per-month label */
 .pricing-per {
   font-size: 0.85rem;
-  color: #9ca3af; /* slate-400 */
+  color: #9ca3af;
+  /* slate-400 */
   margin-left: 10px;
   font-weight: 700;
 }
@@ -209,16 +213,17 @@
 .course-additional-info {
   display: flex;
   flex-direction: column;
-  gap: 24px; /* vertical spacing between cards */
+  gap: 24px;
+  /* vertical spacing between cards */
 }
 
 /* Vertical Spacing for Single Column Content */
-.course-single-column > * {
+.course-single-column>* {
   margin-bottom: 72px;
   /* Increased from 48px */
 }
 
-.course-single-column > *:last-child {
+.course-single-column>*:last-child {
   margin-bottom: 96px;
   /* Reduced to avoid excessive gap before footer while keeping room for bottom banner */
 }
@@ -473,7 +478,7 @@
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .course-breadcrumb {
-    padding: 80px 16px 12px;
+    padding: 110px 16px 12px;
   }
 
   .course-hero-section {
@@ -496,7 +501,7 @@
 
 @media (max-width: 480px) {
   .course-breadcrumb {
-    padding: 70px 12px 10px;
+    padding: 100px 12px 10px;
   }
 
   .course-hero-section {

@@ -9,7 +9,22 @@
   /* Dark base */
   position: relative;
   overflow: hidden;
-  padding: 120px 20px 60px;
+  padding: 140px 20px 60px;
+  /* Increased for header */
+}
+
+@media (max-width: 640px) {
+  .login-container {
+    padding: 110px 16px 40px;
+    align-items: flex-start;
+    /* Prevent centering vertically on short screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 100px 12px 20px;
+  }
 }
 
 /* Background Blobs for Auth */
