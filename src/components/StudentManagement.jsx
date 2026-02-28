@@ -21,6 +21,18 @@ const StudentManagement = () => {
     courseId: '',
     courseName: ''
   });
+  const [changePlanModal, setChangePlanModal] = useState({
+    isOpen: false,
+    enrollment: null,
+    newPlan: ''
+  });
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [receiptModal, setReceiptModal] = useState({
+    isOpen: false,
+    url: '',
+    payment: null
+  });
+  const [selectedCourseData, setSelectedCourseData] = useState(null);
 
   useEffect(() => {
     fetchCourses();
@@ -28,9 +40,22 @@ const StudentManagement = () => {
 
   useEffect(() => {
     if (selectedCourse) {
+      fetchFullCourseData(selectedCourse);
       fetchEnrollments(selectedCourse);
+      fetchPendingPayments(selectedCourse);
     }
   }, [selectedCourse]);
+
+  const fetchFullCourseData = async (courseId) => {
+    try {
+      const courseDoc = await getDoc(doc(db, 'courses', courseId));
+      if (courseDoc.exists()) {
+        setSelectedCourseData({ id: courseDoc.id, ...courseDoc.data() });
+      }
+    } catch (error) {
+      console.error('Error fetching full course data:', error);
+    }
+  };
 
   const fetchCourses = async () => {
     try {
@@ -50,80 +75,95 @@ const StudentManagement = () => {
   const fetchEnrollments = async (courseId) => {
     try {
       setLoading(true);
+
+      // 1. Fetch enrollment plans for the course
       const enrollmentsQuery = query(
         collection(db, 'enrollmentPlans'),
         where('courseId', '==', courseId)
       );
       const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
-      const enrollmentsData = [];
 
-      for (const enrollmentDoc of enrollmentsSnapshot.docs) {
-        const enrollment = enrollmentDoc.data();
-        console.log('Enrollment data:', enrollment); // Debug log
-
-        // Fetch user data
-        const userDoc = await getDoc(doc(db, 'users', enrollment.userId));
-        const userData = userDoc.exists() ? userDoc.data() : { fullName: 'Unknown', email: 'Unknown', whatsappNumber: 'Unknown' };
-
-        // Fetch payment data
-        const paymentsQuery = query(
-          collection(db, 'payments'),
-          where('userId', '==', enrollment.userId),
-          where('courseId', '==', courseId)
-        );
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        const paymentData = paymentsSnapshot.docs.length > 0 ? paymentsSnapshot.docs[0].data() : null;
-
-        // Check for renewal payments
-        const renewalPaymentsQuery = query(
-          collection(db, 'payments'),
-          where('userId', '==', enrollment.userId),
-          where('courseId', '==', courseId),
-          where('isRenewal', '==', true)
-        );
-        const renewalPaymentsSnapshot = await getDocs(renewalPaymentsQuery);
-        const latestRenewalPayment = renewalPaymentsSnapshot.docs.length > 0
-          ? renewalPaymentsSnapshot.docs
-              .map(doc => ({ id: doc.id, ...doc.data() }))
-              .sort((a, b) => b.submittedAt.toDate() - a.submittedAt.toDate())[0]
-          : null;
-
-        const enrollmentDate = enrollment.createdAt?.toDate() || new Date();
-        const expiryDate = enrollment.expiryDate?.toDate() || new Date(enrollmentDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // Default to 30 days if no expiry
-        const nextPaymentDate = new Date(expiryDate);
-
-        enrollmentsData.push({
-          id: enrollmentDoc.id,
-          ...enrollment,
-          user: userData,
-          payment: paymentData,
-          enrollmentDate,
-          expiryDate,
-          dueDate: expiryDate, // Use actual expiry date
-          nextPaymentDate,
-          blocked: enrollment.blocked || false,
-          latestRenewalPayment: latestRenewalPayment
-        });
+      if (enrollmentsSnapshot.empty) {
+        setEnrollments([]);
+        setLoading(false);
+        return;
       }
 
-      // Deduplicate enrollments by userId (each user should only have one enrollment per course)
+      const rawEnrollments = enrollmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const userIds = [...new Set(rawEnrollments.map(e => e.userId).filter(Boolean))];
+
+      // 2. Fetch users in batches of 10 (Firestore 'in' limit)
+      const usersMap = {};
+      const userFetchPromises = [];
+      for (let i = 0; i < userIds.length; i += 10) {
+        const batch = userIds.slice(i, i + 10);
+        userFetchPromises.push(getDocs(query(collection(db, 'users'), where('uid', 'in', batch))));
+      }
+
+      const usersSnapshots = await Promise.all(userFetchPromises);
+      usersSnapshots.forEach(snap => {
+        snap.forEach(doc => {
+          usersMap[doc.id] = doc.data();
+        });
+      });
+
+      // 3. Fetch all payments for this course at once
+      const paymentsQuery = query(
+        collection(db, 'payments'),
+        where('courseId', '==', courseId)
+      );
+      const paymentsSnapshot = await getDocs(paymentsQuery);
+      const paymentsMap = {};
+      paymentsSnapshot.forEach(doc => {
+        const p = { id: doc.id, ...doc.data() };
+        if (!paymentsMap[p.userId]) paymentsMap[p.userId] = [];
+        paymentsMap[p.userId].push(p);
+      });
+
+      // 4. Map everything together in memory
+      const enrollmentsData = rawEnrollments.map(enrollment => {
+        const userId = enrollment.userId;
+        const userData = usersMap[userId] || { fullName: 'Unknown', email: 'Unknown', whatsappNumber: 'Unknown' };
+        const userPayments = paymentsMap[userId] || [];
+
+        // Find specific payment info
+        const mainPayment = userPayments.find(p => !p.isRenewal) || (userPayments.length > 0 ? userPayments[0] : null);
+        const latestRenewalPayment = userPayments
+          .filter(p => p.isRenewal)
+          .sort((a, b) => {
+            const dateA = a.submittedAt?.toDate() || new Date(0);
+            const dateB = b.submittedAt?.toDate() || new Date(0);
+            return dateB - dateA;
+          })[0] || null;
+
+        const enrollmentDate = enrollment.createdAt?.toDate() || new Date();
+        const expiryDate = enrollment.expiryDate?.toDate() || new Date(enrollmentDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+
+        return {
+          ...enrollment,
+          user: userData,
+          payment: mainPayment,
+          enrollmentDate,
+          expiryDate,
+          dueDate: expiryDate,
+          nextPaymentDate: new Date(expiryDate),
+          blocked: enrollment.blocked || false,
+          latestRenewalPayment
+        };
+      });
+
+      // Deduplicate enrollments by userId
       const deduplicatedEnrollments = enrollmentsData.reduce((acc, enrollment) => {
         const existing = acc.find(e => e.userId === enrollment.userId);
-
         if (!existing) {
-          // No existing enrollment for this user, add it
           acc.push(enrollment);
         } else {
-          // Existing enrollment found for this user, decide which one to keep
           const existingIsPaid = existing.payment && (existing.payment.status === 'approved' || existing.paymentStatus === 'paid');
           const currentIsPaid = enrollment.payment && (enrollment.payment.status === 'approved' || enrollment.paymentStatus === 'paid');
-
           if (currentIsPaid && !existingIsPaid) {
-            // Current is paid, existing is not - replace with current
             const index = acc.indexOf(existing);
             acc[index] = enrollment;
           } else if (!currentIsPaid && !existingIsPaid) {
-            // Both are unpaid, keep the more recent one
             const existingDate = existing.createdAt?.toDate() || new Date(0);
             const currentDate = enrollment.createdAt?.toDate() || new Date(0);
             if (currentDate > existingDate) {
@@ -131,49 +171,96 @@ const StudentManagement = () => {
               acc[index] = enrollment;
             }
           }
-          // If existing is paid, keep it (don't replace with unpaid)
         }
-
         return acc;
       }, []);
 
-      // Clean up duplicate enrollment plans (run in background)
-      const cleanupDuplicates = async () => {
-        try {
-          const keptIds = new Set(deduplicatedEnrollments.map(e => e.id));
-          const duplicates = enrollmentsData.filter(e => !keptIds.has(e.id));
-
-          if (duplicates.length > 0) {
-            console.log('StudentManagement: Cleaning up duplicate enrollment plans:', duplicates.map(d => d.id));
-
-            const deletePromises = duplicates.map(async (duplicate) => {
-              try {
-                await deleteDoc(doc(db, 'enrollmentPlans', duplicate.id));
-                console.log('StudentManagement: Deleted duplicate enrollment plan:', duplicate.id);
-              } catch (error) {
-                console.error('StudentManagement: Failed to delete duplicate enrollment plan:', duplicate.id, error);
-              }
-            });
-
-            await Promise.all(deletePromises);
-          }
-        } catch (error) {
-          console.error('StudentManagement: Error during duplicate cleanup:', error);
-        }
-      };
-
-      // Run cleanup in background (don't await)
-      cleanupDuplicates();
-
       setEnrollments(deduplicatedEnrollments);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching enrollments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPendingPayments = async (courseId) => {
+    try {
+      const pendingQuery = query(
+        collection(db, 'payments'),
+        where('courseId', '==', courseId),
+        where('status', '==', 'pending')
+      );
+      const snapshot = await getDocs(pendingQuery);
+      const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPendingPayments(payments);
+    } catch (error) {
+      console.error('Error fetching pending payments:', error);
+    }
+  };
+
+  const approvePayment = async (payment) => {
+    try {
+      setLoading(true);
+      // 1. Update payment status
+      await updateDoc(doc(db, 'payments', payment.id), {
+        status: 'approved',
+        approvedAt: new Date()
+      });
+
+      // 2. Update enrollment - find the enrollment for this user/course
+      const enrollmentQuery = query(
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', payment.userId),
+        where('courseId', '==', payment.courseId)
+      );
+      const enrollmentSnap = await getDocs(enrollmentQuery);
+
+      if (!enrollmentSnap.empty) {
+        const enrollmentDoc = enrollmentSnap.docs[0];
+        const enrollmentData = enrollmentDoc.data();
+
+        // Calculate new expiry date based on planType
+        const now = new Date();
+        const baseDate = enrollmentData.expiryDate?.toDate() > now ? enrollmentData.expiryDate.toDate() : now;
+        const newExpiry = new Date(baseDate);
+
+        if (enrollmentData.planType === 'monthly') {
+          newExpiry.setMonth(newExpiry.getMonth() + 1);
+        } else if (enrollmentData.planType === 'yearly') {
+          newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+        } else {
+          // Onetime - maybe set a very far date or just keep current
+          newExpiry.setFullYear(newExpiry.getFullYear() + 10);
+        }
+
+        await updateDoc(doc(db, 'enrollmentPlans', enrollmentDoc.id), {
+          blocked: false,
+          expiryDate: newExpiry,
+          paymentStatus: 'paid'
+        });
+
+        // 3. Unblock user globally
+        if (payment.userId) {
+          await updateDoc(doc(db, 'users', payment.userId), {
+            blocked: false
+          });
+        }
+      }
+
+      alert('Payment approved successfully!');
+      fetchEnrollments(selectedCourse);
+      fetchPendingPayments(selectedCourse);
+      setReceiptModal({ isOpen: false, url: '', payment: null });
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      alert('Failed to approve payment.');
+    } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (date) => {
+    if (!date || !(date instanceof Date)) return 'N/A';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -181,15 +268,23 @@ const StudentManagement = () => {
     });
   };
 
-  const handleBlockToggle = async (enrollmentId, isBlocked) => {
+  const handleBlockToggle = async (enrollmentId, userId, isBlocked) => {
     try {
+      // 1. Update the specific enrollment plan
       await updateDoc(doc(db, 'enrollmentPlans', enrollmentId), {
         blocked: isBlocked
       });
-      
-      // Update local state
-      setEnrollments(prev => prev.map(enrollment => 
-        enrollment.id === enrollmentId 
+
+      // 2. Also update the global user document for a more robust block
+      if (userId) {
+        await updateDoc(doc(db, 'users', userId), {
+          blocked: isBlocked
+        });
+      }
+
+      // 3. Update local state
+      setEnrollments(prev => prev.map(enrollment =>
+        enrollment.id === enrollmentId
           ? { ...enrollment, blocked: isBlocked }
           : enrollment
       ));
@@ -232,15 +327,15 @@ const StudentManagement = () => {
       });
 
       // Update local state
-      setEnrollments(prev => prev.map(enrollmentItem => 
-        enrollmentItem.id === enrollment.id 
-          ? { 
-              ...enrollmentItem, 
-              expiryDate: newExpiryDate,
-              dueDate: newExpiryDate,
-              nextPaymentDate: newExpiryDate,
-              blocked: false // Update blocked status in local state
-            }
+      setEnrollments(prev => prev.map(enrollmentItem =>
+        enrollmentItem.id === enrollment.id
+          ? {
+            ...enrollmentItem,
+            expiryDate: newExpiryDate,
+            dueDate: newExpiryDate,
+            nextPaymentDate: newExpiryDate,
+            blocked: false // Update blocked status in local state
+          }
           : enrollmentItem
       ));
 
@@ -250,6 +345,51 @@ const StudentManagement = () => {
       console.error('Error extending subscription:', error);
       alert('Failed to extend subscription. Please try again.');
     }
+  };
+
+  const handleChangePlan = async () => {
+    if (!changePlanModal.enrollment || !changePlanModal.newPlan) return;
+
+    try {
+      const enrollment = changePlanModal.enrollment;
+      const newPlan = changePlanModal.newPlan;
+
+      // Update the enrollment planType in Firestore
+      await updateDoc(doc(db, 'enrollmentPlans', enrollment.id), {
+        planType: newPlan,
+        planChangedAt: new Date(),
+        planChangedBy: 'admin'
+      });
+
+      // Update local state
+      setEnrollments(prev => prev.map(enrollmentItem =>
+        enrollmentItem.id === enrollment.id
+          ? { ...enrollmentItem, planType: newPlan }
+          : enrollmentItem
+      ));
+
+      alert('Student plan updated successfully!');
+      setChangePlanModal({ isOpen: false, enrollment: null, newPlan: '' });
+    } catch (error) {
+      console.error('Error changing plan:', error);
+      alert('Failed to change plan. Please try again.');
+    }
+  };
+
+  const openChangePlanModal = (enrollment) => {
+    setChangePlanModal({
+      isOpen: true,
+      enrollment,
+      newPlan: enrollment.planType || 'monthly'
+    });
+  };
+
+  const closeChangePlanModal = () => {
+    setChangePlanModal({
+      isOpen: false,
+      enrollment: null,
+      newPlan: ''
+    });
   };
 
   const openPaymentHistory = (enrollment) => {
@@ -326,69 +466,161 @@ const StudentManagement = () => {
       </div>
 
       {selectedCourse && (
-        <div className="enrollments-table">
-          <h3>Enrolled Students ({enrollments.length})</h3>
-          {enrollments.length === 0 ? (
-            <p className="no-enrollments">No students enrolled in this course yet.</p>
-          ) : (
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Full Name</th>
-                    <th>Email</th>
-                    <th>WhatsApp Number</th>
-                    <th>Plan</th>
-                    <th>Enrollment Date</th>
-                    <th>Due Date</th>
-                    <th>Next Payment</th>
-                    <th>Payment History</th>
-                    <th>Extend Subscription</th>
-                    <th>Block Access</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enrollments.map(enrollment => {
-                    const plan = enrollment.planType ? enrollment.planType.charAt(0).toUpperCase() + enrollment.planType.slice(1) : 'Free';
-                    return (
-                      <tr key={enrollment.id}>
-                        <td>{enrollment.user.fullName}</td>
-                        <td>{enrollment.user.email}</td>
-                        <td>{enrollment.user.whatsappNumber}</td>
-                        <td>{plan}</td>
-                        <td>{formatDate(enrollment.enrollmentDate)}</td>
-                        <td>{formatDate(enrollment.dueDate)}</td>
-                        <td>{formatDate(enrollment.nextPaymentDate)}</td>
-                        <td>
-                          <button
-                            onClick={() => openPaymentHistory(enrollment)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                          >
-                            View History
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            onClick={() => openExtendModal(enrollment)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-                          >
-                            Extend
-                          </button>
-                        </td>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={enrollment.blocked}
-                            onChange={(e) => handleBlockToggle(enrollment.id, e.target.checked)}
-                            className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        <div className="enrollments-list">
+          {/* Pending Approvals Section */}
+          {pendingPayments.length > 0 && (
+            <div className="pending-approvals-section mb-8">
+              <div className="table-header-premium pending">
+                <h3>Pending Payment Approvals ({pendingPayments.length})</h3>
+                <div className="flex items-center gap-4">
+                  {selectedCourseData?.pricing && (
+                    <div className="bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 text-xs font-semibold text-blue-700">
+                      Pricing: ₦{selectedCourseData.pricing.monthly?.toLocaleString()} (M) / ₦{selectedCourseData.pricing.yearly?.toLocaleString()} (Y)
+                    </div>
+                  )}
+                  <span className="badge-pulse">Needs Action</span>
+                </div>
+              </div>
+              <div className="pending-grid">
+                {pendingPayments.map(payment => (
+                  <div key={payment.id} className="pending-card">
+                    <div className="pending-info">
+                      <strong>{payment.userEmail}</strong>
+                      <span>₦{payment.amount?.toLocaleString()} ({payment.type || 'subscription'}{payment.planType ? ` - ${payment.planType}` : ''})</span>
+                      <small>{payment.submittedAt?.toDate().toLocaleString()}</small>
+                    </div>
+                    <div className="pending-actions">
+                      <button
+                        className="view-receipt-btn"
+                        onClick={() => setReceiptModal({ isOpen: true, url: payment.receiptURL, payment })}
+                      >
+                        View Receipt
+                      </button>
+                      <button
+                        className="approve-btn"
+                        onClick={() => approvePayment(payment)}
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
+
+          <div className="table-header-premium">
+            <h3>Enrolled Students ({enrollments.length})</h3>
+          </div>
+
+          {enrollments.length === 0 ? (
+            <div className="no-enrollments-card">
+              <span className="icon">📂</span>
+              <p>No students enrolled in this course yet.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="table-container desktop-only">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Contact</th>
+                      <th>Plan Info</th>
+                      <th>Dates</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enrollments.map(enrollment => {
+                      const plan = enrollment.planType ? enrollment.planType.toUpperCase() : 'FREE';
+                      return (
+                        <tr key={enrollment.id}>
+                          <td>
+                            <div className="student-info">
+                              <span className="name">{enrollment.user.fullName}</span>
+                              <span className="email">{enrollment.user.email}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="whatsapp-badge">
+                              {enrollment.user.whatsappNumber}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`plan-tag ${enrollment.planType}`}>
+                              {plan}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="date-stack">
+                              <span className="date-item"><strong>In:</strong> {formatDate(enrollment.enrollmentDate)}</span>
+                              <span className="date-item"><strong>Due:</strong> {formatDate(enrollment.dueDate)}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="action-buttons">
+                              <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
+                              <button onClick={() => openExtendModal(enrollment)} title="Extend">➕</button>
+                              <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
+                              <div className="block-toggle">
+                                <input
+                                  type="checkbox"
+                                  checked={enrollment.blocked}
+                                  onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
+                                />
+                                <span>Block</span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="mobile-only student-cards">
+                {enrollments.map(enrollment => (
+                  <div key={enrollment.id} className="student-mobile-card">
+                    <div className="card-header">
+                      <div className="student-primary">
+                        <h4>{enrollment.user.fullName}</h4>
+                        <p>{enrollment.user.email}</p>
+                      </div>
+                      <span className={`plan-tag ${enrollment.planType}`}>
+                        {enrollment.planType?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="card-body">
+                      <div className="info-row">
+                        <span>WhatsApp:</span>
+                        <strong>{enrollment.user.whatsappNumber}</strong>
+                      </div>
+                      <div className="info-row">
+                        <span>Due Date:</span>
+                        <strong>{formatDate(enrollment.dueDate)}</strong>
+                      </div>
+                    </div>
+                    <div className="card-actions">
+                      <button onClick={() => openPaymentHistory(enrollment)}>History</button>
+                      <button onClick={() => openExtendModal(enrollment)}>Extend</button>
+                      <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
+                      <div className="block-control">
+                        <span>Block:</span>
+                        <input
+                          type="checkbox"
+                          checked={enrollment.blocked}
+                          onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -415,7 +647,7 @@ const StudentManagement = () => {
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Extend Subscription for {extendModal.enrollment?.user.fullName}
             </h3>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Number of months to extend:
@@ -458,6 +690,99 @@ const StudentManagement = () => {
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
               >
                 Extend Subscription
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Plan Modal */}
+      {changePlanModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
+              Change Plan for {changePlanModal.enrollment?.user.fullName}
+            </h3>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Select New Plan Type:
+              </label>
+              <div className="space-y-3">
+                {['monthly', 'yearly', 'onetime'].map((plan) => (
+                  <label
+                    key={plan}
+                    className={`flex items-center p-3 border rounded-xl cursor-pointer transition-all ${changePlanModal.newPlan === plan
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="newPlan"
+                      value={plan}
+                      checked={changePlanModal.newPlan === plan}
+                      onChange={(e) => setChangePlanModal(prev => ({ ...prev, newPlan: e.target.value }))}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="ml-3 font-semibold text-gray-700 capitalize">
+                      {plan === 'onetime' ? 'One-Time' : plan}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeChangePlanModal}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleChangePlan}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/30"
+              >
+                Update Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {receiptModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold">Payment Receipt</h3>
+              <button
+                onClick={() => setReceiptModal({ isOpen: false, url: '', payment: null })}
+                className="text-gray-500 hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 bg-gray-100 flex items-center justify-center">
+              <img
+                src={receiptModal.url}
+                alt="Receipt"
+                className="max-w-full h-auto shadow-2xl rounded-lg"
+              />
+            </div>
+            <div className="p-4 border-t bg-gray-50 flex gap-4">
+              <button
+                onClick={() => approvePayment(receiptModal.payment)}
+                className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors"
+              >
+                Approve Payment
+              </button>
+              <button
+                onClick={() => setReceiptModal({ isOpen: false, url: '', payment: null })}
+                className="px-6 bg-white border border-gray-300 rounded-xl font-bold hover:bg-gray-50"
+              >
+                Close
               </button>
             </div>
           </div>

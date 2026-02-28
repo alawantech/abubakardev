@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const AuthContext = createContext();
@@ -20,60 +20,48 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let unsubscribe;
+    let unsubscribeAuth;
+    let unsubscribeProfile;
 
-    // Check if Firebase auth is available
     if (!auth) {
-      console.warn('Firebase auth not available, skipping auth initialization');
       setLoading(false);
       return;
     }
 
-    try {
-      unsubscribe = onAuthStateChanged(auth, async (user) => {
-        try {
-          setCurrentUser(user);
+    unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
 
-          if (user && db) {
-            // Fetch additional user data from Firestore
-            try {
-              const userDoc = await getDoc(doc(db, 'users', user.uid));
-              if (userDoc.exists()) {
-                setUserData(userDoc.data());
-              }
-            } catch (firestoreError) {
-              console.error('Error fetching user data:', firestoreError);
-              // Don't set error for user data fetch failure, just log it
+      if (user && db) {
+        // Use a real-time listener for the user document
+        unsubscribeProfile = onSnapshot(
+          doc(db, 'users', user.uid),
+          (snapshot) => {
+            if (snapshot.exists()) {
+              setUserData(snapshot.id ? { uid: snapshot.id, ...snapshot.data() } : snapshot.data());
+            } else {
+              setUserData(null);
             }
-          } else {
-            setUserData(null);
+            setLoading(false);
+          },
+          (err) => {
+            console.error('User profile listener error:', err);
+            setLoading(false);
           }
-
-          setLoading(false);
-        } catch (authError) {
-          console.error('Auth state change error:', authError);
-          setError(authError);
-          setLoading(false);
-        }
-      });
-    } catch (initError) {
-      console.error('Firebase initialization error:', initError);
-      setError(initError);
-      setLoading(false);
-    }
-
-    // Fallback timeout in case Firebase never initializes
-    const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Firebase auth timeout - proceeding without auth');
+        );
+      } else {
+        setUserData(null);
+        if (unsubscribeProfile) unsubscribeProfile();
         setLoading(false);
       }
-    }, 10000); // 10 second timeout
+    });
+
+    const timeout = setTimeout(() => {
+      if (loading) setLoading(false);
+    }, 10000);
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (unsubscribeAuth) unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
       clearTimeout(timeout);
     };
   }, []);

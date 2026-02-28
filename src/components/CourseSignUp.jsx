@@ -138,7 +138,7 @@ const CourseSignUp = () => {
 
         await addDoc(collection(db, "payments"), {
           userId: user.uid,
-          userEmail: formData.email,
+          customerEmail: formData.email,
           courseId: planToSend.courseId,
           courseName: planToSend.courseName,
           planType: planToSend.type,

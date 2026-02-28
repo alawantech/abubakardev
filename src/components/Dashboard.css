@@ -412,6 +412,14 @@
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
+.stat-card-red .stat-icon {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.stat-card-red {
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
 .stat-content h3 {
   color: #1f2937;
   font-size: 32px;
@@ -549,6 +557,11 @@
   color: white;
 }
 
+.badge-pending {
+  background: rgba(245, 158, 11, 0.9);
+  color: white;
+}
+
 .course-content {
   padding: 20px;
 }
@@ -576,8 +589,45 @@
   gap: 6px;
 }
 
-.course-btn {
+.expiry-info {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.expiry-info.critical {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.course-actions {
+  display: flex;
+  gap: 12px;
   width: 100%;
+}
+
+.course-btn {
+  flex: 3;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -593,6 +643,55 @@
   transition: all 0.3s ease;
 }
 
+.whatsapp-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #25d366;
+  color: white !important;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.2);
+}
+
+.whatsapp-admin-btn:hover {
+  background: #128c7e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+  color: white !important;
+}
+
+.whatsapp-admin-btn svg {
+  font-size: 18px;
+}
+
+.renew-action-btn {
+  flex: 1;
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 12px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.renew-action-btn:hover {
+  background: #f5f3ff;
+  transform: translateY(-2px);
+}
+
 .course-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
@@ -602,6 +701,7 @@
   background: #9ca3af;
   cursor: not-allowed;
 }
+
 
 /* Payment Table */
 .payment-table {
@@ -688,6 +788,16 @@
   margin: 0 auto 24px;
   font-size: 48px;
   color: #ef4444;
+}
+
+.blocked-icon.pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.blocked-icon.initial {
+  background: rgba(124, 58, 237, 0.1);
+  color: #7c3aed;
 }
 
 .blocked-title {

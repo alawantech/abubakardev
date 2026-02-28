@@ -157,7 +157,7 @@ const Login = () => {
 
         <div className="login-footer">
           <p>
-            Don't have an account? <Link to="/register">Create Account</Link>
+            Not enrolled in a course yet? <Link to="/courses">Register now</Link>
           </p>
         </div>
       </motion.div>

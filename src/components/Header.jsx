@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
 
 const Header = () => {
+  const navigate = useNavigate()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { currentUser, signOut } = useAuth()
@@ -31,6 +32,7 @@ const Header = () => {
     try {
       await signOut()
       setIsMobileMenuOpen(false)
+      navigate('/login')
     } catch (error) {
       console.error('Error signing out:', error)
     }

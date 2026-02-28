@@ -75,7 +75,8 @@ thead {
   background: #f9fafb;
 }
 
-th, td {
+th,
+td {
   padding: 16px;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
@@ -98,7 +99,8 @@ tbody tr:hover {
   background: #f9fafb;
 }
 
-.no-enrollments, .no-selection {
+.no-enrollments,
+.no-selection {
   text-align: center;
   padding: 60px 20px;
   color: #6b7280;
@@ -124,8 +126,13 @@ tbody tr:hover {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading p {
@@ -133,10 +140,319 @@ tbody tr:hover {
   font-size: 1rem;
 }
 
-/* Responsive */
+/* Advanced Responsive Styles */
+.table-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 5px;
+}
+
+/* Pending Approvals Section */
+.pending-approvals-section {
+  background: #fffafa;
+  border: 2px dashed #fecaca;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+
+.table-header-premium.pending {
+  margin-bottom: 20px;
+}
+
+.table-header-premium.pending h3 {
+  color: #991b1b;
+}
+
+.badge-pulse {
+  background: #ef4444;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.pending-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.pending-card {
+  background: white;
+  border: 1px solid #fee2e2;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(153, 27, 27, 0.05);
+}
+
+.pending-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pending-info strong {
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.pending-info span {
+  color: #DC2626;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.pending-info small {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.pending-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.view-receipt-btn {
+  flex: 1;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.approve-btn {
+  flex: 1;
+  background: #059669;
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+}
+
+.view-receipt-btn:hover {
+  background: #e2e8f0;
+}
+
+.approve-btn:hover {
+  background: #047857;
+  transform: translateY(-2px);
+}
+
+
+.student-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-info .name {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.student-info .email {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.whatsapp-badge {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.plan-tag {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.plan-tag.monthly {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.plan-tag.yearly {
+  background: #fdf2f8;
+  color: #9d174d;
+}
+
+.plan-tag.onetime {
+  background: #f0f9ff;
+  color: #075985;
+}
+
+.date-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-item {
+  font-size: 0.8rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.action-buttons button {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-buttons button:hover {
+  background: #e5e7eb;
+}
+
+.block-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+/* Mobile Specifics */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  .student-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .student-mobile-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .student-primary h4 {
+    color: #1e293b;
+    margin-bottom: 2px;
+  }
+
+  .student-primary p {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+  }
+
+  .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-actions button {
+    flex: 1;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .block-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #ef4444;
+  }
+}
+
 @media (max-width: 768px) {
   .student-management {
-    padding: 15px;
+    padding: 10px;
   }
 
   .table-container {

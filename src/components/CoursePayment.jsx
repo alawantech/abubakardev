@@ -179,7 +179,7 @@ const CoursePayment = () => {
         planType: plan.type,
         amount: plan.amount,
         receiptURL,
-        status: receiptURL ? "approved" : "receipt_pending_upload",
+        status: "pending",
         submittedAt: new Date(),
         paymentMethod: "bank_transfer",
         receiptFileName: paymentReceipt.name,
@@ -192,7 +192,7 @@ const CoursePayment = () => {
         collection(db, "payments"),
         where("userId", "==", userId),
         where("courseId", "==", courseId),
-        where("status", "in", ["receipt_pending_upload", "receipt_required"]),
+        where("status", "in", ["receipt_pending_upload", "receipt_required", "pending"]),
       );
 
       const existingSnapshot = await getDocs(existingPaymentQuery);
@@ -216,32 +216,22 @@ const CoursePayment = () => {
         const enrollmentSnapshot = await getDocs(enrollmentQuery);
 
         if (enrollmentSnapshot.empty) {
-          const daysToAdd = plan.type === "yearly" ? 365 : 30;
-          const nextDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
-
           await setDoc(doc(db, "enrollmentPlans", `${userId}_${courseId}`), {
             userId,
             courseId,
             planType: plan.type,
             planAmount: plan.amount,
-            paymentStatus: "paid",
-            blocked: false,
+            paymentStatus: "pending",
+            blocked: true,
             createdAt: new Date(),
-            nextPaymentDate: nextDate,
-            dueDate: nextDate,
           });
         } else {
           const enrollmentDoc = enrollmentSnapshot.docs[0];
-          const daysToAdd = plan.type === "yearly" ? 365 : 30;
-          const nextDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000);
-
           await updateDoc(doc(db, "enrollmentPlans", enrollmentDoc.id), {
             planType: plan.type,
             planAmount: plan.amount,
-            paymentStatus: "paid",
-            blocked: false,
-            nextPaymentDate: nextDate,
-            dueDate: nextDate,
+            paymentStatus: "pending",
+            blocked: true,
           });
         }
 
@@ -261,14 +251,14 @@ const CoursePayment = () => {
           state: {
             paymentSuccess: true,
             message:
-              "Payment receipt submitted successfully! Your enrollment has been activated.",
+              "Payment receipt submitted! Your enrollment will be activated once our team verifies your payment.",
           },
         });
       } else {
         navigate("/dashboard", {
           state: {
             paymentSuccess: false,
-            message: "Upload failed. Please contact support.",
+            message: "Upload failed. Please try again or contact support if the issue persists.",
             receiptUploadFailed: true,
           },
         });

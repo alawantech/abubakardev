@@ -10,6 +10,7 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
+    onSnapshot
 } from "firebase/firestore";
 import {
     updateProfile,
@@ -135,20 +136,39 @@ const Dashboard = () => {
         }
     };
 
+    const calculateDaysRemaining = (expiryDate) => {
+        if (!expiryDate) return null;
+        try {
+            const now = new Date();
+            const expiry = expiryDate.toDate ? expiryDate.toDate() : new Date(expiryDate);
+            const diffTime = expiry.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        } catch (e) {
+            console.error("Error calculating days remaining:", e);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        if (!currentUser) return;
+
+        // Real-time listener for enrollment changes
+        const q = query(collection(db, "enrollmentPlans"), where("userId", "==", currentUser.uid));
+        const unsubscribe = onSnapshot(q, () => {
+            fetchData();
+        });
+
+        // Initial fetch and profile load
+        fetchData();
+        loadProfileData();
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
     useEffect(() => {
         if (location.state?.paymentSuccess) {
             setShowSuccessMessage(true);
-            window.history.replaceState({}, document.title);
-            setTimeout(() => setShowSuccessMessage(false), 5000);
-        }
-
-        if (!loading) {
-            if (currentUser) {
-                fetchData();
-                loadProfileData();
-            } else {
-                navigate("/login", { state: { from: "/dashboard" } });
-            }
         }
     }, [currentUser, loading, navigate, location.state]);
 
@@ -261,31 +281,54 @@ const Dashboard = () => {
             await uploadBytes(storageRef, paymentReceipt);
             const receiptURL = await getDownloadURL(storageRef);
 
+            const targetEnrollment = enrollments.find(e => e.blocked) || enrollments[0];
+            const getNumericalAmount = (enrollment) => {
+                if (!enrollment || !enrollment.course) return 6500;
+                const plan = enrollment.planType || 'monthly';
+                const pricing = enrollment.course.pricing;
+                if (plan === 'monthly' && pricing?.monthly) return Number(pricing.monthly);
+                if (plan === 'yearly' && pricing?.yearly) return Number(pricing.yearly);
+                if (enrollment.course.price) return Number(enrollment.course.price);
+                return 6500;
+            };
+
+            const actualAmount = getNumericalAmount(targetEnrollment);
+
             const renewalData = {
                 userId: currentUser.uid,
-                userEmail: currentUser.email,
-                courseId: enrollments[0].courseId,
+                customerEmail: currentUser.email,
+                courseId: targetEnrollment.courseId,
                 receiptURL,
-                amount: 6500,
+                amount: actualAmount,
                 status: "pending",
                 submittedAt: new Date(),
-                type: "renewal",
+                type: isInitialPayment ? "initial" : "renewal",
+                planType: targetEnrollment.planType || 'monthly'
             };
 
             await addDoc(collection(db, "payments"), renewalData);
 
             const enrollmentPlansQuery = query(
                 collection(db, "enrollmentPlans"),
-                where("userId", "==", currentUser.uid)
+                where("userId", "==", currentUser.uid),
+                where("courseId", "==", targetEnrollment.courseId)
             );
             const plansSnapshot = await getDocs(enrollmentPlansQuery);
 
             const updatePromises = plansSnapshot.docs.map(async (planDoc) => {
                 const planData = planDoc.data();
-                const newExpiryDate = new Date(
-                    planData.expiryDate?.toDate() || new Date()
-                );
-                newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
+                const currentExpiry = planData.expiryDate?.toDate() || new Date();
+                const now = new Date();
+
+                // Extension logic: if expiry is in future, extend from that. Otherwise, start from now.
+                const baseDate = currentExpiry > now ? currentExpiry : now;
+                const newExpiryDate = new Date(baseDate);
+
+                if (planData.planType === 'yearly') {
+                    newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
+                } else {
+                    newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
+                }
 
                 await updateDoc(doc(db, "enrollmentPlans", planDoc.id), {
                     blocked: false,
@@ -310,18 +353,32 @@ const Dashboard = () => {
         }
     };
 
-    const isUserBlocked = enrollments.some((enrollment) => {
-        const hasPayment = enrollment.payment;
-        const paymentApproved = enrollment.payment?.status === "approved";
-        const paymentStatus = enrollment.paymentStatus;
-        return (
-            hasPayment &&
-            (paymentApproved || paymentStatus === "paid") &&
-            enrollment.blocked
-        );
+    const hasActiveEnrollment = enrollments.some(e => !e.blocked);
+    const hasPendingAccess = enrollments.length > 0 && enrollments.every(e => {
+        const p = e.payment;
+        return !p || p.status === 'pending';
     });
+    const hasAnyApprovedPayment = enrollments.some(e => e.payment?.status === 'approved' || e.paymentStatus === 'paid');
 
-    // Blocked screen
+    // Block if: Admin explicitly blocked user OR all enrollments are blocked
+    const isUserBlocked = userData?.blocked || (enrollments.length > 0 && !hasActiveEnrollment);
+    const isInitialPayment = enrollments.length > 0 && !hasAnyApprovedPayment;
+
+    // Helper to get pricing for the blocked/initial screen
+    const targetEnrollment = isInitialPayment ? enrollments[0] : (enrollments.find(e => e.blocked) || enrollments[0]);
+    const getDisplayAmount = (enrollment) => {
+        if (!enrollment || !enrollment.course) return "₦6,500";
+        const plan = enrollment.planType || 'monthly';
+        const pricing = enrollment.course.pricing;
+        if (plan === 'monthly' && pricing?.monthly) return `₦${Number(pricing.monthly).toLocaleString()}`;
+        if (plan === 'yearly' && pricing?.yearly) return `₦${Number(pricing.yearly).toLocaleString()}`;
+        if (enrollment.course.price) return `₦${Number(enrollment.course.price).toLocaleString()}`;
+        return "₦6,500";
+    };
+    const displayAmount = getDisplayAmount(targetEnrollment);
+    const planLabel = targetEnrollment?.planType ? `(${targetEnrollment.planType.charAt(0).toUpperCase() + targetEnrollment.planType.slice(1)})` : '(Monthly)';
+
+    // Account Level Block or All Courses Pending screen
     if (isUserBlocked) {
         return (
             <div className="dashboard-wrapper">
@@ -334,91 +391,127 @@ const Dashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
-                        <div className="blocked-icon">
-                            <FaExclamationTriangle />
+                        <div className={`blocked-icon ${hasPendingAccess ? 'pending' : (isInitialPayment ? 'initial' : '')}`}>
+                            {hasPendingAccess ? <FaClock /> : (isInitialPayment ? <FaBook /> : <FaExclamationTriangle />)}
                         </div>
-                        <h1 className="blocked-title">Subscription Expired</h1>
+                        <h1 className="blocked-title">
+                            {hasPendingAccess
+                                ? "Verification in Progress"
+                                : (isInitialPayment ? "Step 1: Finish Payment" : (userData?.blocked ? "Account Blocked" : "Your Access Has Ended"))
+                            }
+                        </h1>
                         <p className="blocked-subtitle">
-                            Your subscription has expired. Please renew your payment to
-                            continue accessing your courses.
+                            {hasPendingAccess
+                                ? "We have received your receipt! Our team is checking it now. You'll get access as soon as it's confirmed."
+                                : (isInitialPayment
+                                    ? "Finish your initial payment to start your learning journey with us."
+                                    : (userData?.blocked
+                                        ? "Your account has been restricted by the administrator. Please contact support for more details."
+                                        : "Your subscription period has finished. Please choose a plan below to renew and keep learning."))
+                            }
                         </p>
 
-                        <div className="renewal-card">
-                            <h2 className="renewal-title">Renew Your Subscription</h2>
+                        {!hasPendingAccess && (
+                            <div className="renewal-card">
+                                <h2 className="renewal-title">
+                                    {isInitialPayment ? "Step 1: Finish Your Payment" : "Step 1: Renew Your Access"}
+                                </h2>
 
-                            {bankDetails && (
-                                <div className="bank-details-box">
+                                {bankDetails && (
+                                    <div className="bank-details-box">
+                                        <h3>
+                                            <FaUniversity /> Transfer to our Bank
+                                        </h3>
+                                        <div className="bank-grid">
+                                            <div className="bank-item">
+                                                <label>Bank Name</label>
+                                                <span>{bankDetails.bankName}</span>
+                                            </div>
+                                            <div className="bank-item">
+                                                <label>Account Name</label>
+                                                <span>{bankDetails.accountName}</span>
+                                            </div>
+                                            <div className="bank-item">
+                                                <label>Account Number</label>
+                                                <span>{bankDetails.accountNumber}</span>
+                                            </div>
+                                            <div className="bank-item">
+                                                <label>Amount to Pay</label>
+                                                <span style={{ color: '#6366f1', fontSize: '1.2rem', fontWeight: '800' }}>
+                                                    {displayAmount} {planLabel}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="upload-receipt-box">
                                     <h3>
-                                        <FaUniversity /> Bank Transfer Details
+                                        <FaCloudUploadAlt /> Step 2: Upload Your Receipt
                                     </h3>
-                                    <div className="bank-grid">
-                                        <div className="bank-item">
-                                            <label>Bank Name</label>
-                                            <span>{bankDetails.bankName}</span>
-                                        </div>
-                                        <div className="bank-item">
-                                            <label>Account Name</label>
-                                            <span>{bankDetails.accountName}</span>
-                                        </div>
-                                        <div className="bank-item">
-                                            <label>Account Number</label>
-                                            <span>{bankDetails.accountNumber}</span>
-                                        </div>
-                                        <div className="bank-item">
-                                            <label>Amount</label>
-                                            <span>₦6,500</span>
-                                        </div>
+                                    <div
+                                        className="upload-area"
+                                        onClick={() =>
+                                            document.getElementById("renewal-receipt").click()
+                                        }
+                                    >
+                                        <FaCloudUploadAlt className="upload-icon" />
+                                        <p>Click here to upload your receipt photo</p>
+                                        <small>PNG or JPG images only</small>
                                     </div>
-                                </div>
-                            )}
+                                    <input
+                                        id="renewal-receipt"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleRenewalFileChange}
+                                        style={{ display: "none" }}
+                                    />
 
-                            <div className="upload-receipt-box">
-                                <h3>
-                                    <FaCloudUploadAlt /> Upload Payment Receipt
-                                </h3>
-                                <div
-                                    className="upload-area"
-                                    onClick={() =>
-                                        document.getElementById("renewal-receipt").click()
-                                    }
+                                    {receiptPreview && (
+                                        <div className="receipt-preview">
+                                            <img src={receiptPreview} alt="Receipt preview" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={handleRenewalSubmit}
+                                    disabled={!paymentReceipt || uploadingRenewal}
+                                    className="renewal-submit-btn"
                                 >
-                                    <FaCloudUploadAlt className="upload-icon" />
-                                    <p>Click to upload receipt</p>
-                                    <small>PNG, JPG, JPEG up to 5MB</small>
-                                </div>
-                                <input
-                                    id="renewal-receipt"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleRenewalFileChange}
-                                    style={{ display: "none" }}
-                                />
-
-                                {receiptPreview && (
-                                    <div className="receipt-preview">
-                                        <img src={receiptPreview} alt="Receipt preview" />
-                                    </div>
-                                )}
+                                    {uploadingRenewal ? (
+                                        <>
+                                            <div className="spinner"></div>
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaCloudUploadAlt />
+                                            {isInitialPayment ? "Submit Initial Payment" : "Submit Renewal Payment"}
+                                        </>
+                                    )}
+                                </button>
                             </div>
+                        )}
 
-                            <button
-                                onClick={handleRenewalSubmit}
-                                disabled={!paymentReceipt || uploadingRenewal}
-                                className="renewal-submit-btn"
-                            >
-                                {uploadingRenewal ? (
-                                    <>
-                                        <div className="spinner"></div>
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
-                                        <FaCloudUploadAlt />
-                                        Submit Renewal Payment
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {hasPendingAccess && (
+                            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                                <button
+                                    onClick={fetchData}
+                                    className="btn-secondary"
+                                >
+                                    Refresh Status
+                                </button>
+                                <a
+                                    href="https://wa.me/2348156853636?text=I%20made%20a%20payment,%20I%20am%20waiting%20for%20approval"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="whatsapp-admin-btn"
+                                >
+                                    <FaWhatsapp /> Chat with Admin
+                                </a>
+                            </div>
+                        )}
                     </motion.div>
                 </div>
             </div>
@@ -723,7 +816,10 @@ const Dashboard = () => {
                     </motion.div>
 
                     <motion.div
-                        className="stat-card stat-card-orange"
+                        className={`stat-card ${(() => {
+                            const minDays = Math.min(...enrollments.map(e => calculateDaysRemaining(e.expiryDate)).filter(d => d !== null), Infinity);
+                            return (minDays <= 3 && minDays !== Infinity) ? 'stat-card-red' : 'stat-card-orange';
+                        })()}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
@@ -732,8 +828,15 @@ const Dashboard = () => {
                             <FaClock />
                         </div>
                         <div className="stat-content">
-                            <h3>0</h3>
-                            <p>Hours Learned</p>
+                            <h3>{(() => {
+                                const activeDays = enrollments
+                                    .map(e => calculateDaysRemaining(e.expiryDate))
+                                    .filter(d => d !== null);
+                                if (activeDays.length === 0) return '---';
+                                const minDays = Math.min(...activeDays);
+                                return minDays <= 0 ? 'Expired' : `${minDays} Days`;
+                            })()}</h3>
+                            <p>Access Remaining</p>
                         </div>
                     </motion.div>
                 </div>
@@ -782,8 +885,13 @@ const Dashboard = () => {
                                                     <FaExclamationTriangle /> Blocked
                                                 </div>
                                             )}
+                                            {!enrollment.blocked && enrollment.payment?.status === "pending" && (
+                                                <div className="course-badge badge-pending">
+                                                    <FaHistory /> Verification Pending
+                                                </div>
+                                            )}
                                             {!enrollment.blocked &&
-                                                enrollment.payment?.status === "approved" && (
+                                                (enrollment.payment?.status === "approved" || enrollment.paymentStatus === 'paid') && (
                                                     <div className="course-badge badge-active">
                                                         <FaCheckCircle /> Active
                                                     </div>
@@ -801,16 +909,30 @@ const Dashboard = () => {
                                                 {(enrollment.planAmount || 0).toLocaleString()}
                                             </span>
                                         </div>
-                                        <button
-                                            className="course-btn"
-                                            onClick={() =>
-                                                navigate(`/course/${enrollment.courseId}/learn`)
-                                            }
-                                            disabled={enrollment.blocked}
-                                        >
-                                            {enrollment.blocked ? "Renew to Access" : "Continue Learning"}
-                                            <FaArrowRight />
-                                        </button>
+                                        <div className="course-actions">
+                                            <button
+                                                className="course-btn"
+                                                onClick={() =>
+                                                    navigate(`/course/${enrollment.courseId}/learn`)
+                                                }
+                                                disabled={enrollment.blocked}
+                                            >
+                                                {enrollment.blocked ? "Renew to Access" : "Continue Learning"}
+                                                <FaArrowRight />
+                                            </button>
+                                            <button
+                                                className="renew-action-btn"
+                                                onClick={() => navigate('/renew-payment', {
+                                                    state: {
+                                                        courseId: enrollment.courseId,
+                                                        courseName: enrollment.courseName
+                                                    }
+                                                })}
+                                                title={enrollment.blocked ? "Renew Subscription" : "Extend Subscription"}
+                                            >
+                                                <FaHistory /> {enrollment.blocked ? "Renew" : "Extend"}
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
@@ -865,6 +987,7 @@ const Dashboard = () => {
                                             <td>
                                                 <span className="payment-type">
                                                     {payment.type || "enrollment"}
+                                                    {payment.planType ? ` (${payment.planType})` : ""}
                                                 </span>
                                             </td>
                                             <td>

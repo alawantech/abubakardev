@@ -10,7 +10,7 @@ const CourseLearning = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,18 +124,40 @@ const CourseLearning = () => {
         setCompletedLessons(enrollmentData.completedLessons || []);
       }
 
-      // Process Plan Data (check if blocked)
+      // Process Plan Data (check if blocked or unapproved)
       if (!planSnapshot.empty) {
         const planData = planSnapshot.docs[0].data();
-        if (planData.blocked) {
+        const paymentsQuery = query(
+          collection(db, 'payments'),
+          where('userId', '==', currentUser.uid),
+          where('courseId', '==', courseId),
+          where('status', '==', 'approved')
+        );
+        const approvedPayments = await getDocs(paymentsQuery);
+
+        if (planData.blocked || userData?.blocked) {
           navigate('/dashboard', {
             state: {
-              message: 'Your access to this course has been blocked due to payment issues. Please renew your subscription.',
+              message: 'Your access to this course has been blocked. Please contact support or renew your subscription.',
               paymentSuccess: false
             }
           });
           return;
         }
+
+        if (approvedPayments.empty) {
+          navigate('/dashboard', {
+            state: {
+              message: 'Your payment is still pending approval. You will gain access once the admin verifies your receipt.',
+              paymentSuccess: false
+            }
+          });
+          return;
+        }
+      } else {
+        // No enrollment plan found at all
+        navigate('/courses');
+        return;
       }
 
       setLoading(false);

@@ -15,7 +15,20 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { currentUser, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(true);
+      else setSidebarOpen(false);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -52,8 +65,50 @@ const AdminDashboard = () => {
       case 'dashboard':
         return (
           <div className="dashboard-home">
-            <h2>Welcome to Admin Dashboard</h2>
-            <p>You have admin access to this system.</p>
+            <div className="dashboard-greeting">
+              <h2>Welcome back, <span className="admin-name">{currentUser?.displayName || 'Admin'}</span></h2>
+              <p>Here's what's happening in your school today.</p>
+            </div>
+
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon students">👥</div>
+                <div className="stat-info">
+                  <span className="label">Total Students</span>
+                  <span className="value">Active</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon courses">📚</div>
+                <div className="stat-info">
+                  <span className="label">Courses</span>
+                  <span className="value">Published</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon revenue">💰</div>
+                <div className="stat-info">
+                  <span className="label">Revenue</span>
+                  <span className="value">Growth</span>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon inquiries">📩</div>
+                <div className="stat-info">
+                  <span className="label">New Inquiries</span>
+                  <span className="value">Pending</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-actions">
+              <h3>Quick Actions</h3>
+              <div className="action-grid">
+                <button onClick={() => setActiveTab('courses')} className="action-item">Manage Courses</button>
+                <button onClick={() => setActiveTab('students')} className="action-item">View Students</button>
+                <button onClick={() => setActiveTab('inquiries')} className="action-item">Respond to Inquiries</button>
+              </div>
+            </div>
           </div>
         );
       case 'courses':
@@ -76,7 +131,14 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="admin-dashboard pt-32">
+    <div className={`admin-dashboard pt-32 ${isMobile ? 'mobile' : ''}`}>
+      {isMobile && sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
       <div className={`admin-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h2>Admin Panel</h2>
@@ -88,53 +150,39 @@ const AdminDashboard = () => {
           </button>
         </div>
         <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <span className="nav-icon">📊</span>
-            {sidebarOpen && <span>Dashboard</span>}
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'courses' ? 'active' : ''}`}
-            onClick={() => setActiveTab('courses')}
-          >
-            <span className="nav-icon">📚</span>
-            {sidebarOpen && <span>Courses</span>}
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
-            onClick={() => setActiveTab('students')}
-          >
-            <span className="nav-icon">👥</span>
-            {sidebarOpen && <span>Students</span>}
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'inquiries' ? 'active' : ''}`}
-            onClick={() => setActiveTab('inquiries')}
-          >
-            <span className="nav-icon">📩</span>
-            {sidebarOpen && <span>Inquiries</span>}
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
-          >
-            <span className="nav-icon">⚙️</span>
-            {sidebarOpen && <span>Profile</span>}
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'links' ? 'active' : ''}`}
-            onClick={() => setActiveTab('links')}
-          >
-            <span className="nav-icon">🔗</span>
-            {sidebarOpen && <span>Links</span>}
-          </button>
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+            { id: 'courses', label: 'Courses', icon: '📚' },
+            { id: 'students', label: 'Students', icon: '👥' },
+            { id: 'inquiries', label: 'Inquiries', icon: '📩' },
+            { id: 'profile', label: 'Profile', icon: '⚙️' },
+            { id: 'links', label: 'Links', icon: '🔗' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (isMobile) setSidebarOpen(false);
+              }}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              {(sidebarOpen || !isMobile) && <span>{item.label}</span>}
+            </button>
+          ))}
         </nav>
       </div>
 
       <div className="admin-main">
         <div className="admin-header">
+          {isMobile && (
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setSidebarOpen(true)}
+            >
+              ☰
+            </button>
+          )}
           <h1>Admin Dashboard</h1>
           <button onClick={handleLogout} className="logout-btn">
             Logout
