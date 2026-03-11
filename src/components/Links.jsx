@@ -15,7 +15,13 @@ import {
   FaYoutube,
   FaEnvelope,
   FaPhone,
-  FaLink
+  FaLink,
+  FaGraduationCap,
+  FaSchool,
+  FaBook,
+  FaChalkboardTeacher,
+  FaLaptopCode,
+  FaCertificate
 } from "react-icons/fa";
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -35,7 +41,13 @@ const ICON_OPTIONS = {
   FaYoutube: <FaYoutube />,
   FaEnvelope: <FaEnvelope />,
   FaPhone: <FaPhone />,
-  FaLink: <FaLink />
+  FaLink: <FaLink />,
+  FaGraduationCap: <FaGraduationCap />,
+  FaSchool: <FaSchool />,
+  FaBook: <FaBook />,
+  FaChalkboardTeacher: <FaChalkboardTeacher />,
+  FaLaptopCode: <FaLaptopCode />,
+  FaCertificate: <FaCertificate />
 };
 
 // Fallback/Initial links
@@ -68,12 +80,21 @@ const Links = () => {
   useEffect(() => {
     const fetchLinks = async () => {
       try {
-        const q = query(collection(db, 'quick_links'), orderBy('createdAt', 'desc'));
+        const q = collection(db, 'quick_links');
         const querySnapshot = await getDocs(q);
         const fetchedLinks = querySnapshot.docs.map(doc => ({
           id: doc.id,
+          order: doc.data().order !== undefined ? doc.data().order : 99999,
           ...doc.data()
         }));
+
+        // Sort by order, then by createdAt to keep it consistent
+        fetchedLinks.sort((a, b) => {
+          if (a.order !== b.order) return a.order - b.order;
+          const timeA = a.createdAt?.toMillis() || 0;
+          const timeB = b.createdAt?.toMillis() || 0;
+          return timeB - timeA;
+        });
 
         if (fetchedLinks.length > 0) {
           setLinks(fetchedLinks);

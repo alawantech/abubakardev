@@ -26,6 +26,12 @@ import {
     FaEnvelope,
     FaPhone,
     FaLink,
+    FaGraduationCap,
+    FaSchool,
+    FaBook,
+    FaChalkboardTeacher,
+    FaLaptopCode,
+    FaCertificate,
     FaTrash,
     FaEdit,
     FaPlus,
@@ -48,7 +54,13 @@ const ICON_OPTIONS = {
     FaYoutube: <FaYoutube />,
     FaEnvelope: <FaEnvelope />,
     FaPhone: <FaPhone />,
-    FaLink: <FaLink />
+    FaLink: <FaLink />,
+    FaGraduationCap: <FaGraduationCap />,
+    FaSchool: <FaSchool />,
+    FaBook: <FaBook />,
+    FaChalkboardTeacher: <FaChalkboardTeacher />,
+    FaLaptopCode: <FaLaptopCode />,
+    FaCertificate: <FaCertificate />
 };
 
 const LinksManagement = () => {
@@ -56,6 +68,10 @@ const LinksManagement = () => {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [currentLink, setCurrentLink] = useState(null);
+
+    const [dragItemIndex, setDragItemIndex] = useState(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState(null);
+    const [isReordering, setIsReordering] = useState(false);
 
     const [formData, setFormData] = useState({
         label: '',
@@ -71,12 +87,22 @@ const LinksManagement = () => {
     const fetchLinks = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'quick_links'), orderBy('createdAt', 'desc'));
+            const q = collection(db, 'quick_links');
             const querySnapshot = await getDocs(q);
             const linksData = querySnapshot.docs.map(doc => ({
                 id: doc.id,
+                order: doc.data().order !== undefined ? doc.data().order : 99999,
                 ...doc.data()
             }));
+
+            // Sort by order, then by createdAt to keep it consistent
+            linksData.sort((a, b) => {
+                if (a.order !== b.order) return a.order - b.order;
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
+            });
+
             setLinks(linksData);
         } catch (error) {
             console.error("Error fetching links:", error);
@@ -112,6 +138,7 @@ const LinksManagement = () => {
             } else {
                 await addDoc(collection(db, 'quick_links'), {
                     ...formData,
+                    order: links.length,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 });
@@ -157,6 +184,54 @@ const LinksManagement = () => {
         });
         setIsEditing(false);
         setCurrentLink(null);
+    };
+
+    const handleDragStart = (e, index) => {
+        setDragItemIndex(index);
+        e.dataTransfer.effectAllowed = "move";
+        // Slightly delay to allow the ghost image to render before hiding the original item
+        setTimeout(() => e.target.classList.add('dragging'), 0);
+    };
+
+    const handleDragEnter = (e, index) => {
+        e.preventDefault();
+        setDragOverItemIndex(index);
+    };
+
+    const handleDragEnd = async (e) => {
+        e.preventDefault();
+        e.target.classList.remove('dragging');
+
+        if (dragItemIndex === null || dragOverItemIndex === null || dragItemIndex === dragOverItemIndex) {
+            setDragItemIndex(null);
+            setDragOverItemIndex(null);
+            return;
+        }
+
+        const newLinks = [...links];
+        const draggedItem = newLinks[dragItemIndex];
+        newLinks.splice(dragItemIndex, 1);
+        newLinks.splice(dragOverItemIndex, 0, draggedItem);
+
+        setLinks(newLinks); // Optimistic UI update
+        setDragItemIndex(null);
+        setDragOverItemIndex(null);
+        setIsReordering(true);
+
+        try {
+            // Update order in Firestore
+            const updatePromises = newLinks.map((link, index) => {
+                const linkRef = doc(db, 'quick_links', link.id);
+                return updateDoc(linkRef, { order: index });
+            });
+            await Promise.all(updatePromises);
+        } catch (error) {
+            console.error("Error updating link order:", error);
+            alert("Failed to save new order. Reverting...");
+            fetchLinks(); // Revert on failure
+        } finally {
+            setIsReordering(false);
+        }
     };
 
     return (
@@ -245,12 +320,21 @@ const LinksManagement = () => {
                         ) : links.length === 0 ? (
                             <div className="empty-state">No links found. Add your first link!</div>
                         ) : (
-                            <div className="links-admin-list">
-                                {links.map(link => (
-                                    <div key={link.id} className="link-admin-item">
+                            <div className={`links-admin-list ${isReordering ? 'reordering' : ''}`}>
+                                {isReordering && <div className="reordering-overlay">Saving new order...</div>}
+                                {links.map((link, index) => (
+                                    <div
+                                        key={link.id}
+                                        className={`link-admin-item ${dragOverItemIndex === index ? 'drag-over' : ''}`}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, index)}
+                                        onDragEnter={(e) => handleDragEnter(e, index)}
+                                        onDragEnd={handleDragEnd}
+                                        onDragOver={(e) => e.preventDefault()}
+                                    >
                                         <div className="link-info-main">
-                                            <div className="link-icon-preview">
-                                                {ICON_OPTIONS[link.iconName] || <FaLink />}
+                                            <div className="link-icon-preview drag-handle" title="Drag to reorder">
+                                                <span className="drag-indicator">⋮⋮</span> {ICON_OPTIONS[link.iconName] || <FaLink />}
                                             </div>
                                             <div className="link-details">
                                                 <span className="link-label">{link.label}</span>
