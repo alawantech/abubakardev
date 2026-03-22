@@ -800,6 +800,11 @@
   color: #7c3aed;
 }
 
+.blocked-icon.rejected {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
 .blocked-title {
   color: white;
   font-size: 42px;

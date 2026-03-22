@@ -316,24 +316,8 @@ const Dashboard = () => {
             const plansSnapshot = await getDocs(enrollmentPlansQuery);
 
             const updatePromises = plansSnapshot.docs.map(async (planDoc) => {
-                const planData = planDoc.data();
-                const currentExpiry = planData.expiryDate?.toDate() || new Date();
-                const now = new Date();
-
-                // Extension logic: if expiry is in future, extend from that. Otherwise, start from now.
-                const baseDate = currentExpiry > now ? currentExpiry : now;
-                const newExpiryDate = new Date(baseDate);
-
-                if (planData.planType === 'yearly') {
-                    newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
-                } else {
-                    newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
-                }
-
                 await updateDoc(doc(db, "enrollmentPlans", planDoc.id), {
-                    blocked: false,
-                    expiryDate: newExpiryDate,
-                    lastRenewalDate: new Date(),
+                    paymentStatus: 'pending',
                 });
             });
 
@@ -354,10 +338,6 @@ const Dashboard = () => {
     };
 
     const hasActiveEnrollment = enrollments.some(e => !e.blocked);
-    const hasPendingAccess = enrollments.length > 0 && enrollments.every(e => {
-        const p = e.payment;
-        return !p || p.status === 'pending';
-    });
     const hasAnyApprovedPayment = enrollments.some(e => e.payment?.status === 'approved' || e.paymentStatus === 'paid');
 
     // Block if: Admin explicitly blocked user OR all enrollments are blocked
@@ -366,6 +346,10 @@ const Dashboard = () => {
 
     // Helper to get pricing for the blocked/initial screen
     const targetEnrollment = isInitialPayment ? enrollments[0] : (enrollments.find(e => e.blocked) || enrollments[0]);
+    const targetPayment = targetEnrollment?.payment;
+
+    const isPending = targetPayment?.status === 'pending';
+    const isRejected = targetPayment?.status === 'rejected';
     const getDisplayAmount = (enrollment) => {
         if (!enrollment || !enrollment.course) return "₦6,500";
         const plan = enrollment.planType || 'monthly';
@@ -391,27 +375,31 @@ const Dashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
-                        <div className={`blocked-icon ${hasPendingAccess ? 'pending' : (isInitialPayment ? 'initial' : '')}`}>
-                            {hasPendingAccess ? <FaClock /> : (isInitialPayment ? <FaBook /> : <FaExclamationTriangle />)}
+                        <div className={`blocked-icon ${isPending ? 'pending' : (isRejected ? 'rejected' : isInitialPayment ? 'initial' : '')}`}>
+                            {isPending ? <FaClock /> : (isRejected ? <FaTimes /> : isInitialPayment ? <FaBook /> : <FaExclamationTriangle />)}
                         </div>
                         <h1 className="blocked-title">
-                            {hasPendingAccess
+                            {isPending
                                 ? "Verification in Progress"
-                                : (isInitialPayment ? "Step 1: Finish Payment" : (userData?.blocked ? "Account Blocked" : "Your Access Has Ended"))
+                                : isRejected
+                                    ? "Payment Rejected"
+                                    : (isInitialPayment ? "Step 1: Finish Payment" : (userData?.blocked ? "Account Blocked" : "Your Access Has Ended"))
                             }
                         </h1>
                         <p className="blocked-subtitle">
-                            {hasPendingAccess
+                            {isPending
                                 ? "We have received your receipt! Our team is checking it now. You'll get access as soon as it's confirmed."
-                                : (isInitialPayment
-                                    ? "Finish your initial payment to start your learning journey with us."
-                                    : (userData?.blocked
-                                        ? "Your account has been restricted by the administrator. Please contact support for more details."
-                                        : "Your subscription period has finished. Please choose a plan below to renew and keep learning."))
+                                : isRejected
+                                    ? "Your payment was rejected by the admin. Please check the amount or details, and make the payment again to continue."
+                                    : (isInitialPayment
+                                        ? "Finish your initial payment to start your learning journey with us."
+                                        : (userData?.blocked
+                                            ? "Your account has been restricted by the administrator. Please contact support for more details."
+                                            : "Your subscription period has finished. Please choose a plan below to renew and keep learning."))
                             }
                         </p>
 
-                        {!hasPendingAccess && (
+                        {(!isPending && !userData?.blocked) && (
                             <div className="renewal-card">
                                 <h2 className="renewal-title">
                                     {isInitialPayment ? "Step 1: Finish Your Payment" : "Step 1: Renew Your Access"}
@@ -494,7 +482,7 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {hasPendingAccess && (
+                        {isPending && (
                             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button
                                     onClick={fetchData}
@@ -928,9 +916,9 @@ const Dashboard = () => {
                                                         courseName: enrollment.courseName
                                                     }
                                                 })}
-                                                title={enrollment.blocked ? "Renew Subscription" : "Extend Subscription"}
+                                                title={enrollment.blocked ? "Renew Subscription" : "Pay Ahead"}
                                             >
-                                                <FaHistory /> {enrollment.blocked ? "Renew" : "Extend"}
+                                                <FaHistory /> {enrollment.blocked ? "Renew" : "Pay Ahead"}
                                             </button>
                                         </div>
                                     </div>

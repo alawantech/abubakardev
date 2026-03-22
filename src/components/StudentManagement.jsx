@@ -259,6 +259,44 @@ const StudentManagement = () => {
     }
   };
 
+  const rejectPayment = async (payment) => {
+    if (!window.confirm("Are you sure you want to reject this payment?")) return;
+    try {
+      setLoading(true);
+
+      // Update payment status to rejected
+      await updateDoc(doc(db, 'payments', payment.id), {
+        status: 'rejected',
+        rejectedAt: new Date()
+      });
+
+      // Update enrollment paymentStatus
+      const enrollmentQuery = query(
+        collection(db, 'enrollmentPlans'),
+        where('userId', '==', payment.userId),
+        where('courseId', '==', payment.courseId)
+      );
+      const enrollmentSnap = await getDocs(enrollmentQuery);
+
+      if (!enrollmentSnap.empty) {
+        const enrollmentDoc = enrollmentSnap.docs[0];
+        await updateDoc(doc(db, 'enrollmentPlans', enrollmentDoc.id), {
+          paymentStatus: 'rejected'
+        });
+      }
+
+      alert('Payment rejected successfully!');
+      fetchEnrollments(selectedCourse);
+      fetchPendingPayments(selectedCourse);
+      setReceiptModal({ isOpen: false, url: '', payment: null });
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      alert('Failed to reject payment.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (date) => {
     if (!date || !(date instanceof Date)) return 'N/A';
     return date.toLocaleDateString('en-US', {
@@ -468,46 +506,78 @@ const StudentManagement = () => {
       {selectedCourse && (
         <div className="enrollments-list">
           {/* Pending Approvals Section */}
-          {pendingPayments.length > 0 && (
-            <div className="pending-approvals-section mb-8">
-              <div className="table-header-premium pending">
-                <h3>Pending Payment Approvals ({pendingPayments.length})</h3>
-                <div className="flex items-center gap-4">
-                  {selectedCourseData?.pricing && (
-                    <div className="bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 text-xs font-semibold text-blue-700">
-                      Pricing: ₦{selectedCourseData.pricing.monthly?.toLocaleString()} (M) / ₦{selectedCourseData.pricing.yearly?.toLocaleString()} (Y)
-                    </div>
-                  )}
-                  <span className="badge-pulse">Needs Action</span>
+          {(() => {
+            const initialPayments = pendingPayments.filter(p => !p.type || p.type === 'initial' || p.isRenewal === false);
+            const renewalPayments = pendingPayments.filter(p => p.type === 'renewal' || p.isRenewal === true || p.type === 'extension');
+
+            const renderPaymentCard = (payment) => (
+              <div key={payment.id} className="pending-card">
+                <div className="pending-info">
+                  <strong>{payment.userEmail || payment.customerEmail}</strong>
+                  <span>₦{payment.amount?.toLocaleString()} ({payment.type || 'subscription'}{payment.planType ? ` - ${payment.planType}` : ''})</span>
+                  <small>{payment.submittedAt?.toDate().toLocaleString()}</small>
+                </div>
+                <div className="pending-actions">
+                  <button
+                    className="view-receipt-btn"
+                    onClick={() => setReceiptModal({ isOpen: true, url: payment.receiptURL, payment })}
+                  >
+                    View Receipt
+                  </button>
+                  <button
+                    className="approve-btn"
+                    onClick={() => approvePayment(payment)}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="reject-btn"
+                    style={{ backgroundColor: '#dc2626', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+                    onClick={() => rejectPayment(payment)}
+                  >
+                    Reject
+                  </button>
                 </div>
               </div>
-              <div className="pending-grid">
-                {pendingPayments.map(payment => (
-                  <div key={payment.id} className="pending-card">
-                    <div className="pending-info">
-                      <strong>{payment.userEmail}</strong>
-                      <span>₦{payment.amount?.toLocaleString()} ({payment.type || 'subscription'}{payment.planType ? ` - ${payment.planType}` : ''})</span>
-                      <small>{payment.submittedAt?.toDate().toLocaleString()}</small>
+            );
+
+            return (
+              <>
+                {initialPayments.length > 0 && (
+                  <div className="pending-approvals-section mb-8">
+                    <div className="table-header-premium pending">
+                      <h3>New Enrollments / Initial Payments ({initialPayments.length})</h3>
+                      <div className="flex items-center gap-4">
+                        {selectedCourseData?.pricing && (
+                          <div className="bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 text-xs font-semibold text-blue-700">
+                            Pricing: ₦{selectedCourseData.pricing.monthly?.toLocaleString()} (M) / ₦{selectedCourseData.pricing.yearly?.toLocaleString()} (Y)
+                          </div>
+                        )}
+                        <span className="badge-pulse">Needs Action</span>
+                      </div>
                     </div>
-                    <div className="pending-actions">
-                      <button
-                        className="view-receipt-btn"
-                        onClick={() => setReceiptModal({ isOpen: true, url: payment.receiptURL, payment })}
-                      >
-                        View Receipt
-                      </button>
-                      <button
-                        className="approve-btn"
-                        onClick={() => approvePayment(payment)}
-                      >
-                        Approve
-                      </button>
+                    <div className="pending-grid">
+                      {initialPayments.map(renderPaymentCard)}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
+
+                {renewalPayments.length > 0 && (
+                  <div className="pending-approvals-section mb-8">
+                    <div className="table-header-premium pending" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+                      <h3>Payment Ahead / Renewals ({renewalPayments.length})</h3>
+                      <div className="flex items-center gap-4">
+                        <span className="badge-pulse" style={{ backgroundColor: 'white', color: '#059669' }}>Needs Action</span>
+                      </div>
+                    </div>
+                    <div className="pending-grid">
+                      {renewalPayments.map(renderPaymentCard)}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           <div className="table-header-premium">
             <h3>Enrolled Students ({enrollments.length})</h3>
@@ -562,7 +632,6 @@ const StudentManagement = () => {
                           <td>
                             <div className="action-buttons">
                               <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
-                              <button onClick={() => openExtendModal(enrollment)} title="Extend">➕</button>
                               <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
                               <div className="block-toggle">
                                 <input
@@ -606,7 +675,6 @@ const StudentManagement = () => {
                     </div>
                     <div className="card-actions">
                       <button onClick={() => openPaymentHistory(enrollment)}>History</button>
-                      <button onClick={() => openExtendModal(enrollment)}>Extend</button>
                       <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
                       <div className="block-control">
                         <span>Block:</span>
@@ -777,6 +845,12 @@ const StudentManagement = () => {
                 className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors"
               >
                 Approve Payment
+              </button>
+              <button
+                onClick={() => rejectPayment(receiptModal.payment)}
+                className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-colors"
+              >
+                Reject Payment
               </button>
               <button
                 onClick={() => setReceiptModal({ isOpen: false, url: '', payment: null })}

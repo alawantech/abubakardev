@@ -205,7 +205,7 @@ const RenewPayment = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <h1>{selectedEnrollment?.blocked ? "Renew Your Subscription" : "Extend Your Subscription"}</h1>
+          <h1>{selectedEnrollment?.blocked ? "Renew Your Subscription" : "Pay Ahead"}</h1>
           <p>{selectedEnrollment?.blocked
             ? "Your subscription has ended. Pay below to restore your access."
             : "Pay early to keep your learning going without any interruptions."}
@@ -240,7 +240,7 @@ const RenewPayment = () => {
               <div className="premium-card">
                 <h2 className="card-title">
                   <FaCreditCard className="text-indigo-500" />
-                  {selectedEnrollment?.blocked ? "Renewal Details" : "Extension Details"}
+                  {selectedEnrollment?.blocked ? "Renewal Details" : "Payment Ahead Details"}
                 </h2>
 
                 {enrollments.length > 1 && (
@@ -341,7 +341,7 @@ const RenewPayment = () => {
                     <div className="spinner"></div>
                   ) : (
                     <>
-                      <FaRocket /> {selectedEnrollment?.blocked ? "Submit Renewal" : "Submit Extension"}
+                      <FaRocket /> {selectedEnrollment?.blocked ? "Submit Renewal" : "Submit Payment Ahead"}
                     </>
                   )}
                 </button>
@@ -372,7 +372,7 @@ const RenewPayment = () => {
                   </li>
                   <li className="inst-step">
                     <span className="step-num">4</span>
-                    <p className="step-text">Our team will check your payment and extend your subscription.</p>
+                    <p className="step-text">Our team will check your payment and update your subscription.</p>
                   </li>
                   <li className="inst-step">
                     <span className="step-num">5</span>
