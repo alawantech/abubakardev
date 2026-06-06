@@ -5,9 +5,9 @@ const functions = firebaseModule.functions;
 import { buildSystemPrompt, FUNCTION_DECLARATIONS } from "./systemPrompt";
 
 const WS_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
-// Native audio model: highest quality voice output. Used only for voice mode.
+// Non-thinking native audio model — no internal narration, direct conversational response.
 // Text mode uses the chatWithAgent Cloud Function (REST API) for text responses.
-const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025";
+const MODEL = "models/gemini-2.5-flash-preview-native-audio-dialog";
 const VOICE_NAME = "Aoede";
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;

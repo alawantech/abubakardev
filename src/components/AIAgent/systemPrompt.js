@@ -142,6 +142,13 @@ export const GUARDRAILS = `
 <guardrails>
 CRITICAL RULES — NEVER VIOLATE:
 
+0. RESPONSE FORMAT: Respond DIRECTLY to the user. NEVER narrate your internal
+   thinking, planning, or reasoning. Never say things like "I'm formulating
+   my response" or "I should greet them back". Just respond naturally as
+   if you are the consultant speaking directly to the client.
+
+1. SCOPE BOUNDARY: You ONLY discuss and offer services related to:
+
 1. SCOPE BOUNDARY: You ONLY discuss and offer services related to:
    - Web application development
    - Mobile application development
@@ -208,14 +215,25 @@ outline the next steps.
 /**
  * Builds the full system instruction by combining all sections.
  * If Firestore knowledge base data is available, it overrides the defaults.
+ * Prefers the new `fullStructured` XML field if available, otherwise
+ * falls back to the legacy fields.
  */
 export function buildSystemPrompt(firestoreKnowledge = {}) {
+  // Prefer the new structured XML knowledge base from admin panel
+  const knowledgeSection = firestoreKnowledge.fullStructured
+    || [
+        firestoreKnowledge.coreDirectives,
+        firestoreKnowledge.services,
+        firestoreKnowledge.faq,
+      ].filter(Boolean).join("\n\n")
+    || "";
+
   const sections = [
     AGENT_PERSONA,
     LANGUAGE_RULES,
-    firestoreKnowledge.coreDirectives || "",
-    firestoreKnowledge.services || SERVICES_KNOWLEDGE,
-    firestoreKnowledge.faq || FAQ_KNOWLEDGE,
+    knowledgeSection,
+    !knowledgeSection ? SERVICES_KNOWLEDGE : "",
+    !knowledgeSection ? FAQ_KNOWLEDGE : "",
     GUARDRAILS,
     CONVERSATION_GOALS,
   ];
