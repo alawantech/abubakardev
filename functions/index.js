@@ -7,6 +7,7 @@ admin.initializeApp();
 // Import AI Agent functions
 const { getAgentSession } = require("./agentSession");
 const { captureLeadToFirestore } = require("./captureLead");
+const { chatWithAgent } = require("./chatWithAgent");
 
 /**
  * Verifies Flutterwave payment and creates enrollment
@@ -331,3 +332,4 @@ setGlobalOptions({ maxInstances: 10 });
 // AI Agent exports
 exports.getAgentSession = getAgentSession;
 exports.captureLeadToFirestore = captureLeadToFirestore;
+exports.chatWithAgent = chatWithAgent;

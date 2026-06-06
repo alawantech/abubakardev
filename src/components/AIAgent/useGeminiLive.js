@@ -5,9 +5,9 @@ const functions = firebaseModule.functions;
 import { buildSystemPrompt, FUNCTION_DECLARATIONS } from "./systemPrompt";
 
 const WS_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
-// 2.0 Flash Live supports both AUDIO and TEXT output, so the model can
-// respond with text when the user types, and audio when the user speaks.
-const MODEL = "models/gemini-2.0-flash-live-001";
+// Native audio model: highest quality voice output. Used only for voice mode.
+// Text mode uses the chatWithAgent Cloud Function (REST API) for text responses.
+const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025";
 const VOICE_NAME = "Aoede";
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -419,7 +419,7 @@ export default function useGeminiLive() {
           setup: {
             model: MODEL,
             generationConfig: {
-              responseModalities: ["AUDIO", "TEXT"],
+              responseModalities: ["AUDIO"],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
@@ -516,23 +516,45 @@ export default function useGeminiLive() {
     setIsRecording(false);
   }, []);
 
-  const sendText = useCallback((text) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+  const sendText = useCallback(async (text) => {
     if (!text.trim()) return;
+    if (!functions) {
+      setError("Firebase Functions is not initialized. Check your .env configuration.");
+      return;
+    }
 
-    setMessages((prev) => [...prev, { role: "user", text: text.trim() }]);
+    const userText = text.trim();
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setAiState("thinking");
+    setError(null);
 
-    wsRef.current.send(JSON.stringify({
-      clientContent: {
-        turns: [{
-          role: "user",
-          parts: [{ text: text.trim() }],
-        }],
-        turnComplete: true,
-      },
-    }));
-  }, []);
+    try {
+      // Use REST API for text mode so the model returns TEXT (not audio)
+      const chat = httpsCallable(functions, "chatWithAgent");
+      // Send recent history for context (last 20 messages)
+      const recentHistory = messages.slice(-20).map((m) => ({
+        role: m.role,
+        text: m.text || "",
+      }));
+      const result = await chat({ message: userText, history: recentHistory });
+      const data = result.data;
+
+      if (data.text) {
+        setMessages((prev) => [...prev, { role: "agent", text: data.text }]);
+      }
+      if (data.leadCaptured) {
+        setMessages((prev) => [...prev, {
+          role: "agent",
+          text: "✅ An samu! Bayananku an aika wa ƙungiyar mu. Za su tuntuɓi ku a cikin sa'oo'i 24. / Done! Your details have been sent to our team. They'll reach out within 24 hours.",
+        }]);
+      }
+      setAiState("idle");
+    } catch (err) {
+      console.error("Text chat error:", err);
+      setError(err.message || "Failed to get response");
+      setAiState("idle");
+    }
+  }, [messages]);
 
   const startVoiceCall = useCallback(async () => {
     if (connectionState !== "connected") {
