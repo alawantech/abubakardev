@@ -5,7 +5,9 @@ const functions = firebaseModule.functions;
 import { buildSystemPrompt, FUNCTION_DECLARATIONS } from "./systemPrompt";
 
 const WS_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
-const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025";
+// 2.0 Flash Live supports both AUDIO and TEXT output, so the model can
+// respond with text when the user types, and audio when the user speaks.
+const MODEL = "models/gemini-2.0-flash-live-001";
 const VOICE_NAME = "Aoede";
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
