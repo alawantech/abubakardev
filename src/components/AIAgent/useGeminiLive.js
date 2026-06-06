@@ -276,18 +276,29 @@ export default function useGeminiLive() {
         const { modelTurn, turnComplete } = msg.serverContent;
 
         if (modelTurn && modelTurn.parts) {
+          let hasAudio = false;
           for (const part of modelTurn.parts) {
             if (part.text) {
               setMessages((prev) => [...prev, { role: "agent", text: part.text }]);
-              setAiState("speaking");
             }
             if (part.inlineData) {
-              setAiState("speaking");
+              hasAudio = true;
               queueAudioPlayback(part.inlineData.data);
             }
             if (part.functionCall) {
               handleFunctionCall(part.functionCall);
             }
+          }
+          if (hasAudio) {
+            setAiState("speaking");
+          } else {
+            // Text-only response: briefly show "thinking" then go idle
+            setAiState("thinking");
+            setTimeout(() => {
+              if (aiStateRef.current === "thinking") {
+                setAiState("idle");
+              }
+            }, 400);
           }
         }
 
@@ -406,7 +417,7 @@ export default function useGeminiLive() {
           setup: {
             model: MODEL,
             generationConfig: {
-              responseModalities: ["AUDIO"],
+              responseModalities: ["AUDIO", "TEXT"],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
