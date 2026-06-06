@@ -4,6 +4,10 @@ const axios = require("axios");
 
 admin.initializeApp();
 
+// Import AI Agent functions
+const { getAgentSession } = require("./agentSession");
+const { captureLeadToFirestore } = require("./captureLead");
+
 /**
  * Verifies Flutterwave payment and creates enrollment
  * This is a publicly accessible HTTPS function with input validation
@@ -324,10 +328,6 @@ const logger = require("firebase-functions/logger");
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// AI Agent exports
+exports.getAgentSession = getAgentSession;
+exports.captureLeadToFirestore = captureLeadToFirestore;

@@ -18,6 +18,7 @@ const SchoolLanding = React.lazy(() => import('./components/SchoolLanding'));
 const Links = React.lazy(() => import('./components/Links'));
 const Chatbot = React.lazy(() => import('./components/chatbot/Chatbot'));
 const FloatingWhatsApp = React.lazy(() => import('./components/FloatingWhatsApp'));
+const AIAgentWidget = React.lazy(() => import('./components/AIAgent/AIAgentWidget'));
 const Hero = React.lazy(() => import('./components/Hero'));
 const Services = React.lazy(() => import('./components/Services'));
 const Portfolio = React.lazy(() => import('./components/Portfolio'));
@@ -276,6 +277,7 @@ function App() {
             />
           </Routes>
           <FloatingWhatsApp />
+          <AIAgentWidget />
         </React.Suspense>
       </Router>
     </AuthProvider>

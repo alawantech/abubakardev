@@ -1,0 +1,534 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+import { httpsCallable } from "firebase/functions";
+import * as firebaseModule from "../../firebase";
+const functions = firebaseModule.functions;
+import { buildSystemPrompt, FUNCTION_DECLARATIONS } from "./systemPrompt";
+
+const WS_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+const MODEL = "models/gemini-2.5-flash-native-audio";
+const VOICE_NAME = "Aoede";
+const INPUT_SAMPLE_RATE = 16000;
+const OUTPUT_SAMPLE_RATE = 24000;
+const SCRIPT_BUFFER_SIZE = 4096;
+
+/**
+ * Custom hook for Gemini Live API — WebSocket + bidirectional audio streaming.
+ *
+ * Returns:
+ *  - connectionState: "disconnected" | "connecting" | "connected"
+ *  - aiState: "idle" | "thinking" | "speaking" | "listening"
+ *  - messages: Array<{ role: "user"|"agent", text?: string, audio?: boolean }>
+ *  - isVoiceMode: boolean (live call active)
+ *  - isRecording: boolean (voice note recording)
+ *  - startSession: () => Promise<void>
+ *  - endSession: () => void
+ *  - sendText: (text: string) => void
+ *  - startVoiceCall: () => Promise<void>
+ *  - endVoiceCall: () => void
+ *  - toggleRecording: () => Promise<void>
+ *  - error: string | null
+ */
+export default function useGeminiLive() {
+  const [connectionState, setConnectionState] = useState("disconnected");
+  const [aiState, setAiState] = useState("idle");
+  const [messages, setMessages] = useState([]);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [error, setError] = useState(null);
+
+  const wsRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const micProcessorRef = useRef(null);
+  const nextPlayTimeRef = useRef(0);
+  const playbackQueueRef = useRef([]);
+  const isPlayingRef = useRef(false);
+  const sessionConfigRef = useRef(null);
+  const capturedLeadsRef = useRef(new Set());
+  const aiStateRef = useRef("idle");
+
+  // Keep aiStateRef in sync
+  useEffect(() => {
+    aiStateRef.current = aiState;
+  }, [aiState]);
+
+  // --- Audio helpers ---
+
+  function float32ToInt16(float32Array) {
+    const int16 = new Int16Array(float32Array.length);
+    for (let i = 0; i < float32Array.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32Array[i]));
+      int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return int16;
+  }
+
+  function int16ToFloat32(int16Array) {
+    const float32 = new Float32Array(int16Array.length);
+    for (let i = 0; i < int16Array.length; i++) {
+      float32[i] = int16Array[i] / 32768;
+    }
+    return float32;
+  }
+
+  function encodePCM16ToBase64(int16Array) {
+    const bytes = new Uint8Array(int16Array.buffer);
+    let binary = "";
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function decodeBase64ToPCM16(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Int16Array(bytes.buffer);
+  }
+
+  // --- Audio playback queue ---
+
+  function getAudioContext() {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE });
+    }
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }
+
+  function queueAudioPlayback(base64Data) {
+    try {
+      const int16Data = decodeBase64ToPCM16(base64Data);
+      if (int16Data.length === 0) return;
+
+      const float32Data = int16ToFloat32(int16Data);
+      const ctx = getAudioContext();
+      const audioBuffer = ctx.createBuffer(1, float32Data.length, OUTPUT_SAMPLE_RATE);
+      audioBuffer.getChannelData(0).set(float32Data);
+
+      playbackQueueRef.current.push(audioBuffer);
+      processPlaybackQueue();
+    } catch (e) {
+      console.warn("Audio playback error:", e);
+    }
+  }
+
+  function processPlaybackQueue() {
+    if (isPlayingRef.current || playbackQueueRef.current.length === 0) return;
+
+    isPlayingRef.current = true;
+    const ctx = getAudioContext();
+    const buffer = playbackQueueRef.current.shift();
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+
+    const startTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
+    source.start(startTime);
+    nextPlayTimeRef.current = startTime + buffer.duration;
+
+    source.onended = () => {
+      isPlayingRef.current = false;
+      if (playbackQueueRef.current.length > 0) {
+        processPlaybackQueue();
+      } else if (aiStateRef.current === "speaking") {
+        setAiState("idle");
+      }
+    };
+  }
+
+  // --- Microphone capture ---
+
+  async function startMicCapture() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: INPUT_SAMPLE_RATE,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      micStreamRef.current = stream;
+
+      const ctx = getAudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const processor = ctx.createScriptProcessor(SCRIPT_BUFFER_SIZE, 1, 1);
+      micProcessorRef.current = processor;
+
+      processor.onaudioprocess = (event) => {
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (aiStateRef.current === "speaking") return; // Don't send while AI is speaking (full-duplex: comment out to enable interruption)
+
+        const inputData = event.inputBuffer.getChannelData(0);
+        // Resample if needed (AudioContext may give us a different rate)
+        const resampled = resampleAudio(inputData, ctx.sampleRate, INPUT_SAMPLE_RATE);
+        const int16Data = float32ToInt16(resampled);
+        const base64 = encodePCM16ToBase64(int16Data);
+
+        wsRef.current.send(JSON.stringify({
+          realtimeInput: {
+            mediaChunks: [{
+              mimeType: `audio/pcm;rate=${INPUT_SAMPLE_RATE}`,
+              data: base64,
+            }],
+          },
+        }));
+      };
+
+      source.connect(processor);
+      processor.connect(ctx.destination);
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      setError("Microphone access denied. Please allow microphone access and try again.");
+      throw err;
+    }
+  }
+
+  function stopMicCapture() {
+    if (micProcessorRef.current) {
+      micProcessorRef.current.disconnect();
+      micProcessorRef.current = null;
+    }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((t) => t.stop());
+      micStreamRef.current = null;
+    }
+  }
+
+  function resampleAudio(inputData, fromRate, toRate) {
+    if (fromRate === toRate) return inputData;
+    const ratio = fromRate / toRate;
+    const newLength = Math.round(inputData.length / ratio);
+    const result = new Float32Array(newLength);
+    for (let i = 0; i < newLength; i++) {
+      const idx = i * ratio;
+      const low = Math.floor(idx);
+      const high = Math.min(low + 1, inputData.length - 1);
+      const frac = idx - low;
+      result[i] = inputData[low] * (1 - frac) + inputData[high] * frac;
+    }
+    return result;
+  }
+
+  // --- WebSocket message handling ---
+
+  function handleServerMessage(data) {
+    try {
+      const msg = JSON.parse(data);
+
+      if (msg.setupComplete) {
+        setConnectionState("connected");
+        setAiState("idle");
+        return;
+      }
+
+      if (msg.serverContent) {
+        const { modelTurn, turnComplete } = msg.serverContent;
+
+        if (modelTurn && modelTurn.parts) {
+          for (const part of modelTurn.parts) {
+            if (part.text) {
+              setMessages((prev) => [...prev, { role: "agent", text: part.text }]);
+              setAiState("speaking");
+            }
+            if (part.inlineData) {
+              setAiState("speaking");
+              queueAudioPlayback(part.inlineData.data);
+            }
+            if (part.functionCall) {
+              handleFunctionCall(part.functionCall);
+            }
+          }
+        }
+
+        if (turnComplete) {
+          playbackQueueRef.current = [];
+          isPlayingRef.current = false;
+          nextPlayTimeRef.current = 0;
+        }
+        return;
+      }
+
+      // Interrupted — AI stopped speaking
+      if (msg.serverContent && msg.serverContent.interrupted) {
+        playbackQueueRef.current = [];
+        isPlayingRef.current = false;
+        nextPlayTimeRef.current = 0;
+        setAiState("idle");
+      }
+    } catch (e) {
+      console.warn("Failed to parse WS message:", e);
+    }
+  }
+
+  // --- Function calling ---
+
+  async function handleFunctionCall(functionCall) {
+    const { name, args } = functionCall;
+
+    if (name === "captureLeadData") {
+      const leadKey = `${args.name}-${args.businessType}`;
+      if (capturedLeadsRef.current.has(leadKey)) {
+        // Already captured this lead, don't duplicate
+        sendFunctionResponse(name, { status: "already_captured", message: "Lead already captured." });
+        return;
+      }
+
+      try {
+        setMessages((prev) => [...prev, {
+          role: "agent",
+          text: "Ina aika bayananku zuwa ga ƙungiyar mu... / Sending your details to our team...",
+        }]);
+
+        const captureLead = httpsCallable(functions, "captureLeadToFirestore");
+        const result = await captureLead(args);
+        capturedLeadsRef.current.add(leadKey);
+
+        sendFunctionResponse(name, { status: "success", leadId: result.data.leadId });
+
+        setMessages((prev) => [...prev, {
+          role: "agent",
+          text: "An samu! An aika bayananku ga ƙungiyar mu. Za su tuntuɓi ku a cikin sa'oo'i 24. Na gode! / Done! Your details have been sent to our team. They'll reach out to you within 24 hours. Thank you!",
+        }]);
+      } catch (err) {
+        console.error("Lead capture error:", err);
+        sendFunctionResponse(name, { status: "error", message: err.message });
+      }
+    }
+  }
+
+  function sendFunctionResponse(name, response) {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    wsRef.current.send(JSON.stringify({
+      clientContent: {
+        turns: [{
+          role: "user",
+          parts: [{
+            functionResponse: {
+              name,
+              response,
+            },
+          }],
+        }],
+        turnComplete: true,
+      },
+    }));
+  }
+
+  // --- Session management ---
+
+  async function getSessionConfig() {
+    if (sessionConfigRef.current) return sessionConfigRef.current;
+
+    if (!functions) {
+      throw new Error("Firebase Functions is not initialized. Please check your .env configuration.");
+    }
+
+    try {
+      const getAgentSession = httpsCallable(functions, "getAgentSession");
+      const result = await getAgentSession();
+      sessionConfigRef.current = result.data;
+      return sessionConfigRef.current;
+    } catch (err) {
+      console.error("Failed to get agent session:", err);
+      throw new Error("Failed to initialize AI session. Please try again.");
+    }
+  }
+
+  async function connectWebSocket() {
+    const config = await getSessionConfig();
+
+    if (!config.apiKey) {
+      throw new Error("Gemini API key not configured. Please set GEMINI_API_KEY in Firebase secrets.");
+    }
+
+    const ws = new WebSocket(`${WS_URL}?key=${config.apiKey}`);
+    wsRef.current = ws;
+
+    return new Promise((resolve, reject) => {
+      ws.onopen = () => {
+        const systemInstruction = buildSystemPrompt(config.knowledgeBase);
+
+        const setupMsg = {
+          setup: {
+            model: MODEL,
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: VOICE_NAME,
+                  },
+                },
+              },
+            },
+            systemInstruction: {
+              parts: [{ text: systemInstruction }],
+            },
+            tools: [{
+              functionDeclarations: FUNCTION_DECLARATIONS,
+            }],
+          },
+        };
+
+        ws.send(JSON.stringify(setupMsg));
+      };
+
+      ws.onmessage = (event) => {
+        const data = event.data;
+
+        // Check for setupComplete
+        try {
+          const msg = JSON.parse(data);
+          if (msg.setupComplete) {
+            setConnectionState("connected");
+            resolve();
+            return;
+          }
+        } catch {
+          // Not JSON, ignore
+        }
+
+        handleServerMessage(data);
+      };
+
+      ws.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        setError("Connection error. Please check your internet and try again.");
+        reject(err);
+      };
+
+      ws.onclose = (event) => {
+        setConnectionState("disconnected");
+        if (event.code !== 1000) {
+          setError(`Connection closed (code: ${event.code}). Reconnecting...`);
+        }
+      };
+    });
+  }
+
+  // --- Public API ---
+
+  const startSession = useCallback(async () => {
+    if (connectionState === "connected") return;
+    setConnectionState("connecting");
+    setError(null);
+    try {
+      await connectWebSocket();
+    } catch (err) {
+      setConnectionState("disconnected");
+      setError(err.message || "Failed to connect.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionState]);
+
+  const endSession = useCallback(() => {
+    stopMicCapture();
+    playbackQueueRef.current = [];
+    isPlayingRef.current = false;
+    nextPlayTimeRef.current = 0;
+
+    if (wsRef.current) {
+      wsRef.current.close(1000, "Session ended");
+      wsRef.current = null;
+    }
+    setConnectionState("disconnected");
+    setAiState("idle");
+    setIsVoiceMode(false);
+    setIsRecording(false);
+  }, []);
+
+  const sendText = useCallback((text) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!text.trim()) return;
+
+    setMessages((prev) => [...prev, { role: "user", text: text.trim() }]);
+    setAiState("thinking");
+
+    wsRef.current.send(JSON.stringify({
+      clientContent: {
+        turns: [{
+          role: "user",
+          parts: [{ text: text.trim() }],
+        }],
+        turnComplete: true,
+      },
+    }));
+  }, []);
+
+  const startVoiceCall = useCallback(async () => {
+    if (connectionState !== "connected") {
+      await startSession();
+    }
+    try {
+      await startMicCapture();
+      setIsVoiceMode(true);
+      setAiState("listening");
+    } catch (err) {
+      setError(err.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionState, startSession]);
+
+  const endVoiceCall = useCallback(() => {
+    stopMicCapture();
+    setIsVoiceMode(false);
+    setAiState("idle");
+  }, []);
+
+  const toggleRecording = useCallback(async () => {
+    if (isRecording) {
+      stopMicCapture();
+      setIsRecording(false);
+      setAiState("idle");
+    } else {
+      if (connectionState !== "connected") {
+        await startSession();
+      }
+      try {
+        await startMicCapture();
+        setIsRecording(true);
+        setAiState("listening");
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording, connectionState, startSession]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopMicCapture();
+      if (wsRef.current) {
+        wsRef.current.close(1000);
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  return {
+    connectionState,
+    aiState,
+    messages,
+    isVoiceMode,
+    isRecording,
+    startSession,
+    endSession,
+    sendText,
+    startVoiceCall,
+    endVoiceCall,
+    toggleRecording,
+    error,
+  };
+}

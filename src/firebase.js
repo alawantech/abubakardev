@@ -4,6 +4,7 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -32,7 +33,7 @@ if (missingVars.length > 0) {
 }
 
 // Initialize Firebase
-let app, analytics, auth, db, storage;
+let app, analytics, auth, db, storage, functions;
 
 try {
   app = initializeApp(firebaseConfig);
@@ -40,6 +41,7 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+  functions = getFunctions(app);
   console.log('Firebase initialized successfully');
 } catch (error) {
   console.error('Failed to initialize Firebase:', error);
@@ -49,6 +51,7 @@ try {
   auth = null;
   db = null;
   storage = null;
+  functions = null;
 }
 
-export { app, analytics, auth, db, storage };
+export { app, analytics, auth, db, storage, functions };
