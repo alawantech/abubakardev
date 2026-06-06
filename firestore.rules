@@ -82,6 +82,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Knowledge Base - admin-only read/write, served to AI via Cloud Functions
+    match /knowledge_base/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
     // Default deny for any other collections
     match /{document=**} {
       allow read, write: if false;

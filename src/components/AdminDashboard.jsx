@@ -8,6 +8,7 @@ import StudentManagement from './StudentManagement';
 import InquiriesManagement from './SchoolInquiries';
 import AdminProfile from './AdminProfile';
 import LinksManagement from './LinksManagement';
+import KnowledgeBase from './Admin/KnowledgeBase/KnowledgeBase';
 import './SchoolInquiries.css';
 import './AdminDashboard.css';
 
@@ -121,6 +122,8 @@ const AdminDashboard = () => {
         return <AdminProfile />;
       case 'links':
         return <LinksManagement />;
+      case 'knowledge-base':
+        return <KnowledgeBase />;
       default:
         return (
           <div className="dashboard-home">
@@ -155,8 +158,9 @@ const AdminDashboard = () => {
             { id: 'courses', label: 'Courses', icon: '📚' },
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'inquiries', label: 'Inquiries', icon: '📩' },
-            { id: 'profile', label: 'Profile', icon: '⚙️' },
+            { id: 'knowledge-base', label: 'AI Knowledge', icon: '🧠' },
             { id: 'links', label: 'Links', icon: '🔗' },
+            { id: 'profile', label: 'Profile', icon: '⚙️' },
           ].map((item) => (
             <button
               key={item.id}
