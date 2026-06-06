@@ -5,7 +5,7 @@ const functions = firebaseModule.functions;
 import { buildSystemPrompt, FUNCTION_DECLARATIONS } from "./systemPrompt";
 
 const WS_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
-const MODEL = "models/gemini-2.5-flash-native-audio";
+const MODEL = "models/gemini-2.5-flash-native-audio-preview-09-2025";
 const VOICE_NAME = "Aoede";
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -42,7 +42,6 @@ export default function useGeminiLive() {
   const micProcessorRef = useRef(null);
   const nextPlayTimeRef = useRef(0);
   const playbackQueueRef = useRef([]);
-  const isPlayingRef = useRef(false);
   const sessionConfigRef = useRef(null);
   const capturedLeadsRef = useRef(new Set());
   const aiStateRef = useRef("idle");
@@ -90,17 +89,23 @@ export default function useGeminiLive() {
     return new Int16Array(bytes.buffer);
   }
 
-  // --- Audio playback queue ---
+  // --- Audio playback queue (gap-free pre-scheduling) ---
 
   function getAudioContext() {
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
-      audioContextRef.current = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE });
+      audioContextRef.current = new AudioContext({
+        sampleRate: OUTPUT_SAMPLE_RATE,
+        latencyHint: "interactive",
+      });
     }
     if (audioContextRef.current.state === "suspended") {
       audioContextRef.current.resume();
     }
     return audioContextRef.current;
   }
+
+  // Monitoring timer to detect end of playback
+  const monitorTimerRef = useRef(null);
 
   function queueAudioPlayback(base64Data) {
     try {
@@ -113,34 +118,66 @@ export default function useGeminiLive() {
       audioBuffer.getChannelData(0).set(float32Data);
 
       playbackQueueRef.current.push(audioBuffer);
-      processPlaybackQueue();
+      schedulePlayback();
     } catch (e) {
       console.warn("Audio playback error:", e);
     }
   }
 
-  function processPlaybackQueue() {
-    if (isPlayingRef.current || playbackQueueRef.current.length === 0) return;
+  // Pre-schedule up to LOOKAHEAD seconds of audio ahead of time.
+  // This eliminates the gap that occurs when waiting for `onended` between chunks.
+  const PLAYBACK_LOOKAHEAD = 0.15; // 150ms lookahead
 
-    isPlayingRef.current = true;
+  function schedulePlayback() {
     const ctx = getAudioContext();
-    const buffer = playbackQueueRef.current.shift();
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
+    const now = ctx.currentTime;
 
-    const startTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
-    source.start(startTime);
-    nextPlayTimeRef.current = startTime + buffer.duration;
+    // Keep scheduling while there are chunks AND the next start time
+    // is within the lookahead window of `now`
+    while (playbackQueueRef.current.length > 0) {
+      const nextStart = Math.max(now + 0.01, nextPlayTimeRef.current);
+      if (nextStart > now + PLAYBACK_LOOKAHEAD) break;
 
-    source.onended = () => {
-      isPlayingRef.current = false;
-      if (playbackQueueRef.current.length > 0) {
-        processPlaybackQueue();
-      } else if (aiStateRef.current === "speaking") {
-        setAiState("idle");
+      const buffer = playbackQueueRef.current.shift();
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start(nextStart);
+      nextPlayTimeRef.current = nextStart + buffer.duration;
+    }
+
+    // Start (or restart) the end-of-playback monitor
+    startPlaybackMonitor();
+  }
+
+  function startPlaybackMonitor() {
+    if (monitorTimerRef.current) return; // already monitoring
+
+    monitorTimerRef.current = setInterval(() => {
+      const ctx = audioContextRef.current;
+      if (!ctx || ctx.state === "closed") {
+        stopPlaybackMonitor();
+        return;
       }
-    };
+      // If the queue is empty AND we've passed the last scheduled time,
+      // playback has finished
+      if (
+        playbackQueueRef.current.length === 0 &&
+        ctx.currentTime >= nextPlayTimeRef.current - 0.05
+      ) {
+        stopPlaybackMonitor();
+        if (aiStateRef.current === "speaking") {
+          setAiState("idle");
+        }
+      }
+    }, 100);
+  }
+
+  function stopPlaybackMonitor() {
+    if (monitorTimerRef.current) {
+      clearInterval(monitorTimerRef.current);
+      monitorTimerRef.current = null;
+    }
   }
 
   // --- Microphone capture ---
@@ -220,7 +257,12 @@ export default function useGeminiLive() {
 
   // --- WebSocket message handling ---
 
-  function handleServerMessage(data) {
+  async function handleServerMessage(data) {
+    // Convert Blob to text if needed
+    if (data instanceof Blob) {
+      data = await data.text();
+    }
+
     try {
       const msg = JSON.parse(data);
 
@@ -250,9 +292,13 @@ export default function useGeminiLive() {
         }
 
         if (turnComplete) {
-          playbackQueueRef.current = [];
-          isPlayingRef.current = false;
-          nextPlayTimeRef.current = 0;
+          // Let the queued audio finish playing naturally.
+          // The monitor will detect end-of-playback and set state to idle.
+          // Only reset nextPlayTime if it's in the past (start fresh for next turn)
+          const ctx = audioContextRef.current;
+          if (ctx && nextPlayTimeRef.current < ctx.currentTime) {
+            nextPlayTimeRef.current = 0;
+          }
         }
         return;
       }
@@ -260,7 +306,6 @@ export default function useGeminiLive() {
       // Interrupted — AI stopped speaking
       if (msg.serverContent && msg.serverContent.interrupted) {
         playbackQueueRef.current = [];
-        isPlayingRef.current = false;
         nextPlayTimeRef.current = 0;
         setAiState("idle");
       }
@@ -382,15 +427,26 @@ export default function useGeminiLive() {
         ws.send(JSON.stringify(setupMsg));
       };
 
-      ws.onmessage = (event) => {
-        const data = event.data;
+      ws.onmessage = async (event) => {
+        let data = event.data;
 
-        // Check for setupComplete
+        // Convert Blob to text if needed
+        if (data instanceof Blob) {
+          data = await data.text();
+        }
+
+        // Check for setupComplete or setup error
         try {
           const msg = JSON.parse(data);
           if (msg.setupComplete) {
             setConnectionState("connected");
             resolve();
+            return;
+          }
+          if (msg.error) {
+            console.error("Gemini setup error:", JSON.stringify(msg.error, null, 2));
+            setError(`Gemini error: ${msg.error.message || JSON.stringify(msg.error)}`);
+            ws.close(1000);
             return;
           }
         } catch {
@@ -408,8 +464,9 @@ export default function useGeminiLive() {
 
       ws.onclose = (event) => {
         setConnectionState("disconnected");
+        console.warn("WebSocket closed:", { code: event.code, reason: event.reason, wasClean: event.wasClean });
         if (event.code !== 1000) {
-          setError(`Connection closed (code: ${event.code}). Reconnecting...`);
+          setError(`Connection closed (code: ${event.code}${event.reason ? `: ${event.reason}` : ""})`);
         }
       };
     });
@@ -432,8 +489,8 @@ export default function useGeminiLive() {
 
   const endSession = useCallback(() => {
     stopMicCapture();
+    stopPlaybackMonitor();
     playbackQueueRef.current = [];
-    isPlayingRef.current = false;
     nextPlayTimeRef.current = 0;
 
     if (wsRef.current) {
@@ -508,6 +565,8 @@ export default function useGeminiLive() {
   useEffect(() => {
     return () => {
       stopMicCapture();
+      stopPlaybackMonitor();
+      playbackQueueRef.current = [];
       if (wsRef.current) {
         wsRef.current.close(1000);
       }
