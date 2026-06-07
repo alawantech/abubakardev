@@ -156,12 +156,7 @@ function StepIndicator({ step }) {
   );
 }
 
-function WelcomeStep({ form, setForm, onStart }) {
-  const languages = [
-    { id: "english", name: "English", native: "English", flag: "🇬🇧", desc: "We'll speak English on the call." },
-    { id: "hausa", name: "Hausa", native: "Hausa", flag: "🇳🇬", desc: "Za mu yi magana a harshen Hausa." }
-  ];
-
+function WelcomeStep({ onStart }) {
   return (
     <motion.div {...fadeUp} className="bc-step-content bc-welcome">
       <div className="bc-welcome-badge">
@@ -208,42 +203,59 @@ function WelcomeStep({ form, setForm, onStart }) {
         </div>
       </div>
 
-      <div className="bc-language-picker">
-        <div className="bc-language-picker-header">
-          <FaLanguage size={14} />
-          <span>What language should we use for the call?</span>
-        </div>
-        <div className="bc-language-grid">
-          {languages.map((lang) => {
-            const active = form.language === lang.id;
-            return (
-              <button
-                key={lang.id}
-                type="button"
-                className={`bc-language-card ${active ? "active" : ""}`}
-                onClick={() => setForm((f) => ({ ...f, language: lang.id }))}
-              >
-                <div className="bc-language-flag">{lang.flag}</div>
-                <div className="bc-language-info">
-                  <div className="bc-language-name">{lang.name}</div>
-                  <div className="bc-language-desc">{lang.desc}</div>
-                </div>
-                {active && <div className="bc-language-check"><FaCheck size={10} /></div>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div className="bc-welcome-cta">
         <button
           onClick={onStart}
-          disabled={!form.language}
           className="btn btn-primary bc-cta-primary"
         >
           Let's begin <FaArrowRight />
         </button>
         <span className="bc-welcome-foot">No commitment. Takes about 2 minutes.</span>
+      </div>
+    </motion.div>
+  );
+}
+
+function LanguageStep({ form, setForm, onNext, onBack }) {
+  const languages = [
+    { id: "english", name: "English", native: "English", flag: "🇬🇧", desc: "We'll speak English on the call." },
+    { id: "hausa", name: "Hausa", native: "Hausa", flag: "🇳🇬", desc: "Za mu yi magana a harshen Hausa." }
+  ];
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 1 of 5</span>
+        <h2>What language should we use for the call?</h2>
+        <p>Pick the language you're most comfortable speaking. We'll match you with someone who can chat in that language.</p>
+      </div>
+
+      <div className="bc-language-grid">
+        {languages.map((lang) => {
+          const active = form.language === lang.id;
+          return (
+            <button
+              key={lang.id}
+              type="button"
+              className={`bc-language-card ${active ? "active" : ""}`}
+              onClick={() => setForm((f) => ({ ...f, language: lang.id }))}
+            >
+              <div className="bc-language-flag">{lang.flag}</div>
+              <div className="bc-language-info">
+                <div className="bc-language-name">{lang.name}</div>
+                <div className="bc-language-desc">{lang.desc}</div>
+              </div>
+              {active && <div className="bc-language-check"><FaCheck size={10} /></div>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
+        <button onClick={onNext} disabled={!form.language} className="btn btn-primary">
+          Continue <FaArrowRight />
+        </button>
       </div>
     </motion.div>
   );
@@ -938,7 +950,7 @@ export default function BookCall() {
       setConfirmation(res.data);
       setForm((f) => ({ ...f, ...payload, _finalStep: true }));
       clearDraft();
-      setStep(6);
+      setStep(7);
     } catch (err) {
       console.error("createBooking error:", err);
       const msg = err?.message || err?.details || "Something went wrong. Please try again.";
@@ -969,20 +981,18 @@ export default function BookCall() {
       <div className="container">
         <div className="bc-shell">
           <div className="bc-shell-inner">
-            {step > 1 && step < 6 && <StepIndicator step={step} />}
+            {step > 1 && step < 7 && <StepIndicator step={step - 1} />}
 
             <AnimatePresence mode="wait">
               {step === 1 && (
                 <WelcomeStep
                   key="welcome"
-                  form={form}
-                  setForm={setForm}
                   onStart={() => goTo(2)}
                 />
               )}
               {step === 2 && (
-                <ServiceStep
-                  key="service"
+                <LanguageStep
+                  key="language"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(3)}
@@ -990,20 +1000,17 @@ export default function BookCall() {
                 />
               )}
               {step === 3 && (
-                <BusinessStep
-                  key="business"
+                <ServiceStep
+                  key="service"
                   form={form}
                   setForm={setForm}
-                  audioBlobs={audioBlobs}
-                  onAudioChange={onAudioChange}
-                  onAudioClear={onAudioClear}
                   onNext={() => goTo(4)}
                   onBack={() => goTo(2)}
                 />
               )}
               {step === 4 && (
-                <ProjectStep
-                  key="project"
+                <BusinessStep
+                  key="business"
                   form={form}
                   setForm={setForm}
                   audioBlobs={audioBlobs}
@@ -1013,19 +1020,31 @@ export default function BookCall() {
                   onBack={() => goTo(3)}
                 />
               )}
-              {step === 5 && !confirmation && (
+              {step === 5 && (
+                <ProjectStep
+                  key="project"
+                  form={form}
+                  setForm={setForm}
+                  audioBlobs={audioBlobs}
+                  onAudioChange={onAudioChange}
+                  onAudioClear={onAudioClear}
+                  onNext={() => goTo(6)}
+                  onBack={() => goTo(4)}
+                />
+              )}
+              {step === 6 && !confirmation && (
                 <ScheduleStep
                   key="schedule"
                   form={form}
                   setForm={setForm}
-                  onBack={() => goTo(4)}
+                  onBack={() => goTo(5)}
                   onSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
                   uploadStatus={uploadStatus}
                   error={error}
                 />
               )}
-              {step === 6 && confirmation && (
+              {step === 7 && confirmation && (
                 <ConfirmationStep
                   key="confirm"
                   form={form}
