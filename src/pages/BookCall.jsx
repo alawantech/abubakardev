@@ -31,9 +31,7 @@ import { services } from "../data/services";
 import { countries } from "../data/countries";
 import { useUserTimezone, formatInTimezone } from "../hooks/useUserTimezone";
 import { httpsCallable } from "firebase/functions";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { functions, storage } from "../firebase";
-import VoiceField from "../components/VoiceField";
+import { functions } from "../firebase";
 import "./BookCall.css";
 
 const STORAGE_KEY = "zedrotech_book_call_draft_v1";
@@ -78,14 +76,6 @@ const initialForm = {
   slotEndUtc: "",
   slotDurationMinutes: 30
 };
-
-const AUDIO_FIELDS = [
-  "businessDescription",
-  "projectDescription",
-  "currentSoftware",
-  "problem",
-  "additionalInfo"
-];
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },

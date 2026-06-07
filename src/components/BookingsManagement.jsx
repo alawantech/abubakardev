@@ -20,9 +20,6 @@ import {
   FaCopy,
   FaLink,
   FaSync,
-  FaPlay,
-  FaPause,
-  FaMicrophone,
   FaLanguage
 } from "react-icons/fa";
 import { httpsCallable } from "firebase/functions";
@@ -43,91 +40,6 @@ const LANGUAGE_LABELS = {
   english: "English",
   hausa: "Hausa"
 };
-
-function AudioPlayer({ url, duration }) {
-  const audioRef = React.useRef(null);
-  const [playing, setPlaying] = useState(false);
-  const [current, setCurrent] = useState(0);
-  const [total, setTotal] = useState(duration || 0);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onTime = () => setCurrent(a.currentTime);
-    const onLoaded = () => {
-      if (!isNaN(a.duration) && isFinite(a.duration)) setTotal(a.duration);
-    };
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onErr = () => setError("Couldn't load audio");
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("loadedmetadata", onLoaded);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    a.addEventListener("error", onErr);
-    return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("loadedmetadata", onLoaded);
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-      a.removeEventListener("error", onErr);
-    };
-  }, [url]);
-
-  const togglePlay = async () => {
-    const a = audioRef.current;
-    if (!a) return;
-    try {
-      if (playing) {
-        a.pause();
-      } else {
-        await a.play();
-      }
-    } catch (err) {
-      setError("Playback failed");
-    }
-  };
-
-  const fmt = (s) => {
-    if (!s || isNaN(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  const pct = total > 0 ? (current / total) * 100 : 0;
-
-  return (
-    <div className="bm-audio">
-      <button
-        type="button"
-        onClick={togglePlay}
-        className="bm-audio-play"
-        aria-label={playing ? "Pause" : "Play"}
-      >
-        {playing ? <FaPause size={11} /> : <FaPlay size={11} />}
-      </button>
-      <div className="bm-audio-body">
-        <div className="bm-audio-bar" onClick={(e) => {
-          const a = audioRef.current;
-          if (!a || !total) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          const ratio = (e.clientX - rect.left) / rect.width;
-          a.currentTime = ratio * total;
-        }}>
-          <div className="bm-audio-bar-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="bm-audio-meta">
-          <FaMicrophone size={9} />
-          <span>{fmt(current)} / {fmt(total)}</span>
-        </div>
-      </div>
-      <audio ref={audioRef} src={url} preload="metadata" />
-      {error && <div className="bm-audio-error">{error}</div>}
-    </div>
-  );
-}
 
 function formatDateTime(iso, tz) {
   if (!iso) return "—";
@@ -400,35 +312,10 @@ function BookingsManagement() {
                         <Field icon={<FaLanguage />} label="Call language" value={LANGUAGE_LABELS[b.language] || b.language || "—"} />
                         <Field icon={<FaBuilding />} label="Business" value={b.businessName || "—"} />
                         <Field icon={<FaLightbulb />} label="What they want" value={b.projectDescription || "—"} fullWidth />
-                        {b.projectDescriptionAudioUrl && (
-                          <Field icon={<FaMicrophone />} label="What they want (audio)" value={
-                            <AudioPlayer url={b.projectDescriptionAudioUrl} duration={b.projectDescriptionAudioDuration} />
-                          } fullWidth />
-                        )}
                         <Field icon={<FaBuilding />} label="Business description" value={b.businessDescription || "—"} fullWidth />
-                        {b.businessDescriptionAudioUrl && (
-                          <Field icon={<FaMicrophone />} label="Business description (audio)" value={
-                            <AudioPlayer url={b.businessDescriptionAudioUrl} duration={b.businessDescriptionAudioDuration} />
-                          } fullWidth />
-                        )}
                         {b.currentSoftware && <Field icon={<FaTools />} label="Current software" value={b.currentSoftware} fullWidth />}
-                        {b.currentSoftwareAudioUrl && (
-                          <Field icon={<FaMicrophone />} label="Current software (audio)" value={
-                            <AudioPlayer url={b.currentSoftwareAudioUrl} duration={b.currentSoftwareAudioDuration} />
-                          } fullWidth />
-                        )}
                         {b.problem && <Field icon={<FaExclamationTriangle />} label="Challenge" value={b.problem} fullWidth />}
-                        {b.problemAudioUrl && (
-                          <Field icon={<FaMicrophone />} label="Challenge (audio)" value={
-                            <AudioPlayer url={b.problemAudioUrl} duration={b.problemAudioDuration} />
-                          } fullWidth />
-                        )}
                         {b.additionalInfo && <Field icon={<FaLightbulb />} label="Notes" value={b.additionalInfo} fullWidth />}
-                        {b.additionalInfoAudioUrl && (
-                          <Field icon={<FaMicrophone />} label="Notes (audio)" value={
-                            <AudioPlayer url={b.additionalInfoAudioUrl} duration={b.additionalInfoAudioDuration} />
-                          } fullWidth />
-                        )}
                         <Field icon={<FaPhone />} label="Timezone" value={`${b.timezone || "—"} (${b.countryName || ""})`} />
                         <Field icon={<FaClock />} label="Duration" value={`${b.durationMinutes} minutes`} />
                       </div>

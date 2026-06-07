@@ -317,34 +317,6 @@ exports.createBooking = functions.https.onCall(async (request) => {
     const startTs = admin.firestore.Timestamp.fromMillis(startMs);
     const endTs = admin.firestore.Timestamp.fromMillis(startMs + SLOT_DURATION_MINUTES * 60 * 1000);
 
-    const audioFieldMap = {
-      businessDescription: "businessDescriptionAudioUrl",
-      projectDescription: "projectDescriptionAudioUrl",
-      currentSoftware: "currentSoftwareAudioUrl",
-      problem: "problemAudioUrl",
-      additionalInfo: "additionalInfoAudioUrl"
-    };
-    const audioDurationMap = {
-      businessDescription: "businessDescriptionAudioDuration",
-      projectDescription: "projectDescriptionAudioDuration",
-      currentSoftware: "currentSoftwareAudioDuration",
-      problem: "problemAudioDuration",
-      additionalInfo: "additionalInfoAudioDuration"
-    };
-
-    const audioUrls = {};
-    for (const [field, key] of Object.entries(audioFieldMap)) {
-      const v = data[key];
-      if (typeof v === "string" && v.startsWith("https://")) {
-        audioUrls[key] = v;
-        const dKey = audioDurationMap[field];
-        const d = parseFloat(data[dKey]);
-        if (Number.isFinite(d) && d >= 0 && d <= 600) {
-          audioUrls[dKey] = Math.round(d * 10) / 10;
-        }
-      }
-    }
-
     const bookingDoc = {
       slotStartUtc: startTs,
       slotEndUtc: endTs,
@@ -375,7 +347,6 @@ exports.createBooking = functions.https.onCall(async (request) => {
       status: "confirmed",
       meetLink: "",
       meetLinkSentAt: null,
-      ...audioUrls,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       userAgent: request.rawRequest?.headers?.["user-agent"] || "",
       ip: request.rawRequest?.ip || ""
@@ -540,17 +511,7 @@ exports.adminListBookings = functions.https.onCall(async (request) => {
       startUtc: data.slotStartUtc?.toDate().toISOString() || null,
       endUtc: data.slotEndUtc?.toDate().toISOString() || null,
       durationMinutes: data.durationMinutes,
-      createdAt: data.createdAt?.toDate().toISOString() || null,
-      businessDescriptionAudioUrl: data.businessDescriptionAudioUrl || "",
-      businessDescriptionAudioDuration: data.businessDescriptionAudioDuration || 0,
-      projectDescriptionAudioUrl: data.projectDescriptionAudioUrl || "",
-      projectDescriptionAudioDuration: data.projectDescriptionAudioDuration || 0,
-      currentSoftwareAudioUrl: data.currentSoftwareAudioUrl || "",
-      currentSoftwareAudioDuration: data.currentSoftwareAudioDuration || 0,
-      problemAudioUrl: data.problemAudioUrl || "",
-      problemAudioDuration: data.problemAudioDuration || 0,
-      additionalInfoAudioUrl: data.additionalInfoAudioUrl || "",
-      additionalInfoAudioDuration: data.additionalInfoAudioDuration || 0
+      createdAt: data.createdAt?.toDate().toISOString() || null
     };
   });
   if (filter !== "all") {

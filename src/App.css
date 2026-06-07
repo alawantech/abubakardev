@@ -57,3 +57,9 @@ html {
   pointer-events: auto !important;
   transform: translateZ(0) !important;
 }
+
+/* Hide header/footer chrome on booking page */
+.bc-chrome-hidden header,
+.bc-chrome-hidden footer {
+  display: none !important;
+}

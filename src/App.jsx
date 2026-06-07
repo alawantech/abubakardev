@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { isSchoolSubdomain } from './utils/hostname';
 import ScrollToTop from './components/ScrollToTop';
@@ -42,6 +42,16 @@ const Login = React.lazy(() => import('./components/Login'));
 const Register = React.lazy(() => import('./components/Register'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const ExtendSubscription = React.lazy(() => import('./components/ExtendSubscription'));
+
+function RouteAwareFloatingWhatsApp() {
+  const { pathname } = useLocation();
+  if (pathname === '/book') return null;
+  return (
+    <React.Suspense fallback={null}>
+      <FloatingWhatsApp />
+    </React.Suspense>
+  );
+}
 
 function App() {
   const isSchool = isSchoolSubdomain();
@@ -252,10 +262,8 @@ function App() {
             <Route
               path="/book"
               element={
-                <div className="App">
-                  <NavHeader />
+                <div className="App bc-chrome-hidden">
                   <BookCall />
-                  <NavFooter />
                 </div>
               }
             />
@@ -297,7 +305,7 @@ function App() {
               }
             />
           </Routes>
-          <FloatingWhatsApp />
+          <RouteAwareFloatingWhatsApp />
           {/* <AIAgentWidget /> temporarily hidden — re-enable later */}
         </React.Suspense>
       </Router>
