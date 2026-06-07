@@ -341,7 +341,7 @@ function ServiceStep({ form, setForm, onNext, onBack }) {
   );
 }
 
-function BusinessStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, onNext, onBack }) {
+function BusinessStep({ form, setForm, onNext, onBack }) {
   const [countryQuery, setCountryQuery] = useState("");
   const [countryOpen, setCountryOpen] = useState(false);
   const countryRef = useRef(null);
@@ -370,13 +370,12 @@ function BusinessStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, 
     setCountryOpen(false);
   };
 
-  const hasBusinessAudio = !!audioBlobs.businessDescription;
   const requiredOk =
     form.name.trim() &&
     validateEmail(form.email) &&
     form.countryCode &&
     form.businessName.trim() &&
-    (form.businessDescription.trim().length >= 10 || hasBusinessAudio);
+    form.businessDescription.trim().length >= 10;
 
   return (
     <motion.div {...fadeUp} className="bc-step-content">
@@ -489,16 +488,13 @@ function BusinessStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, 
 
         <div className="bc-field">
           <span className="bc-field-label">What does your business do?</span>
-          <span className="bc-field-hint">A few sentences is plenty. Or record a voice note if typing is tiring.</span>
-          <VoiceField
+          <span className="bc-field-hint">A few sentences is plenty.</span>
+          <textarea
             value={form.businessDescription}
-            onTextChange={(v) => setForm((f) => ({ ...f, businessDescription: v }))}
-            audioBlob={audioBlobs.businessDescription?.blob || null}
-            audioDurationSec={audioBlobs.businessDescription?.duration || 0}
-            onAudioChange={(blob, duration) => onAudioChange("businessDescription", blob, duration)}
-            onAudioClear={() => onAudioClear("businessDescription")}
+            onChange={(e) => setForm((f) => ({ ...f, businessDescription: e.target.value }))}
             placeholder="What do you sell or offer? Who's it for? Where do you operate?"
             rows={4}
+            className="bc-textarea"
           />
         </div>
       </div>
@@ -513,30 +509,26 @@ function BusinessStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, 
   );
 }
 
-function ProjectStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, onNext, onBack }) {
-  const hasProjectAudio = !!audioBlobs.projectDescription;
-  const canNext = form.projectDescription.trim().length >= 10 || hasProjectAudio;
+function ProjectStep({ form, setForm, onNext, onBack }) {
+  const canNext = form.projectDescription.trim().length >= 10;
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
         <span className="eyebrow eyebrow-accent">Step 4 of 5</span>
         <h2>What are you trying to build?</h2>
-        <p>The more honest you are here, the more useful the call will be. Only the first one is required. Tap the mic to record a voice note instead of typing.</p>
+        <p>The more honest you are here, the more useful the call will be. Only the first one is required.</p>
       </div>
 
       <div className="bc-form">
         <div className="bc-field">
           <span className="bc-field-label">What do you want to achieve?</span>
           <span className="bc-field-hint">A website? An app? AI automation? Replacing a spreadsheet? A booking system?</span>
-          <VoiceField
+          <textarea
             value={form.projectDescription}
-            onTextChange={(v) => setForm((f) => ({ ...f, projectDescription: v }))}
-            audioBlob={audioBlobs.projectDescription?.blob || null}
-            audioDurationSec={audioBlobs.projectDescription?.duration || 0}
-            onAudioChange={(blob, duration) => onAudioChange("projectDescription", blob, duration)}
-            onAudioClear={() => onAudioClear("projectDescription")}
+            onChange={(e) => setForm((f) => ({ ...f, projectDescription: e.target.value }))}
             placeholder="e.g. We need a customer portal where our clients can log in, see their order history, and download invoices…"
             rows={4}
+            className="bc-textarea"
           />
         </div>
 
@@ -545,15 +537,12 @@ function ProjectStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, o
             Tools you already use <span className="bc-optional">(optional)</span>
           </span>
           <span className="bc-field-hint">CRM, marketing software, accounting, anything else relevant.</span>
-          <VoiceField
+          <textarea
             value={form.currentSoftware}
-            onTextChange={(v) => setForm((f) => ({ ...f, currentSoftware: v }))}
-            audioBlob={audioBlobs.currentSoftware?.blob || null}
-            audioDurationSec={audioBlobs.currentSoftware?.duration || 0}
-            onAudioChange={(blob, duration) => onAudioChange("currentSoftware", blob, duration)}
-            onAudioClear={() => onAudioClear("currentSoftware")}
+            onChange={(e) => setForm((f) => ({ ...f, currentSoftware: e.target.value }))}
             placeholder="e.g. HubSpot, Zoho, Excel spreadsheets, WhatsApp Business…"
             rows={2}
+            className="bc-textarea"
           />
         </div>
 
@@ -561,15 +550,12 @@ function ProjectStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, o
           <span className="bc-field-label">
             What's the biggest pain right now? <span className="bc-optional">(optional)</span>
           </span>
-          <VoiceField
+          <textarea
             value={form.problem}
-            onTextChange={(v) => setForm((f) => ({ ...f, problem: v }))}
-            audioBlob={audioBlobs.problem?.blob || null}
-            audioDurationSec={audioBlobs.problem?.duration || 0}
-            onAudioChange={(blob, duration) => onAudioChange("problem", blob, duration)}
-            onAudioClear={() => onAudioClear("problem")}
+            onChange={(e) => setForm((f) => ({ ...f, problem: e.target.value }))}
             placeholder="e.g. We're losing leads because we can't reply on WhatsApp fast enough…"
             rows={3}
+            className="bc-textarea"
           />
         </div>
 
@@ -577,15 +563,12 @@ function ProjectStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, o
           <span className="bc-field-label">
             Anything else we should know? <span className="bc-optional">(optional)</span>
           </span>
-          <VoiceField
+          <textarea
             value={form.additionalInfo}
-            onTextChange={(v) => setForm((f) => ({ ...f, additionalInfo: v }))}
-            audioBlob={audioBlobs.additionalInfo?.blob || null}
-            audioDurationSec={audioBlobs.additionalInfo?.duration || 0}
-            onAudioChange={(blob, duration) => onAudioChange("additionalInfo", blob, duration)}
-            onAudioClear={() => onAudioClear("additionalInfo")}
+            onChange={(e) => setForm((f) => ({ ...f, additionalInfo: e.target.value }))}
             placeholder="Budget range, deadline, link to your current site, examples of what you like…"
             rows={3}
+            className="bc-textarea"
           />
         </div>
       </div>
@@ -844,7 +827,6 @@ function getFlagEmoji(countryCode) {
 export default function BookCall() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(() => loadDraft() || initialForm);
-  const [audioBlobs, setAudioBlobs] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [error, setError] = useState("");
@@ -862,55 +844,20 @@ export default function BookCall() {
     }
   }, [userTimezone]);
 
-  const onAudioChange = (field, blob, duration) => {
-    setAudioBlobs((b) => ({ ...b, [field]: { blob, duration } }));
-  };
-  const onAudioClear = (field) => {
-    setAudioBlobs((b) => {
-      const next = { ...b };
-      delete next[field];
-      return next;
-    });
-  };
-
   const goTo = (n) => {
     setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
     setStep(n);
   };
 
-  const uploadAudio = async (bookingId) => {
-    const urls = {};
-    for (const field of AUDIO_FIELDS) {
-      const entry = audioBlobs[field];
-      if (!entry || !entry.blob) continue;
-      const ext = entry.blob.type && entry.blob.type.includes("mp4") ? "m4a" : "webm";
-      const path = `bookings/${bookingId}/${field}_${Date.now()}.${ext}`;
-      const r = storageRef(storage, path);
-      setUploadStatus(`Uploading ${field} audio…`);
-      try {
-        await uploadBytes(r, entry.blob, { contentType: entry.blob.type || "audio/webm" });
-        urls[`${field}AudioUrl`] = await getDownloadURL(r);
-        urls[`${field}AudioDuration`] = entry.duration;
-      } catch (err) {
-        console.warn(`Audio upload failed for ${field}:`, err);
-      }
-    }
-    return urls;
-  };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError("");
-    setUploadStatus(audioBlobs && Object.keys(audioBlobs).length > 0 ? "Preparing upload…" : "");
+    setUploadStatus("");
     try {
       const clientBookingId = (typeof crypto !== "undefined" && crypto.randomUUID)
         ? crypto.randomUUID()
         : `b_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-
-      const audioUrls = Object.keys(audioBlobs).length > 0
-        ? await uploadAudio(clientBookingId)
-        : {};
 
       const fn = httpsCallable(functions, "createBooking");
       const payload = {
@@ -932,8 +879,7 @@ export default function BookCall() {
         problem: form.problem,
         additionalInfo: form.additionalInfo,
         callType: form.callType,
-        timezone: form.timezone || userTimezone || "UTC",
-        ...audioUrls
+        timezone: form.timezone || userTimezone || "UTC"
       };
       setUploadStatus("Confirming booking…");
       const res = await fn(payload);
@@ -953,7 +899,6 @@ export default function BookCall() {
 
   const reset = () => {
     setForm({ ...initialForm, timezone: userTimezone || "" });
-    setAudioBlobs({});
     setConfirmation(null);
     setStep(1);
     clearDraft();
@@ -1003,9 +948,6 @@ export default function BookCall() {
                   key="business"
                   form={form}
                   setForm={setForm}
-                  audioBlobs={audioBlobs}
-                  onAudioChange={onAudioChange}
-                  onAudioClear={onAudioClear}
                   onNext={() => goTo(5)}
                   onBack={() => goTo(3)}
                 />
@@ -1015,9 +957,6 @@ export default function BookCall() {
                   key="project"
                   form={form}
                   setForm={setForm}
-                  audioBlobs={audioBlobs}
-                  onAudioChange={onAudioChange}
-                  onAudioClear={onAudioClear}
                   onNext={() => goTo(6)}
                   onBack={() => goTo(4)}
                 />
