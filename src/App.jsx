@@ -21,7 +21,13 @@ const FloatingWhatsApp = React.lazy(() => import('./components/FloatingWhatsApp'
 const AIAgentWidget = React.lazy(() => import('./components/AIAgent/AIAgentWidget'));
 const Hero = React.lazy(() => import('./components/Hero'));
 const Services = React.lazy(() => import('./components/Services'));
+const AIAutomation = React.lazy(() => import('./components/AIAutomation'));
 const Portfolio = React.lazy(() => import('./components/Portfolio'));
+const TrustBar = React.lazy(() => import('./components/TrustBar'));
+const Process = React.lazy(() => import('./components/Process'));
+const Testimonials = React.lazy(() => import('./components/Testimonials'));
+const CTABanner = React.lazy(() => import('./components/CTABanner'));
+const BookCall = React.lazy(() => import('./pages/BookCall'));
 
 const Courses = React.lazy(() => import('./components/Courses'));
 const CoursePage = React.lazy(() => import('./components/CoursePage'));
@@ -85,9 +91,14 @@ function App() {
                   {isSchool ? <SchoolLanding /> : (
                     <>
                       <Hero />
+                      <TrustBar />
                       <Services />
+                      <AIAutomation />
+                      <Process />
                       <Portfolio />
                       <About />
+                      <Testimonials />
+                      <CTABanner />
                       <Contact />
                     </>
                   )}
@@ -238,6 +249,16 @@ function App() {
               }
             />
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/book"
+              element={
+                <div className="App">
+                  <NavHeader />
+                  <BookCall />
+                  <NavFooter />
+                </div>
+              }
+            />
             <Route path="/register" element={<Register />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route
@@ -277,7 +298,7 @@ function App() {
             />
           </Routes>
           <FloatingWhatsApp />
-          <AIAgentWidget />
+          {/* <AIAgentWidget /> temporarily hidden — re-enable later */}
         </React.Suspense>
       </Router>
     </AuthProvider>

@@ -1,0 +1,1042 @@
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaCode,
+  FaMobile,
+  FaRobot,
+  FaCogs,
+  FaBullhorn,
+  FaWhatsapp,
+  FaVideo,
+  FaArrowRight,
+  FaArrowLeft,
+  FaCheck,
+  FaCheckCircle,
+  FaClock,
+  FaGlobe,
+  FaEnvelope,
+  FaUserTie,
+  FaLightbulb,
+  FaExclamationTriangle,
+  FaCalendarAlt,
+  FaShieldAlt,
+  FaCommentDots,
+  FaSearch,
+  FaQuestion,
+  FaLanguage,
+  FaSpinner
+} from "react-icons/fa";
+import { HiArrowUpRight } from "react-icons/hi2";
+import { services } from "../data/services";
+import { countries } from "../data/countries";
+import { useUserTimezone, formatInTimezone } from "../hooks/useUserTimezone";
+import { httpsCallable } from "firebase/functions";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { functions, storage } from "../firebase";
+import VoiceField from "../components/VoiceField";
+import "./BookCall.css";
+
+const STORAGE_KEY = "zedrotech_book_call_draft_v1";
+
+const SERVICE_ICONS = {
+  web: FaCode,
+  ai: FaRobot,
+  mobile: FaMobile,
+  custom: FaCogs,
+  marketing: FaBullhorn,
+  other: FaQuestion
+};
+
+const STEP_LABELS = [
+  "Language",
+  "Service",
+  "Your business",
+  "Project",
+  "Schedule",
+  "Done"
+];
+
+const initialForm = {
+  language: "",
+  service: "",
+  customService: "",
+  name: "",
+  email: "",
+  whatsapp: "",
+  countryCode: "",
+  countryName: "",
+  countryDialCode: "",
+  businessName: "",
+  businessDescription: "",
+  projectDescription: "",
+  currentSoftware: "",
+  problem: "",
+  additionalInfo: "",
+  callType: "whatsapp",
+  slotId: "",
+  slotStartUtc: "",
+  slotEndUtc: "",
+  slotDurationMinutes: 30
+};
+
+const AUDIO_FIELDS = [
+  "businessDescription",
+  "projectDescription",
+  "currentSoftware",
+  "problem",
+  "additionalInfo"
+];
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+  transition: { duration: 0.35, ease: "easeOut" }
+};
+
+function loadDraft() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { ...initialForm, ...parsed };
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(form, step) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form, _step: step }));
+  } catch {
+    // ignore quota / disabled storage
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || "").trim());
+}
+
+function validateWhatsApp(num) {
+  const digits = (num || "").replace(/[^\d]/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
+function StepIndicator({ step }) {
+  return (
+    <div className="bc-stepper">
+      <div className="bc-stepper-track">
+        {STEP_LABELS.map((label, i) => {
+          const n = i + 1;
+          const status = n < step ? "done" : n === step ? "active" : "pending";
+          return (
+            <React.Fragment key={label}>
+              <div className={`bc-step bc-step-${status}`}>
+                <div className="bc-step-circle">
+                  {status === "done" ? <FaCheck size={11} /> : n}
+                </div>
+                <div className="bc-step-label">{label}</div>
+              </div>
+              {i < STEP_LABELS.length - 1 && (
+                <div className={`bc-step-line ${n < step ? "filled" : ""}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WelcomeStep({ form, setForm, onStart }) {
+  const languages = [
+    { id: "english", name: "English", native: "English", flag: "🇬🇧", desc: "We'll speak English on the call." },
+    { id: "hausa", name: "Hausa", native: "Hausa", flag: "🇳🇬", desc: "Za mu yi magana a harshen Hausa." }
+  ];
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content bc-welcome">
+      <div className="bc-welcome-badge">
+        <FaCalendarAlt size={12} /> Free 30-min discovery call
+      </div>
+      <h1 className="bc-welcome-title">
+        Book a call.<br />
+        <span className="gradient-text">Get a real plan.</span>
+      </h1>
+      <p className="bc-welcome-lede">
+        Before we get on a call, we want to learn a bit about your business.
+        That way, when we meet, we skip the small talk and walk you through
+        a concrete plan — what we'd build, how long it takes, and what it costs.
+      </p>
+
+      <div className="bc-welcome-points">
+        <div className="bc-welcome-point">
+          <div className="bc-welcome-point-icon"><FaClock size={14} /></div>
+          <div>
+            <strong>2 minutes to fill.</strong>
+            <p>Five short questions. Nothing overwhelming.</p>
+          </div>
+        </div>
+        <div className="bc-welcome-point">
+          <div className="bc-welcome-point-icon"><FaUserTie size={14} /></div>
+          <div>
+            <strong>Talk to a senior, not a salesperson.</strong>
+            <p>You'll meet the person who'd actually build your project.</p>
+          </div>
+        </div>
+        <div className="bc-welcome-point">
+          <div className="bc-welcome-point-icon"><FaLightbulb size={14} /></div>
+          <div>
+            <strong>Leave with a plan — even if it's not us.</strong>
+            <p>If we're not the right fit, we'll tell you on the spot.</p>
+          </div>
+        </div>
+        <div className="bc-welcome-point">
+          <div className="bc-welcome-point-icon"><FaShieldAlt size={14} /></div>
+          <div>
+            <strong>Your details stay private.</strong>
+            <p>We only use them to prep for the call. No spam, ever.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bc-language-picker">
+        <div className="bc-language-picker-header">
+          <FaLanguage size={14} />
+          <span>What language should we use for the call?</span>
+        </div>
+        <div className="bc-language-grid">
+          {languages.map((lang) => {
+            const active = form.language === lang.id;
+            return (
+              <button
+                key={lang.id}
+                type="button"
+                className={`bc-language-card ${active ? "active" : ""}`}
+                onClick={() => setForm((f) => ({ ...f, language: lang.id }))}
+              >
+                <div className="bc-language-flag">{lang.flag}</div>
+                <div className="bc-language-info">
+                  <div className="bc-language-name">{lang.name}</div>
+                  <div className="bc-language-desc">{lang.desc}</div>
+                </div>
+                {active && <div className="bc-language-check"><FaCheck size={10} /></div>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bc-welcome-cta">
+        <button
+          onClick={onStart}
+          disabled={!form.language}
+          className="btn btn-primary bc-cta-primary"
+        >
+          Let's begin <FaArrowRight />
+        </button>
+        <span className="bc-welcome-foot">No commitment. Takes about 2 minutes.</span>
+      </div>
+    </motion.div>
+  );
+}
+
+function ServiceStep({ form, setForm, onNext, onBack }) {
+  const isOther = form.service === "other";
+
+  const select = (id) => {
+    setForm((f) => ({
+      ...f,
+      service: id,
+      customService: id === "other" ? f.customService : ""
+    }));
+  };
+
+  const canNext = form.service && (!isOther || (form.customService && form.customService.trim().length > 0));
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 2 of 5</span>
+        <h2>What do you need help with?</h2>
+        <p>Pick the service that best matches what you're trying to build. Don't worry — we'll go deeper on the call.</p>
+      </div>
+
+      <div className="bc-services-grid">
+        {services.map((s) => {
+          const Icon = s.icon;
+          const active = form.service === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              className={`bc-service-card ${active ? "active" : ""}`}
+              onClick={() => select(s.id)}
+              style={{ "--accent": s.accent }}
+            >
+              <div className="bc-service-icon"><Icon size={20} /></div>
+              <div className="bc-service-name">{s.title}</div>
+              <div className="bc-service-desc">{s.description}</div>
+              {active && <div className="bc-service-check"><FaCheck size={11} /></div>}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          className={`bc-service-card bc-service-other ${isOther ? "active" : ""}`}
+          onClick={() => select("other")}
+          style={{ "--accent": "#94a3b8" }}
+        >
+          <div className="bc-service-icon"><FaQuestion size={20} /></div>
+          <div className="bc-service-name">Something else</div>
+          <div className="bc-service-desc">
+            If you don't see a match above, pick this and tell us what you have in mind.
+          </div>
+          {isOther && <div className="bc-service-check"><FaCheck size={11} /></div>}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isOther && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="bc-other-wrap"
+          >
+            <label className="bc-field">
+              <span className="bc-field-label">What kind of project is it?</span>
+              <input
+                type="text"
+                value={form.customService}
+                onChange={(e) => setForm((f) => ({ ...f, customService: e.target.value }))}
+                placeholder="e.g. A Chrome extension, a Chrome plugin, an internal tool, a desktop app…"
+                className="bc-input"
+                autoFocus
+              />
+            </label>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
+        <button onClick={onNext} disabled={!canNext} className="btn btn-primary">
+          Continue <FaArrowRight />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function BusinessStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, onNext, onBack }) {
+  const [countryQuery, setCountryQuery] = useState("");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const countryRef = useRef(null);
+
+  useEffect(() => {
+    if (form.countryName && !countryQuery) setCountryQuery(form.countryName);
+  }, [form.countryName]);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (countryRef.current && !countryRef.current.contains(e.target)) setCountryOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = countryQuery.trim().toLowerCase();
+    if (!q) return countries;
+    return countries.filter((c) => c.name.toLowerCase().includes(q));
+  }, [countryQuery]);
+
+  const selectCountry = (c) => {
+    setForm((f) => ({ ...f, countryCode: c.code, countryName: c.name, countryDialCode: c.dialCode }));
+    setCountryQuery(c.name);
+    setCountryOpen(false);
+  };
+
+  const hasBusinessAudio = !!audioBlobs.businessDescription;
+  const requiredOk =
+    form.name.trim() &&
+    validateEmail(form.email) &&
+    form.countryCode &&
+    form.businessName.trim() &&
+    (form.businessDescription.trim().length >= 10 || hasBusinessAudio);
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 3 of 5</span>
+        <h2>Tell us about your business</h2>
+        <p>The basics. So we can do our homework before the call.</p>
+      </div>
+
+      <div className="bc-form">
+        <div className="bc-form-row">
+          <label className="bc-field">
+            <span className="bc-field-label">Your name</span>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Jane Doe"
+              className="bc-input"
+              autoComplete="name"
+            />
+          </label>
+          <label className="bc-field">
+            <span className="bc-field-label">Email</span>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              placeholder="jane@company.com"
+              className="bc-input"
+              autoComplete="email"
+            />
+          </label>
+        </div>
+
+        <div className="bc-form-row">
+          <div className="bc-field" ref={countryRef}>
+            <span className="bc-field-label">Country</span>
+            <div className="bc-combobox">
+              <FaGlobe className="bc-combobox-icon" />
+              <FaSearch className="bc-combobox-search" />
+              <input
+                type="text"
+                value={countryQuery}
+                onChange={(e) => {
+                  setCountryQuery(e.target.value);
+                  setCountryOpen(true);
+                  if (!e.target.value) {
+                    setForm((f) => ({ ...f, countryCode: "", countryName: "", countryDialCode: "" }));
+                  }
+                }}
+                onFocus={() => setCountryOpen(true)}
+                placeholder="Search countries…"
+                className="bc-input bc-input-with-icon"
+                autoComplete="off"
+              />
+              <AnimatePresence>
+                {countryOpen && filtered.length > 0 && (
+                  <motion.ul
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="bc-combobox-list"
+                  >
+                    {filtered.slice(0, 200).map((c) => (
+                      <li
+                        key={c.code}
+                        className={`bc-combobox-item ${form.countryCode === c.code ? "active" : ""}`}
+                        onClick={() => selectCountry(c)}
+                      >
+                        <span className="bc-combobox-flag">{getFlagEmoji(c.code)}</span>
+                        <span className="bc-combobox-name">{c.name}</span>
+                        <span className="bc-combobox-dial">{c.dialCode}</span>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+          <label className="bc-field">
+            <span className="bc-field-label">
+              WhatsApp <span className="bc-optional">(optional, no country code)</span>
+            </span>
+            <div className="bc-phone">
+              {form.countryDialCode && <span className="bc-phone-prefix">{form.countryDialCode}</span>}
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={(e) => setForm((f) => ({ ...f, whatsapp: e.target.value }))}
+                placeholder="800 000 0000"
+                className="bc-input"
+                autoComplete="tel"
+              />
+            </div>
+          </label>
+        </div>
+
+        <label className="bc-field">
+          <span className="bc-field-label">Business / project name</span>
+          <input
+            type="text"
+            value={form.businessName}
+            onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+            placeholder="e.g. Zee Logistics, Adunni Couture, Sunmark Energy…"
+            className="bc-input"
+          />
+        </label>
+
+        <div className="bc-field">
+          <span className="bc-field-label">What does your business do?</span>
+          <span className="bc-field-hint">A few sentences is plenty. Or record a voice note if typing is tiring.</span>
+          <VoiceField
+            value={form.businessDescription}
+            onTextChange={(v) => setForm((f) => ({ ...f, businessDescription: v }))}
+            audioBlob={audioBlobs.businessDescription?.blob || null}
+            audioDurationSec={audioBlobs.businessDescription?.duration || 0}
+            onAudioChange={(blob, duration) => onAudioChange("businessDescription", blob, duration)}
+            onAudioClear={() => onAudioClear("businessDescription")}
+            placeholder="What do you sell or offer? Who's it for? Where do you operate?"
+            rows={4}
+          />
+        </div>
+      </div>
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
+        <button onClick={onNext} disabled={!requiredOk} className="btn btn-primary">
+          Continue <FaArrowRight />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ProjectStep({ form, setForm, audioBlobs, onAudioChange, onAudioClear, onNext, onBack }) {
+  const hasProjectAudio = !!audioBlobs.projectDescription;
+  const canNext = form.projectDescription.trim().length >= 10 || hasProjectAudio;
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 4 of 5</span>
+        <h2>What are you trying to build?</h2>
+        <p>The more honest you are here, the more useful the call will be. Only the first one is required. Tap the mic to record a voice note instead of typing.</p>
+      </div>
+
+      <div className="bc-form">
+        <div className="bc-field">
+          <span className="bc-field-label">What do you want to achieve?</span>
+          <span className="bc-field-hint">A website? An app? AI automation? Replacing a spreadsheet? A booking system?</span>
+          <VoiceField
+            value={form.projectDescription}
+            onTextChange={(v) => setForm((f) => ({ ...f, projectDescription: v }))}
+            audioBlob={audioBlobs.projectDescription?.blob || null}
+            audioDurationSec={audioBlobs.projectDescription?.duration || 0}
+            onAudioChange={(blob, duration) => onAudioChange("projectDescription", blob, duration)}
+            onAudioClear={() => onAudioClear("projectDescription")}
+            placeholder="e.g. We need a customer portal where our clients can log in, see their order history, and download invoices…"
+            rows={4}
+          />
+        </div>
+
+        <div className="bc-field">
+          <span className="bc-field-label">
+            Tools you already use <span className="bc-optional">(optional)</span>
+          </span>
+          <span className="bc-field-hint">CRM, marketing software, accounting, anything else relevant.</span>
+          <VoiceField
+            value={form.currentSoftware}
+            onTextChange={(v) => setForm((f) => ({ ...f, currentSoftware: v }))}
+            audioBlob={audioBlobs.currentSoftware?.blob || null}
+            audioDurationSec={audioBlobs.currentSoftware?.duration || 0}
+            onAudioChange={(blob, duration) => onAudioChange("currentSoftware", blob, duration)}
+            onAudioClear={() => onAudioClear("currentSoftware")}
+            placeholder="e.g. HubSpot, Zoho, Excel spreadsheets, WhatsApp Business…"
+            rows={2}
+          />
+        </div>
+
+        <div className="bc-field">
+          <span className="bc-field-label">
+            What's the biggest pain right now? <span className="bc-optional">(optional)</span>
+          </span>
+          <VoiceField
+            value={form.problem}
+            onTextChange={(v) => setForm((f) => ({ ...f, problem: v }))}
+            audioBlob={audioBlobs.problem?.blob || null}
+            audioDurationSec={audioBlobs.problem?.duration || 0}
+            onAudioChange={(blob, duration) => onAudioChange("problem", blob, duration)}
+            onAudioClear={() => onAudioClear("problem")}
+            placeholder="e.g. We're losing leads because we can't reply on WhatsApp fast enough…"
+            rows={3}
+          />
+        </div>
+
+        <div className="bc-field">
+          <span className="bc-field-label">
+            Anything else we should know? <span className="bc-optional">(optional)</span>
+          </span>
+          <VoiceField
+            value={form.additionalInfo}
+            onTextChange={(v) => setForm((f) => ({ ...f, additionalInfo: v }))}
+            audioBlob={audioBlobs.additionalInfo?.blob || null}
+            audioDurationSec={audioBlobs.additionalInfo?.duration || 0}
+            onAudioChange={(blob, duration) => onAudioChange("additionalInfo", blob, duration)}
+            onAudioClear={() => onAudioClear("additionalInfo")}
+            placeholder="Budget range, deadline, link to your current site, examples of what you like…"
+            rows={3}
+          />
+        </div>
+      </div>
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
+        <button onClick={onNext} disabled={!canNext} className="btn btn-primary">
+          Continue <FaArrowRight />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadStatus, error }) {
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const userTimezone = useUserTimezone();
+  const tz = userTimezone || form.timezone || "UTC";
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const fn = httpsCallable(functions, "listAvailableSlots");
+        const res = await fn({ days: 21 });
+        if (!cancelled) setSlots(res.data.slots || []);
+      } catch (err) {
+        console.error("listAvailableSlots error:", err);
+        if (!cancelled) setSlots([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const grouped = useMemo(() => groupSlotsByDay(slots, tz), [slots, tz]);
+
+  const selectSlot = (s) => {
+    setForm((f) => ({
+      ...f,
+      slotId: s.id,
+      slotStartUtc: s.startUtc,
+      slotEndUtc: s.endUtc,
+      slotDurationMinutes: s.durationMinutes
+    }));
+  };
+
+  const canSubmit = !!form.slotStartUtc && (form.callType === "whatsapp" || form.callType === "google_meet");
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 5 of 5</span>
+        <h2>Pick a time that works for you</h2>
+        <p>All times shown in <strong>{tz.replace(/_/g, " ")}</strong>. We'll send a confirmation email with the details.</p>
+      </div>
+
+      <div className="bc-calltype">
+        <button
+          type="button"
+          className={`bc-calltype-card ${form.callType === "whatsapp" ? "active" : ""}`}
+          onClick={() => setForm((f) => ({ ...f, callType: "whatsapp" }))}
+          style={{ "--accent": "#10b981" }}
+        >
+          <FaWhatsapp size={22} />
+          <div className="bc-calltype-name">WhatsApp call</div>
+          <div className="bc-calltype-desc">We call you on WhatsApp. Quick and personal.</div>
+          {form.callType === "whatsapp" && <div className="bc-calltype-check"><FaCheck size={11} /></div>}
+        </button>
+        <button
+          type="button"
+          className={`bc-calltype-card ${form.callType === "google_meet" ? "active" : ""}`}
+          onClick={() => setForm((f) => ({ ...f, callType: "google_meet" }))}
+          style={{ "--accent": "#6366f1" }}
+        >
+          <FaVideo size={22} />
+          <div className="bc-calltype-name">Google Meet</div>
+          <div className="bc-calltype-desc">Video call with screen-share. Link sent 24h before.</div>
+          {form.callType === "google_meet" && <div className="bc-calltype-check"><FaCheck size={11} /></div>}
+        </button>
+      </div>
+
+      <div className="bc-slots-wrap">
+        <h3 className="bc-slots-title">Available times</h3>
+        {loading ? (
+          <div className="bc-slots-loading">
+            <div className="bc-spinner" />
+            <span>Loading available times…</span>
+          </div>
+        ) : slots.length === 0 ? (
+          <div className="bc-slots-empty">
+            <FaExclamationTriangle size={18} />
+            <div>
+              <strong>No slots available right now.</strong>
+              <p>Reach out on WhatsApp and we'll find a time that works.</p>
+              <a
+                href="https://wa.me/2348156853636"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ marginTop: 10 }}
+              >
+                <FaWhatsapp /> Chat on WhatsApp
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="bc-slots-days">
+            {grouped.map((day) => (
+              <div className="bc-slots-day" key={day.label}>
+                <div className="bc-slots-day-label">{day.label}</div>
+                <div className="bc-slots-day-grid">
+                  {day.slots.map((s) => {
+                    const active = form.slotId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`bc-slot-pill ${active ? "active" : ""}`}
+                        onClick={() => selectSlot(s)}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {error && <div className="bc-error">{error}</div>}
+      {isSubmitting && uploadStatus && (
+        <div className="bc-upload-status">
+          <FaSpinner className="bc-spin" /> {uploadStatus}
+        </div>
+      )}
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost" disabled={isSubmitting}><FaArrowLeft /> Back</button>
+        <button onClick={onSubmit} disabled={!canSubmit || isSubmitting} className="btn btn-primary">
+          {isSubmitting ? (
+            <><div className="bc-spinner bc-spinner-inline" /> Confirming…</>
+          ) : (
+            <>Confirm booking <FaArrowRight /></>
+          )}
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ConfirmationStep({ form, confirmation, onReset }) {
+  const start = confirmation?.scheduledAt ? new Date(confirmation.scheduledAt) : null;
+  const tz = form.timezone || "UTC";
+  const when = start ? formatInTimezone(start, tz, {
+    weekday: "long", year: "numeric", month: "long", day: "numeric"
+  }) : "";
+  const time = start ? formatInTimezone(start, tz, { hour: "numeric", minute: "2-digit" }) : "";
+  const callTypeLabel = form.callType === "google_meet" ? "Google Meet" : "WhatsApp call";
+  const languageLabel = form.language === "hausa" ? "Hausa" : "English";
+
+  return (
+    <motion.div {...fadeUp} className="bc-step-content bc-confirmation">
+      <motion.div
+        initial={{ scale: 0.6, rotate: -8 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 220, damping: 14 }}
+        className="bc-confirm-check"
+      >
+        <FaCheck size={32} />
+      </motion.div>
+
+      <h2>You're booked. 🎉</h2>
+      <p className="bc-confirm-lede">
+        We've sent a confirmation to <strong>{form.email}</strong>. Check your inbox (and your spam folder, just in case).
+      </p>
+
+      <div className="bc-confirm-card">
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">Language</span>
+          <span className="bc-confirm-value">{languageLabel}</span>
+        </div>
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">Service</span>
+          <span className="bc-confirm-value">
+            {form.service === "other"
+              ? form.customService
+              : services.find((s) => s.id === form.service)?.title || form.service}
+          </span>
+        </div>
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">When</span>
+          <span className="bc-confirm-value">{when} · {time}</span>
+        </div>
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">Duration</span>
+          <span className="bc-confirm-value">{form.slotDurationMinutes} minutes</span>
+        </div>
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">Call type</span>
+          <span className="bc-confirm-value">{callTypeLabel}</span>
+        </div>
+        <div className="bc-confirm-row">
+          <span className="bc-confirm-label">Reference</span>
+          <span className="bc-confirm-value"><code>{confirmation?.bookingId || "—"}</code></span>
+        </div>
+      </div>
+
+      <p className="bc-confirm-fine">
+        We'll review everything you sent and come prepared. Need to reschedule?
+        Just reply to the confirmation email.
+      </p>
+
+      <div className="bc-confirm-actions">
+        <button onClick={onReset} className="btn btn-ghost">Book another time</button>
+        <a href="/" className="btn btn-secondary">Back to home</a>
+      </div>
+    </motion.div>
+  );
+}
+
+function groupSlotsByDay(slots, tz) {
+  const groups = {};
+  for (const s of slots) {
+    const d = new Date(s.startUtc);
+    const dayKey = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: tz }).format(d);
+    const dayLabel = new Intl.DateTimeFormat("en-US", {
+      weekday: "short", day: "numeric", month: "short", timeZone: tz
+    }).format(d);
+    if (!groups[dayKey]) groups[dayKey] = { label: dayLabel, slots: [] };
+    const timeLabel = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric", minute: "2-digit", timeZone: tz
+    }).format(d);
+    groups[dayKey].slots.push({ ...s, label: timeLabel });
+  }
+  return Object.entries(groups)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, g]) => g);
+}
+
+function getFlagEmoji(countryCode) {
+  if (!countryCode || countryCode.length !== 2) return "";
+  const codePoints = countryCode.toUpperCase().split("").map((c) => 127397 + c.charCodeAt(0));
+  try {
+    return String.fromCodePoint(...codePoints);
+  } catch {
+    return "";
+  }
+}
+
+export default function BookCall() {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState(() => loadDraft() || initialForm);
+  const [audioBlobs, setAudioBlobs] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [error, setError] = useState("");
+  const [confirmation, setConfirmation] = useState(null);
+  const userTimezone = useUserTimezone();
+
+  useEffect(() => {
+    if (confirmation) return;
+    if (form && step > 1) saveDraft(form, step);
+  }, [form, step, confirmation]);
+
+  useEffect(() => {
+    if (userTimezone && !form.timezone) {
+      setForm((f) => ({ ...f, timezone: userTimezone }));
+    }
+  }, [userTimezone]);
+
+  const onAudioChange = (field, blob, duration) => {
+    setAudioBlobs((b) => ({ ...b, [field]: { blob, duration } }));
+  };
+  const onAudioClear = (field) => {
+    setAudioBlobs((b) => {
+      const next = { ...b };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const goTo = (n) => {
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setStep(n);
+  };
+
+  const uploadAudio = async (bookingId) => {
+    const urls = {};
+    for (const field of AUDIO_FIELDS) {
+      const entry = audioBlobs[field];
+      if (!entry || !entry.blob) continue;
+      const ext = entry.blob.type && entry.blob.type.includes("mp4") ? "m4a" : "webm";
+      const path = `bookings/${bookingId}/${field}_${Date.now()}.${ext}`;
+      const r = storageRef(storage, path);
+      setUploadStatus(`Uploading ${field} audio…`);
+      try {
+        await uploadBytes(r, entry.blob, { contentType: entry.blob.type || "audio/webm" });
+        urls[`${field}AudioUrl`] = await getDownloadURL(r);
+        urls[`${field}AudioDuration`] = entry.duration;
+      } catch (err) {
+        console.warn(`Audio upload failed for ${field}:`, err);
+      }
+    }
+    return urls;
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError("");
+    setUploadStatus(audioBlobs && Object.keys(audioBlobs).length > 0 ? "Preparing upload…" : "");
+    try {
+      const clientBookingId = (typeof crypto !== "undefined" && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `b_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+      const audioUrls = Object.keys(audioBlobs).length > 0
+        ? await uploadAudio(clientBookingId)
+        : {};
+
+      const fn = httpsCallable(functions, "createBooking");
+      const payload = {
+        clientBookingId,
+        slotStartUtc: form.slotStartUtc,
+        language: form.language || "english",
+        service: form.service,
+        customService: form.service === "other" ? form.customService : "",
+        name: form.name,
+        email: form.email,
+        whatsapp: form.whatsapp,
+        countryCode: form.countryCode,
+        countryName: form.countryName,
+        countryDialCode: form.countryDialCode,
+        businessName: form.businessName,
+        businessDescription: form.businessDescription,
+        projectDescription: form.projectDescription,
+        currentSoftware: form.currentSoftware,
+        problem: form.problem,
+        additionalInfo: form.additionalInfo,
+        callType: form.callType,
+        timezone: form.timezone || userTimezone || "UTC",
+        ...audioUrls
+      };
+      setUploadStatus("Confirming booking…");
+      const res = await fn(payload);
+      setConfirmation(res.data);
+      setForm((f) => ({ ...f, ...payload, _finalStep: true }));
+      clearDraft();
+      setStep(6);
+    } catch (err) {
+      console.error("createBooking error:", err);
+      const msg = err?.message || err?.details || "Something went wrong. Please try again.";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+      setUploadStatus("");
+    }
+  };
+
+  const reset = () => {
+    setForm({ ...initialForm, timezone: userTimezone || "" });
+    setAudioBlobs({});
+    setConfirmation(null);
+    setStep(1);
+    clearDraft();
+  };
+
+  return (
+    <section className="bc-page">
+      <div className="bc-bg">
+        <div className="bc-bg-orb bc-bg-orb-1" />
+        <div className="bc-bg-orb bc-bg-orb-2" />
+        <div className="bc-bg-orb bc-bg-orb-3" />
+        <div className="bc-bg-grid" />
+      </div>
+
+      <div className="container">
+        <div className="bc-shell">
+          <div className="bc-shell-inner">
+            {step > 1 && step < 6 && <StepIndicator step={step} />}
+
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <WelcomeStep
+                  key="welcome"
+                  form={form}
+                  setForm={setForm}
+                  onStart={() => goTo(2)}
+                />
+              )}
+              {step === 2 && (
+                <ServiceStep
+                  key="service"
+                  form={form}
+                  setForm={setForm}
+                  onNext={() => goTo(3)}
+                  onBack={() => goTo(1)}
+                />
+              )}
+              {step === 3 && (
+                <BusinessStep
+                  key="business"
+                  form={form}
+                  setForm={setForm}
+                  audioBlobs={audioBlobs}
+                  onAudioChange={onAudioChange}
+                  onAudioClear={onAudioClear}
+                  onNext={() => goTo(4)}
+                  onBack={() => goTo(2)}
+                />
+              )}
+              {step === 4 && (
+                <ProjectStep
+                  key="project"
+                  form={form}
+                  setForm={setForm}
+                  audioBlobs={audioBlobs}
+                  onAudioChange={onAudioChange}
+                  onAudioClear={onAudioClear}
+                  onNext={() => goTo(5)}
+                  onBack={() => goTo(3)}
+                />
+              )}
+              {step === 5 && !confirmation && (
+                <ScheduleStep
+                  key="schedule"
+                  form={form}
+                  setForm={setForm}
+                  onBack={() => goTo(4)}
+                  onSubmit={handleSubmit}
+                  isSubmitting={isSubmitting}
+                  uploadStatus={uploadStatus}
+                  error={error}
+                />
+              )}
+              {step === 6 && confirmation && (
+                <ConfirmationStep
+                  key="confirm"
+                  form={form}
+                  confirmation={confirmation}
+                  onReset={reset}
+                />
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

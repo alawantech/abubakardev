@@ -8,6 +8,7 @@ admin.initializeApp();
 const { getAgentSession } = require("./agentSession");
 const { captureLeadToFirestore } = require("./captureLead");
 const { chatWithAgent } = require("./chatWithAgent");
+const { transcribeVoiceNote } = require("./transcribeVoiceNote");
 
 /**
  * Verifies Flutterwave payment and creates enrollment
@@ -333,3 +334,18 @@ setGlobalOptions({ maxInstances: 10 });
 exports.getAgentSession = getAgentSession;
 exports.captureLeadToFirestore = captureLeadToFirestore;
 exports.chatWithAgent = chatWithAgent;
+exports.transcribeVoiceNote = transcribeVoiceNote;
+
+// Discovery-call booking exports
+const {
+  listAvailableSlots,
+  createBooking,
+  adminAddMeetLink,
+  adminSetBookingStatus,
+  adminListBookings
+} = require("./bookings");
+exports.listAvailableSlots = listAvailableSlots;
+exports.createBooking = createBooking;
+exports.adminAddMeetLink = adminAddMeetLink;
+exports.adminSetBookingStatus = adminSetBookingStatus;
+exports.adminListBookings = adminListBookings;

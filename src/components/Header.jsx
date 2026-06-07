@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes, FaPhoneAlt } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
 
@@ -21,7 +21,6 @@ const Header = () => {
       }
     }
 
-    // Set initial state
     handleScroll()
 
     window.addEventListener('scroll', handleScroll)
@@ -36,6 +35,11 @@ const Header = () => {
     } catch (error) {
       console.error('Error signing out:', error)
     }
+  }
+
+  const goToBook = () => {
+    setIsMobileMenuOpen(false)
+    navigate('/book')
   }
 
   const navLinks = [
@@ -72,8 +76,19 @@ const Header = () => {
         </nav>
 
         <div className="header-right">
+          <div className="header-cta-group">
+            <button
+              type="button"
+              className="header-book-btn"
+              onClick={goToBook}
+              aria-label="Book a free 15-minute call"
+            >
+              <FaPhoneAlt className="header-btn-icon" />
+              <span>Book a free call</span>
+            </button>
+          </div>
 
-          {currentUser ? (
+          {currentUser && (
             <div className="auth-group">
               <Link to="/dashboard" className="dashboard-pill">
                 <FaUser className="btn-icon" />
@@ -84,16 +99,12 @@ const Header = () => {
                 <span>Logout</span>
               </button>
             </div>
-          ) : (
-            <Link to="/login" className="login-pill">
-              <FaUser className="btn-icon" />
-              <span>Login</span>
-            </Link>
           )}
 
           <button
             className="mobile-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
           </button>
@@ -121,7 +132,17 @@ const Header = () => {
                   </Link>
                 </li>
               ))}
-              {currentUser ? (
+              <li className="mobile-cta-row">
+                <button
+                  type="button"
+                  className="mobile-book-btn"
+                  onClick={goToBook}
+                >
+                  <FaPhoneAlt />
+                  <span>Book a free call</span>
+                </button>
+              </li>
+              {currentUser && (
                 <>
                   <li>
                     <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
@@ -134,12 +155,6 @@ const Header = () => {
                     </button>
                   </li>
                 </>
-              ) : (
-                <li>
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    Login
-                  </Link>
-                </li>
               )}
             </ul>
           </motion.nav>

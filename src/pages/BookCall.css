@@ -1,0 +1,769 @@
+/* ============================================================
+   BookCall.css — multi-step booking flow
+   Reuses the existing palette & motion grammar from index.css
+   ============================================================ */
+
+.bc-page {
+  position: relative;
+  padding: 140px 0 100px;
+  min-height: 100vh;
+  background: var(--bg-primary, #050510);
+  color: #e5e7eb;
+  overflow: hidden;
+}
+
+.bc-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bc-bg-orb {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.25;
+  animation: bcOrbDrift 22s ease-in-out infinite;
+}
+.bc-bg-orb-1 {
+  top: -120px;
+  right: -120px;
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+}
+.bc-bg-orb-2 {
+  bottom: -160px;
+  left: -120px;
+  background: radial-gradient(circle, #ec4899, transparent 70%);
+  animation-delay: -7s;
+}
+.bc-bg-orb-3 {
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, #8b5cf6, transparent 70%);
+  opacity: 0.12;
+  animation-delay: -14s;
+}
+@keyframes bcOrbDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(20px, -20px) scale(1.05); }
+}
+
+.bc-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+.bc-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.bc-shell-inner {
+  background: rgba(15, 18, 32, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 24px;
+  padding: 48px 48px 40px;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+@media (max-width: 720px) {
+  .bc-page { padding: 110px 0 60px; }
+  .bc-shell-inner { padding: 32px 22px 28px; border-radius: 18px; }
+}
+
+/* ---------- Step indicator ---------- */
+
+.bc-stepper {
+  margin-bottom: 40px;
+}
+.bc-stepper-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  justify-content: space-between;
+}
+.bc-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+.bc-step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
+  color: #94a3b8;
+  background: rgba(15, 18, 32, 0.6);
+  transition: all 0.3s ease;
+}
+.bc-step-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #64748b;
+  text-align: center;
+  white-space: nowrap;
+}
+.bc-step-active .bc-step-circle {
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+.bc-step-active .bc-step-label { color: #e5e7eb; }
+.bc-step-done .bc-step-circle {
+  border-color: #10b981;
+  background: #10b981;
+  color: white;
+}
+.bc-step-done .bc-step-label { color: #94a3b8; }
+.bc-step-line {
+  flex: 1;
+  height: 1.5px;
+  background: rgba(99, 102, 241, 0.18);
+  margin: 0 8px;
+  margin-bottom: 22px;
+  transition: background 0.3s ease;
+}
+.bc-step-line.filled { background: #10b981; }
+@media (max-width: 600px) {
+  .bc-step-label { display: none; }
+  .bc-step-line { margin-bottom: 0; }
+}
+
+/* ---------- Step content wrapper ---------- */
+
+.bc-step-content { min-height: 380px; }
+
+.bc-step-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.bc-step-header h2 {
+  margin: 8px 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.2;
+}
+.bc-step-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- Step footer (back/next) ---------- */
+
+.bc-step-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+  gap: 12px;
+}
+.bc-step-footer .btn-primary { margin-left: auto; }
+.bc-step-footer .btn-primary:only-child { margin-left: auto; }
+
+/* ---------- Buttons (reuse + ghost) ---------- */
+
+.bc-shell-inner .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+  text-decoration: none;
+  font-family: inherit;
+}
+.bc-shell-inner .btn-primary {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6 50%, #ec4899);
+  color: white;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
+}
+.bc-shell-inner .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 32px rgba(99, 102, 241, 0.5);
+}
+.bc-shell-inner .btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.bc-shell-inner .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+.bc-shell-inner .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+.bc-shell-inner .btn-ghost {
+  background: transparent;
+  color: #94a3b8;
+  padding: 12px 18px;
+}
+.bc-shell-inner .btn-ghost:hover { color: #e5e7eb; }
+
+.bc-cta-primary {
+  font-size: 16px !important;
+  padding: 16px 32px !important;
+}
+
+/* ---------- Welcome step ---------- */
+
+.bc-welcome { text-align: center; }
+
+.bc-welcome-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.bc-welcome-title {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 16px;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 600px) { .bc-welcome-title { font-size: 32px; } }
+
+.bc-welcome-lede {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 540px;
+  margin: 0 auto 32px;
+}
+
+.bc-welcome-points {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 620px;
+  margin: 0 auto 32px;
+  text-align: left;
+}
+@media (max-width: 600px) { .bc-welcome-points { grid-template-columns: 1fr; } }
+
+.bc-welcome-point {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(15, 18, 32, 0.5);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.bc-welcome-point:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+.bc-welcome-point-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c4b5fd;
+  flex-shrink: 0;
+}
+.bc-welcome-point strong { color: #f1f5f9; font-size: 14px; display: block; margin-bottom: 2px; }
+.bc-welcome-point p { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.4; }
+
+.bc-welcome-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.bc-welcome-foot {
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Service step ---------- */
+
+.bc-services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+@media (max-width: 600px) { .bc-services-grid { grid-template-columns: 1fr; } }
+
+.bc-service-card {
+  position: relative;
+  text-align: left;
+  padding: 18px;
+  background: rgba(15, 18, 32, 0.5);
+  border: 1.5px solid rgba(99, 102, 241, 0.12);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bc-service-card:hover {
+  border-color: var(--accent, rgba(99, 102, 241, 0.4));
+  background: rgba(15, 18, 32, 0.7);
+  transform: translateY(-1px);
+}
+.bc-service-card.active {
+  border-color: var(--accent, #6366f1);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.06));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, #6366f1) 12%, transparent);
+}
+.bc-service-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent, #6366f1) 12%, transparent);
+  color: var(--accent, #c4b5fd);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bc-service-name { font-weight: 600; color: #f1f5f9; font-size: 15px; }
+.bc-service-desc { font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+.bc-service-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent, #6366f1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bc-service-other .bc-service-icon { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+.bc-other-wrap {
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bc-other-wrap .bc-field { margin-top: 14px; }
+
+/* ---------- Form fields ---------- */
+
+.bc-form { display: flex; flex-direction: column; gap: 18px; }
+.bc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) { .bc-form-row { grid-template-columns: 1fr; } }
+
+.bc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.bc-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bc-optional {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+  font-style: italic;
+}
+.bc-field-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: -2px;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.bc-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(99, 102, 241, 0.15);
+  background: rgba(8, 10, 20, 0.6);
+  color: #f1f5f9;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.bc-input:focus {
+  border-color: #6366f1;
+  background: rgba(8, 10, 20, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+.bc-input::placeholder { color: #475569; }
+.bc-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+
+/* ---------- Country combobox ---------- */
+
+.bc-combobox { position: relative; }
+.bc-combobox-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 13px;
+  pointer-events: none;
+}
+.bc-combobox-search {
+  display: none;
+}
+.bc-input-with-icon { padding-left: 38px; }
+.bc-combobox-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  background: rgba(10, 12, 24, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  z-index: 30;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+.bc-combobox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e5e7eb;
+  transition: background 0.15s ease;
+}
+.bc-combobox-item:hover { background: rgba(99, 102, 241, 0.15); }
+.bc-combobox-item.active { background: rgba(99, 102, 241, 0.2); }
+.bc-combobox-flag { font-size: 16px; }
+.bc-combobox-name { flex: 1; }
+.bc-combobox-dial { color: #64748b; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.bc-phone {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.bc-phone-prefix {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.bc-phone .bc-input { padding-left: 56px; }
+
+/* ---------- Schedule step ---------- */
+
+.bc-calltype {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+@media (max-width: 600px) { .bc-calltype { grid-template-columns: 1fr; } }
+
+.bc-calltype-card {
+  position: relative;
+  text-align: left;
+  padding: 18px;
+  background: rgba(15, 18, 32, 0.5);
+  border: 1.5px solid rgba(99, 102, 241, 0.12);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bc-calltype-card:hover {
+  border-color: var(--accent, rgba(99, 102, 241, 0.4));
+  background: rgba(15, 18, 32, 0.7);
+}
+.bc-calltype-card.active {
+  border-color: var(--accent, #10b981);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.bc-calltype-card > svg { color: var(--accent, #94a3b8); }
+.bc-calltype-name { font-weight: 600; color: #f1f5f9; font-size: 15px; }
+.bc-calltype-desc { font-size: 12.5px; line-height: 1.4; color: #94a3b8; }
+.bc-calltype-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent, #10b981);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bc-slots-wrap { margin-top: 8px; }
+.bc-slots-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin: 0 0 14px;
+  letter-spacing: 0.02em;
+}
+
+.bc-slots-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 18px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.bc-slots-empty {
+  display: flex;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  color: #fbbf24;
+  align-items: flex-start;
+}
+.bc-slots-empty > svg { margin-top: 2px; flex-shrink: 0; }
+.bc-slots-empty strong { display: block; color: #fde68a; font-size: 14px; margin-bottom: 2px; }
+.bc-slots-empty p { margin: 0; color: #fcd34d; font-size: 13px; line-height: 1.5; }
+
+.bc-slots-days {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 4px;
+  margin: 0 -4px;
+}
+.bc-slots-day-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.bc-slots-day-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bc-slot-pill {
+  padding: 9px 14px;
+  background: rgba(15, 18, 32, 0.6);
+  border: 1.5px solid rgba(99, 102, 241, 0.15);
+  border-radius: 999px;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.bc-slot-pill:hover {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  color: #f1f5f9;
+}
+.bc-slot-pill.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bc-error {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-left: 3px solid #ef4444;
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Spinner ---------- */
+
+.bc-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: bcSpin 0.8s linear infinite;
+  display: inline-block;
+}
+.bc-spinner-inline { width: 14px; height: 14px; border-width: 2px; }
+@keyframes bcSpin { to { transform: rotate(360deg); } }
+
+/* ---------- Confirmation step ---------- */
+
+.bc-confirmation {
+  text-align: center;
+  padding: 8px 0;
+}
+.bc-confirm-check {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.15), 0 8px 32px rgba(16, 185, 129, 0.4);
+}
+.bc-confirmation h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #f8fafc;
+}
+.bc-confirm-lede {
+  color: #cbd5e1;
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 460px;
+  margin: 0 auto 28px;
+}
+.bc-confirm-card {
+  text-align: left;
+  background: rgba(15, 18, 32, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 14px;
+  padding: 6px;
+  margin: 0 auto 20px;
+  max-width: 480px;
+}
+.bc-confirm-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+  align-items: baseline;
+}
+.bc-confirm-row:last-child { border-bottom: none; }
+.bc-confirm-label {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+.bc-confirm-value {
+  font-size: 14px;
+  color: #f1f5f9;
+  font-weight: 500;
+  word-break: break-word;
+}
+.bc-confirm-value code {
+  background: rgba(99, 102, 241, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+}
+.bc-confirm-fine {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 460px;
+  margin: 0 auto 24px;
+}
+.bc-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

@@ -1,33 +1,134 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import './FloatingWhatsApp.css';
+
+const WHATSAPP_URL = 'https://wa.me/2348156853636';
+const PREF_KEY = 'zedrotech_wa_tooltip_dismissed_v1';
 
 const FloatingWhatsApp = () => {
     const location = useLocation();
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipDismissed, setTooltipDismissed] = useState(false);
+    const [showPulse, setShowPulse] = useState(false);
+    const hoverTimerRef = useRef(null);
 
-    if (location.pathname === '/chatbot' || location.pathname === '/dashboard' || location.pathname.includes('/learn')) {
+    useEffect(() => {
+        try {
+            if (sessionStorage.getItem(PREF_KEY) === '1') setTooltipDismissed(true);
+        } catch { /* ignore */ }
+    }, []);
+
+    useEffect(() => {
+        if (location.pathname === '/chatbot' ||
+            location.pathname === '/dashboard' ||
+            location.pathname.includes('/learn') ||
+            location.pathname === '/book') {
+            return null;
+        }
+
+        if (tooltipDismissed) return;
+
+        const initialDelay = setTimeout(() => setShowTooltip(true), 4500);
+        const autoHide = setTimeout(() => {
+            setShowTooltip(false);
+            try { sessionStorage.setItem(PREF_KEY, '1'); } catch { /* ignore */ }
+        }, 13500);
+
+        const pulseInterval = setInterval(() => {
+            setShowPulse(true);
+            setTimeout(() => setShowPulse(false), 1400);
+        }, 9000);
+
+        return () => {
+            clearTimeout(initialDelay);
+            clearTimeout(autoHide);
+            clearInterval(pulseInterval);
+        };
+    }, [location.pathname, tooltipDismissed]);
+
+    if (location.pathname === '/chatbot' ||
+        location.pathname === '/dashboard' ||
+        location.pathname.includes('/learn') ||
+        location.pathname === '/book') {
         return null;
     }
 
+    const dismissTooltip = () => {
+        setShowTooltip(false);
+        setTooltipDismissed(true);
+        try { sessionStorage.setItem(PREF_KEY, '1'); } catch { /* ignore */ }
+    };
+
+    const handleEnter = () => {
+        if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+        setShowTooltip(true);
+    };
+
+    const handleLeave = () => {
+        if (tooltipDismissed) return;
+        hoverTimerRef.current = setTimeout(() => setShowTooltip(false), 1800);
+    };
+
     return (
-        <a
-            href="https://wa.me/2348156853636"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="whatsapp-float"
-            style={{
-                position: 'fixed',
-                bottom: '98px',
-                right: '2px',
-                zIndex: 2147483647,
-                pointerEvents: 'auto'
-            }}
-            aria-label="Contact us on WhatsApp"
+        <div
+            className="wa-float-wrap"
+            onMouseEnter={handleEnter}
+            onMouseLeave={handleLeave}
         >
-            <div className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-green-500/50 group">
-                <svg className="w-8 h-8 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+            <AnimatePresence>
+                {showTooltip && (
+                    <motion.div
+                        key="tooltip"
+                        initial={{ opacity: 0, x: 12, scale: 0.92 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 12, scale: 0.92 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="wa-float-tooltip"
+                    >
+                        <button
+                            className="wa-float-tooltip-close"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismissTooltip(); }}
+                            aria-label="Dismiss"
+                        >
+                            ×
+                        </button>
+                        <div className="wa-float-tooltip-title">Chat on WhatsApp</div>
+                        <div className="wa-float-tooltip-body">We typically reply in under 5 minutes during business hours.</div>
+                        <div className="wa-float-tooltip-cta">
+                            <span className="wa-float-dot" />
+                            <span>Tap to start a conversation</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <motion.a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wa-float"
+                aria-label="Chat with us on WhatsApp"
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.6 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.94 }}
+            >
+                {showPulse && (
+                    <span className="wa-float-pulse" />
+                )}
+                <span className="wa-float-pulse-ring" />
+                <svg
+                    className="wa-float-icon"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                >
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
                 </svg>
-            </div>
-        </a>
+            </motion.a>
+        </div>
     );
 };
 

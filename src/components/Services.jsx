@@ -1,162 +1,81 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
-import { FaGlobe, FaMobileAlt, FaCogs, FaArrowRight, FaCheckCircle, FaChalkboardTeacher, FaShoppingCart } from 'react-icons/fa'
+import { HiArrowUpRight } from 'react-icons/hi2'
+import { services } from '../data/services'
+import { StaggerReveal, TiltCard } from '../animations/primitives'
 import './Services.css'
 
+const EASE = [0.22, 1, 0.36, 1]
+
 const Services = () => {
-  const services = [
-    {
-      title: "Website Development",
-      description: "Grow your business with a stunning, high-converting website. We build fast, secure, and mobile-friendly sites that attract customers and turn visitors into loyal clients.",
-      features: [
-        "Modern, SEO-friendly websites",
-        "100% mobile responsive design",
-        "Fast loading & secure performance",
-        "Google Search optimization"
-      ],
-      icon: <FaGlobe />,
-      color: "var(--primary-blue)"
-    },
-    {
-      title: "E-Commerce Website",
-      description: "Start selling online with a powerful e-commerce platform. We build secure, scalable online stores that provide a seamless shopping experience for your customers.",
-      features: [
-        "Secure payment integrations",
-        "Product & inventory management",
-        "Shopping cart & checkout flow",
-        "Sales tracking & analytics"
-      ],
-      icon: <FaShoppingCart />,
-      color: "#f43f5e"
-    },
-    {
-      title: "Mobile App Development",
-      description: "Engage your audience anywhere with a custom mobile app. We deliver smooth, intuitive apps that keep users coming back and help you stand out in the app stores.",
-      features: [
-        "Reach customers on Android & iOS",
-        "Push notifications to boost engagement",
-        "Easy-to-use interface",
-        "App store launch & support"
-      ],
-      icon: <FaMobileAlt />,
-      color: "var(--accent-teal)"
-    },
-    {
-      title: "Custom Software",
-      description: "Streamline your business and save time with software built just for you. Automate tasks, manage data, and scale your operations with powerful, easy-to-use tools.",
-      features: [
-        "Automate repetitive tasks",
-        "Integrate with existing systems",
-        "Cloud-based for access anywhere",
-        "Ongoing support & updates"
-      ],
-      icon: <FaCogs />,
-      color: "var(--primary-purple)"
-    }
-  ]
-
-  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 })
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  }
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 50, scale: 0.9 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.8, ease: "easeOut" }
-    }
-  }
-
   return (
-    <section id="services" className="services-section">
-      <div className="background-elements">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-      </div>
-
+    <section className="services-section section" id="services">
+      <div className="bg-orb bg-orb-2" style={{ opacity: 0.15 }} />
       <div className="container">
-        <div className="section-header" ref={ref}>
+        <div className="section-heading">
           <motion.span
-            className="overline"
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
+            className="eyebrow eyebrow-accent"
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.4, ease: EASE }}
           >
-            Capabilities
+            What we do
           </motion.span>
           <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.05, ease: EASE }}
           >
-            Tailored <span className="highlight">Solutions</span> for Growth
+            Software, AI & automation,<br/>
+            <span className="gradient-text">end to end.</span>
           </motion.h2>
           <motion.p
-            className="section-subtitle"
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
           >
-            We combine strategic thinking with technical excellence to deliver digital products that move the needle for your business.
+            Web apps, mobile apps, custom software, AI agents, and marketing automation — built and shipped by one senior team.
           </motion.p>
         </div>
 
-        <motion.div
-          className="services-grid"
-          variants={containerVariants}
-          initial="hidden"
-          animate={inView ? "visible" : "hidden"}
-        >
-          {services.map((service, index) => (
-            <motion.div
-              key={index}
-              className="service-card"
-              variants={cardVariants}
-              whileHover={{
-                y: -15,
-                transition: { duration: 0.3 }
-              }}
-            >
-              <div className="card-glass-reveal"></div>
-              <div className="service-icon-wrapper" style={{ '--icon-color': service.color }}>
-                <div className="icon-bg"></div>
-                <div className="icon-inner">{service.icon}</div>
-              </div>
-
-              <h3 className="service-title">{service.title}</h3>
-              <p className="service-description">{service.description}</p>
-
-              <ul className="service-features">
-                {service.features.map((feature, idx) => (
-                  <li key={idx}>
-                    <FaCheckCircle className="check-icon" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <motion.button
-                className="service-cta"
-                whileHover={{ gap: '12px' }}
+        <StaggerReveal className="services-bento" amount={0.08} stagger={0.06}>
+          {services.map((service) => {
+            const Icon = service.icon
+            return (
+              <TiltCard
+                key={service.id}
+                className={`service-card-wrap service-${service.size}`}
+                max={4}
+                scale={1.012}
               >
-                Learn More <FaArrowRight />
-              </motion.button>
-            </motion.div>
-          ))}
-        </motion.div>
+                <div
+                  className="service-card"
+                  style={{ '--accent': service.accent }}
+                >
+                  <div className="service-glow" />
+                  <div className="service-content">
+                    <div className="service-icon-wrap">
+                      <Icon size={22} />
+                    </div>
+                    <h3 className="service-title">{service.title}</h3>
+                    <p className="service-desc">{service.description}</p>
+                    <ul className="service-features">
+                      {service.features.map((f, j) => (
+                        <li key={j}>{f}</li>
+                      ))}
+                    </ul>
+                    <div className="service-arrow">
+                      <HiArrowUpRight size={20} />
+                    </div>
+                  </div>
+                </div>
+              </TiltCard>
+            );
+          })}
+        </StaggerReveal>
       </div>
     </section>
   )

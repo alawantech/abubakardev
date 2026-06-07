@@ -9,8 +9,10 @@ import InquiriesManagement from './SchoolInquiries';
 import AdminProfile from './AdminProfile';
 import LinksManagement from './LinksManagement';
 import KnowledgeBase from './Admin/KnowledgeBase/KnowledgeBase';
+import BookingsManagement from './BookingsManagement';
 import './SchoolInquiries.css';
 import './AdminDashboard.css';
+import './BookingsManagement.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -118,6 +120,8 @@ const AdminDashboard = () => {
         return <StudentManagement />;
       case 'inquiries':
         return <InquiriesManagement />;
+      case 'bookings':
+        return <BookingsManagement />;
       case 'profile':
         return <AdminProfile />;
       case 'links':
@@ -158,6 +162,7 @@ const AdminDashboard = () => {
             { id: 'courses', label: 'Courses', icon: '📚' },
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'inquiries', label: 'Inquiries', icon: '📩' },
+            { id: 'bookings', label: 'Bookings', icon: '📅' },
             { id: 'knowledge-base', label: 'AI Knowledge', icon: '🧠' },
             { id: 'links', label: 'Links', icon: '🔗' },
             { id: 'profile', label: 'Profile', icon: '⚙️' },

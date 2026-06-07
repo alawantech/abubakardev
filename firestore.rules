@@ -87,6 +87,21 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Discovery-call booking system
+    // Slots are managed by admins only; the public reads them via Cloud Functions
+    // (we keep client rules tight; listAvailableSlots runs with admin privileges).
+    match /call_slots/{slotId} {
+      allow read: if isAdmin();
+      allow write, create, delete: if isAdmin();
+    }
+
+    // Bookings are public-create (validated by createBooking Cloud Function)
+    // and admin-only for reads/updates/deletes.
+    match /discovery_bookings/{bookingId} {
+      allow create: if true;
+      allow read, update, delete, list: if isAdmin();
+    }
+
     // Default deny for any other collections
     match /{document=**} {
       allow read, write: if false;

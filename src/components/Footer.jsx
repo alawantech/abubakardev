@@ -1,143 +1,178 @@
 import React from 'react'
+import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { FaLinkedin, FaFacebook, FaInstagram, FaTwitter, FaTiktok, FaWhatsapp, FaEnvelope, FaMapMarkerAlt, FaArrowUp } from 'react-icons/fa'
 import './Footer.css'
-import whatsappIcon from '../assets/images/whatsapp.png';
-import { Link } from 'react-router-dom';
+
+const EASE = [0.22, 1, 0.36, 1]
+
+const colVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: 0.05 + i * 0.06, ease: EASE }
+  })
+}
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
 
   const socialLinks = [
-    {
-      name: 'LinkedIn',
-      url: 'https://linkedin.com/company/zedrotech',
-      icon: 'in'
-    },
-    {
-      name: 'GitHub',
-      url: 'https://github.com/zedrotech',
-      icon: 'gh'
-    },
-    {
-      name: 'Twitter',
-      url: 'https://twitter.com/zedrotech',
-      icon: 'tw'
-    }
+    { name: 'LinkedIn', url: 'https://www.linkedin.com/company/zedrotech/about/', icon: FaLinkedin },
+    { name: 'Facebook', url: 'https://www.facebook.com/share/14fSMqNf1V6/', icon: FaFacebook },
+    { name: 'Instagram', url: 'https://www.instagram.com/zedrotech?igsh=MndqZGhlb2ZydQ%3D%3D&utm_source=qr', icon: FaInstagram },
+    { name: 'X', url: 'https://x.com/zedrotech?s=21', icon: FaTwitter },
+    { name: 'TikTok', url: 'https://www.tiktok.com/@zedrotech?_r=1&_t=ZS-970XTt7AlQD', icon: FaTiktok }
   ]
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const quickLinks = [
     { name: 'Home', to: '/' },
-    { name: 'Services', to: '/services' },
-    { name: 'Projects', to: '/portfolio' },
+    { name: 'Services', to: '/#services' },
+    { name: 'AI Automation', to: '/#ai-automation' },
+    { name: 'Projects', to: '/#portfolio' },
+    { name: 'About', to: '/#about' },
     { name: 'Pricing', to: '/pricing' },
-    { name: 'About', to: '/about' },
-    { name: 'Contact', to: '/contact' }
+    { name: 'Contact', to: '/#contact' }
   ]
 
-  const services = [
-    'Website Development',
-    'E-Commerce Website',
-    'Mobile App Development',
-    'Custom Software Solutions',
-    'UI/UX Design',
-    'Technical Consulting'
+  const serviceLinks = [
+    'Web Applications',
+    'AI Automation',
+    'Mobile Apps',
+    'Custom Software',
+    'Marketing Technology'
   ]
-
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId.replace('#', ''))
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
 
   return (
     <footer className="footer">
+      <div className="footer-bg">
+        <div className="footer-grid" />
+        <div className="footer-glow footer-glow-1" />
+        <div className="footer-glow footer-glow-2" />
+      </div>
+
       <div className="container">
-        <div className="footer-content">
-          <div className="footer-section footer-about">
-            <div className="footer-logo">
-              <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }}>
-                <img src="/logo2.png" alt="ZedroTech Logo" style={{ height: '32px' }} />
-              </a>
-            </div>
-            <p className="footer-description">
-              We build websites, mobile apps, and custom software solutions that help businesses grow and succeed in the digital world.
-            </p>
-            <div className="social-links">
-              {socialLinks.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="social-link"
-                  aria-label={link.name}
-                >
-                  <span className={`social-icon icon-${link.icon}`}>
-                    {link.icon === 'in' && '💼'}
-                    {link.icon === 'gh' && '🔗'}
-                    {link.icon === 'tw' && '🐦'}
-                  </span>
-                </a>
-              ))}
-            </div>
+        <motion.div
+          className="footer-cta-bar"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: EASE }}
+        >
+          <div>
+            <h3 className="footer-cta-title">Ready to build something great?</h3>
+            <p className="footer-cta-text">Free 30-minute discovery call. No pitch, no pressure — just an honest conversation.</p>
           </div>
+          <div className="footer-cta-actions">
+            <Link to="/#contact" className="btn btn-primary">Start your project</Link>
+            <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+              <FaWhatsapp size={14} /> Chat on WhatsApp
+            </a>
+          </div>
+        </motion.div>
 
-          <div className="footer-section">
-            <h3 className="footer-title">Quick Links</h3>
-            <ul className="footer-links">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <Link to={link.to}>
-                    {link.name}
-                  </Link>
+        <div className="footer-grid-main">
+          {[
+            <div className="footer-brand" key="brand">
+              <Link to="/" className="footer-logo">
+                <img src="/logo2.png" alt="ZedroTech" />
+                <span>ZedroTech</span>
+              </Link>
+              <p className="footer-description">
+                A senior software development and AI automation agency. We build web apps, mobile apps, custom software, and AI agents for ambitious teams worldwide.
+              </p>
+              <div className="footer-socials">
+                {socialLinks.map((s, i) => {
+                  const Icon = s.icon
+                  return (
+                    <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.name} className="social-pill">
+                      <Icon size={14} />
+                    </a>
+                  )
+                })}
+              </div>
+            </div>,
+            <div className="footer-col" key="company">
+              <h4 className="footer-col-title">Company</h4>
+              <ul className="footer-list">
+                {quickLinks.map((l, i) => (
+                  <li key={i}>
+                    <Link to={l.to}>{l.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>,
+            <div className="footer-col" key="services">
+              <h4 className="footer-col-title">Services</h4>
+              <ul className="footer-list">
+                {serviceLinks.map((s, i) => (
+                  <li key={i}>
+                    <Link to="/#services">{s}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>,
+            <div className="footer-col" key="contact">
+              <h4 className="footer-col-title">Get in touch</h4>
+              <ul className="footer-contact">
+                <li>
+                  <FaEnvelope size={14} />
+                  <a href="mailto:info@zedrotech.com">info@zedrotech.com</a>
                 </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h3 className="footer-title">Our Services</h3>
-            <ul className="footer-links">
-              {services.map((service, index) => (
-                <li key={index}>
-                  <span>{service}</span>
+                <li>
+                  <FaWhatsapp size={14} />
+                  <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
                 </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h3 className="footer-title">Contact Info</h3>
-            <div className="contact-info">
-              <div className="contact-item">
-                <a href="mailto:info@zedrotech.com" className="contact-icon" style={{ display: 'inline-block' }}>
-                  <span role="img" aria-label="Email">📧</span>
-                </a>
-                <a href="mailto:info@zedrotech.com">info@zedrotech.com</a>
-              </div>
-              <div className="contact-item">
-                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services." target="_blank" rel="noopener noreferrer" className="contact-icon" style={{ display: 'inline-block' }}>
-                  <img src={whatsappIcon} alt="WhatsApp" style={{ width: '1.5em', verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }} />
-                </a>
-                <a href="https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20need%20to%20know%20more%20information%20about%20your%20services." target="_blank" rel="noopener noreferrer">Whatsapp</a>
-              </div>
-              <div className="contact-item">
-                <span className="contact-icon">📍</span>
-                <span>Kano Nigeria</span>
+                <li>
+                  <FaMapMarkerAlt size={14} />
+                  <span>Nigeria · Serving the world</span>
+                </li>
+              </ul>
+              <div className="footer-availability">
+                <span className="avail-pulse" />
+                <span>Available Q3 2026</span>
               </div>
             </div>
-          </div>
+          ].map((child, i) => (
+            <motion.div
+              key={i}
+              custom={i}
+              variants={colVariants}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.1, margin: "0px 0px -8% 0px" }}
+              className="footer-grid-item"
+            >
+              {child}
+            </motion.div>
+          ))}
         </div>
 
-        <div className="footer-bottom">
-          <div className="footer-bottom-content">
-            <p>&copy; {currentYear} ZedroTech. All rights reserved.</p>
-            <div className="footer-bottom-links">
-              <a href="#privacy">Privacy Policy</a>
-              <a href="#terms">Terms of Service</a>
-            </div>
+        <motion.div
+          className="footer-bottom"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: EASE }}
+        >
+          <div className="footer-bottom-left">
+            <p>© {currentYear} ZedroTech. All rights reserved.</p>
+            <span className="footer-sep">·</span>
+            <p>Built with care in Nigeria</p>
           </div>
-        </div>
+          <div className="footer-bottom-right">
+            <Link to="/#privacy">Privacy</Link>
+            <Link to="/#terms">Terms</Link>
+            <button onClick={scrollToTop} className="back-to-top">
+              Back to top <FaArrowUp size={11} />
+            </button>
+          </div>
+        </motion.div>
       </div>
     </footer>
   )
