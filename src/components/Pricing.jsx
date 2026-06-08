@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import {
@@ -17,9 +17,17 @@ import { pricingByService } from "../data/pricing";
 import "./Pricing.css";
 
 const Pricing = () => {
-  const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
+  const { ref, inView } = useInView({ threshold: 0.05, triggerOnce: true });
   const { symbol, isNigeria, loading, currency } = useUserLocation();
   const [activeService, setActiveService] = useState("all");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  const shouldAnimate = inView || mounted;
 
   const filteredServices = activeService === "all"
     ? services
@@ -41,14 +49,14 @@ const Pricing = () => {
           <motion.span
             className="eyebrow eyebrow-accent"
             initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
           >
             Pricing
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             Honest pricing.<br/>
@@ -56,7 +64,7 @@ const Pricing = () => {
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             Every service, priced transparently. We adjust to your currency based on where you're browsing from. No hidden fees, no surprises.
@@ -65,7 +73,7 @@ const Pricing = () => {
           <motion.div
             className="currency-indicator"
             initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <FaGlobe size={12} />
@@ -84,7 +92,7 @@ const Pricing = () => {
         <motion.div
           className="pricing-service-nav"
           initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <button
@@ -126,7 +134,7 @@ const Pricing = () => {
                 className="pricing-service"
                 style={{ '--service-accent': service.accent }}
                 initial={{ opacity: 0, y: 40 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
+                animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.1 + sIdx * 0.08 }}
               >
                 <div className="service-header">
@@ -195,7 +203,7 @@ const Pricing = () => {
         <motion.div
           className="pricing-help"
           initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
+          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           <div className="help-card">
