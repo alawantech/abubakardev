@@ -241,7 +241,7 @@ exports.sendContactNotification = functions.https.onRequest({ cors: true }, asyn
 
   try {
     const { formData, source } = req.body;
-    const API_TOKEN = process.env.MAILERSEND_API_TOKEN;
+    const API_TOKEN = process.env.MAILERSEND_API_TOKEN || null;
     const API_URL = "https://api.mailersend.com/v1";
 
     if (!API_TOKEN) {

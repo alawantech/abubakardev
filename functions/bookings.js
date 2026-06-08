@@ -44,7 +44,7 @@ function formatSlotForEmail(isoUtc, tz) {
 }
 
 async function sendMailersendEmail({ to, subject, html, text, replyTo }) {
-  const token = process.env.MAILERSEND_API_TOKEN;
+  const token = process.env.MAILERSEND_API_TOKEN || null;
   if (!token) {
     console.warn("MAILERSEND_API_TOKEN not configured; skipping email send");
     return { skipped: true };
