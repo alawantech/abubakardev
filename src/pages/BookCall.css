@@ -196,6 +196,66 @@
 .bc-step-footer .btn-primary { margin-left: auto; }
 .bc-step-footer .btn-primary:only-child { margin-left: auto; }
 
+.bc-step-footer-sticky {
+  position: sticky;
+  bottom: 0;
+  background: rgba(5, 5, 16, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 0;
+  margin-top: 24px;
+  z-index: 10;
+  border-radius: 0 0 16px 16px;
+}
+
+.bc-services-selected-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #6366f1;
+  margin-top: 12px;
+  font-weight: 500;
+  min-height: 20px;
+}
+
+.bc-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bc-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.bc-select option {
+  background: #1a1a2e;
+  color: #e5e7eb;
+}
+
+.bc-slot-error-detail {
+  font-size: 13px;
+  color: #f87171;
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
 /* ---------- Buttons (reuse + ghost) ---------- */
 
 .bc-shell-inner .btn {

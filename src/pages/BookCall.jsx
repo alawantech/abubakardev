@@ -46,17 +46,15 @@ const SERVICE_ICONS = {
 };
 
 const STEP_LABELS = [
-  "Language",
   "Service",
   "Your business",
   "Project",
-  "Schedule",
-  "Done"
+  "Schedule"
 ];
 
 const initialForm = {
   language: "",
-  service: "",
+  services: [],
   customService: "",
   name: "",
   email: "",
@@ -206,82 +204,39 @@ function WelcomeStep({ onStart }) {
   );
 }
 
-function LanguageStep({ form, setForm, onNext, onBack }) {
-  const languages = [
-    { id: "english", name: "English", native: "English", flag: "🇬🇧", desc: "We'll speak English on the call." },
-    { id: "hausa", name: "Hausa", native: "Hausa", flag: "🇳🇬", desc: "Za mu yi magana a harshen Hausa." }
-  ];
-
-  return (
-    <motion.div {...fadeUp} className="bc-step-content">
-      <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 1 of 5</span>
-        <h2>What language should we use for the call?</h2>
-        <p>Pick the language you're most comfortable speaking. We'll match you with someone who can chat in that language.</p>
-      </div>
-
-      <div className="bc-language-grid">
-        {languages.map((lang) => {
-          const active = form.language === lang.id;
-          return (
-            <button
-              key={lang.id}
-              type="button"
-              className={`bc-language-card ${active ? "active" : ""}`}
-              onClick={() => setForm((f) => ({ ...f, language: lang.id }))}
-            >
-              <div className="bc-language-flag">{lang.flag}</div>
-              <div className="bc-language-info">
-                <div className="bc-language-name">{lang.name}</div>
-                <div className="bc-language-desc">{lang.desc}</div>
-              </div>
-              {active && <div className="bc-language-check"><FaCheck size={10} /></div>}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="bc-step-footer">
-        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
-        <button onClick={onNext} disabled={!form.language} className="btn btn-primary">
-          Continue <FaArrowRight />
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
 function ServiceStep({ form, setForm, onNext, onBack }) {
-  const isOther = form.service === "other";
+  const isOther = form.services.includes("other");
 
-  const select = (id) => {
-    setForm((f) => ({
-      ...f,
-      service: id,
-      customService: id === "other" ? f.customService : ""
-    }));
+  const toggle = (id) => {
+    setForm((f) => {
+      const current = f.services || [];
+      const next = current.includes(id)
+        ? current.filter((s) => s !== id)
+        : [...current, id];
+      return { ...f, services: next, customService: id === "other" && !current.includes("other") ? f.customService : (id !== "other" ? f.customService : "") };
+    });
   };
 
-  const canNext = form.service && (!isOther || (form.customService && form.customService.trim().length > 0));
+  const canNext = form.services.length > 0 && (!isOther || (form.customService && form.customService.trim().length > 0));
 
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 2 of 5</span>
+        <span className="eyebrow eyebrow-accent">Step 1 of 4</span>
         <h2>What do you need help with?</h2>
-        <p>Pick the service that best matches what you're trying to build. Don't worry — we'll go deeper on the call.</p>
+        <p>Select all that apply. Don't worry — we'll go deeper on the call.</p>
       </div>
 
       <div className="bc-services-grid">
         {services.map((s) => {
           const Icon = s.icon;
-          const active = form.service === s.id;
+          const active = form.services.includes(s.id);
           return (
             <button
               key={s.id}
               type="button"
               className={`bc-service-card ${active ? "active" : ""}`}
-              onClick={() => select(s.id)}
+              onClick={() => toggle(s.id)}
               style={{ "--accent": s.accent }}
             >
               <div className="bc-service-icon"><Icon size={20} /></div>
@@ -295,7 +250,7 @@ function ServiceStep({ form, setForm, onNext, onBack }) {
         <button
           type="button"
           className={`bc-service-card bc-service-other ${isOther ? "active" : ""}`}
-          onClick={() => select("other")}
+          onClick={() => toggle("other")}
           style={{ "--accent": "#94a3b8" }}
         >
           <div className="bc-service-icon"><FaQuestion size={20} /></div>
@@ -331,7 +286,13 @@ function ServiceStep({ form, setForm, onNext, onBack }) {
         )}
       </AnimatePresence>
 
-      <div className="bc-step-footer">
+      <div className="bc-services-selected-hint">
+        {form.services.length > 0 && (
+          <span>{form.services.length} service{form.services.length > 1 ? "s" : ""} selected</span>
+        )}
+      </div>
+
+      <div className="bc-step-footer bc-step-footer-sticky">
         <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
         <button onClick={onNext} disabled={!canNext} className="btn btn-primary">
           Continue <FaArrowRight />
@@ -380,12 +341,24 @@ function BusinessStep({ form, setForm, onNext, onBack }) {
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 3 of 5</span>
+        <span className="eyebrow eyebrow-accent">Step 2 of 4</span>
         <h2>Tell us about your business</h2>
         <p>The basics. So we can do our homework before the call.</p>
       </div>
 
       <div className="bc-form">
+        <div className="bc-field">
+          <span className="bc-field-label">Language for the call</span>
+          <select
+            value={form.language || "english"}
+            onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
+            className="bc-select"
+          >
+            <option value="english">English</option>
+            <option value="hausa">Hausa</option>
+          </select>
+        </div>
+
         <div className="bc-form-row">
           <label className="bc-field">
             <span className="bc-field-label">Your name</span>
@@ -514,7 +487,7 @@ function ProjectStep({ form, setForm, onNext, onBack }) {
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 4 of 5</span>
+        <span className="eyebrow eyebrow-accent">Step 3 of 4</span>
         <h2>What are you trying to build?</h2>
         <p>The more honest you are here, the more useful the call will be. Only the first one is required.</p>
       </div>
@@ -586,6 +559,7 @@ function ProjectStep({ form, setForm, onNext, onBack }) {
 function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadStatus, error }) {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [slotError, setSlotError] = useState(null);
   const userTimezone = useUserTimezone();
   const tz = userTimezone || form.timezone || "UTC";
 
@@ -593,13 +567,19 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setSlotError(null);
       try {
         const fn = httpsCallable(functions, "listAvailableSlots");
         const res = await fn({ days: 21 });
-        if (!cancelled) setSlots(res.data.slots || []);
+        const slotData = res.data?.slots || [];
+        console.log("[slots] received", slotData.length, "slots from function");
+        if (!cancelled) setSlots(slotData);
       } catch (err) {
-        console.error("listAvailableSlots error:", err);
-        if (!cancelled) setSlots([]);
+        console.error("[slots] listAvailableSlots FAILED:", err?.code, err?.message, err?.details);
+        if (!cancelled) {
+          setSlots([]);
+          setSlotError(err?.details || err?.message || "Failed to load available times");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -624,7 +604,7 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 5 of 5</span>
+        <span className="eyebrow eyebrow-accent">Step 4 of 4</span>
         <h2>Pick a time that works for you</h2>
         <p>All times shown in <strong>{tz.replace(/_/g, " ")}</strong>. We'll send a confirmation email with the details.</p>
       </div>
@@ -666,6 +646,7 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
             <FaExclamationTriangle size={18} />
             <div>
               <strong>No slots available right now.</strong>
+              {slotError && <p className="bc-slot-error-detail">{slotError}</p>}
               <p>Reach out on WhatsApp and we'll find a time that works.</p>
               <a
                 href="https://wa.me/2348156853636"
@@ -757,11 +738,12 @@ function ConfirmationStep({ form, confirmation, onReset }) {
           <span className="bc-confirm-value">{languageLabel}</span>
         </div>
         <div className="bc-confirm-row">
-          <span className="bc-confirm-label">Service</span>
+          <span className="bc-confirm-label">Services</span>
           <span className="bc-confirm-value">
-            {form.service === "other"
-              ? form.customService
-              : services.find((s) => s.id === form.service)?.title || form.service}
+            {(form.services || []).map((s) => {
+              if (s === "other") return form.customService || "Other";
+              return services.find((svc) => svc.id === s)?.title || s;
+            }).join(", ") || "—"}
           </span>
         </div>
         <div className="bc-confirm-row">
@@ -864,8 +846,8 @@ export default function BookCall() {
         clientBookingId,
         slotStartUtc: form.slotStartUtc,
         language: form.language || "english",
-        service: form.service,
-        customService: form.service === "other" ? form.customService : "",
+        services: form.services || [],
+        customService: form.services.includes("other") ? form.customService : "",
         name: form.name,
         email: form.email,
         whatsapp: form.whatsapp,
@@ -886,7 +868,7 @@ export default function BookCall() {
       setConfirmation(res.data);
       setForm((f) => ({ ...f, ...payload, _finalStep: true }));
       clearDraft();
-      setStep(7);
+      setStep(6);
     } catch (err) {
       console.error("createBooking error:", err);
       const msg = err?.message || err?.details || "Something went wrong. Please try again.";
@@ -916,7 +898,7 @@ export default function BookCall() {
       <div className="container">
         <div className="bc-shell">
           <div className="bc-shell-inner">
-            {step > 1 && step < 7 && <StepIndicator step={step - 1} />}
+            {step > 1 && step < 6 && <StepIndicator step={step - 1} />}
 
             <AnimatePresence mode="wait">
               {step === 1 && (
@@ -926,8 +908,8 @@ export default function BookCall() {
                 />
               )}
               {step === 2 && (
-                <LanguageStep
-                  key="language"
+                <ServiceStep
+                  key="service"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(3)}
@@ -935,8 +917,8 @@ export default function BookCall() {
                 />
               )}
               {step === 3 && (
-                <ServiceStep
-                  key="service"
+                <BusinessStep
+                  key="business"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(4)}
@@ -944,36 +926,27 @@ export default function BookCall() {
                 />
               )}
               {step === 4 && (
-                <BusinessStep
-                  key="business"
+                <ProjectStep
+                  key="project"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(5)}
                   onBack={() => goTo(3)}
                 />
               )}
-              {step === 5 && (
-                <ProjectStep
-                  key="project"
-                  form={form}
-                  setForm={setForm}
-                  onNext={() => goTo(6)}
-                  onBack={() => goTo(4)}
-                />
-              )}
-              {step === 6 && !confirmation && (
+              {step === 5 && !confirmation && (
                 <ScheduleStep
                   key="schedule"
                   form={form}
                   setForm={setForm}
-                  onBack={() => goTo(5)}
+                  onBack={() => goTo(4)}
                   onSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
                   uploadStatus={uploadStatus}
                   error={error}
                 />
               )}
-              {step === 7 && confirmation && (
+              {step === 6 && confirmation && (
                 <ConfirmationStep
                   key="confirm"
                   form={form}

@@ -212,18 +212,25 @@ exports.listAvailableSlots = functions.https.onCall(async (request) => {
   const minStartMs = nowMs + MIN_LEAD_MINUTES * 60 * 1000;
   const maxStartMs = nowMs + days * 24 * 60 * 60 * 1000;
 
-  const minTs = admin.firestore.Timestamp.fromMillis(nowMs);
-  const maxTs = admin.firestore.Timestamp.fromMillis(maxStartMs + BUFFER_MINUTES * 60 * 1000);
-  const snap = await admin.firestore()
-    .collection("discovery_bookings")
-    .where("status", "in", ["confirmed", "pending"])
-    .where("slotStartUtc", ">=", minTs)
-    .where("slotStartUtc", "<=", maxTs)
-    .get();
+  let existing = [];
+  try {
+    const minTs = admin.firestore.Timestamp.fromMillis(nowMs);
+    const maxTs = admin.firestore.Timestamp.fromMillis(maxStartMs + BUFFER_MINUTES * 60 * 1000);
+    const snap = await admin.firestore()
+      .collection("discovery_bookings")
+      .where("status", "in", ["confirmed", "pending"])
+      .where("slotStartUtc", ">=", minTs)
+      .where("slotStartUtc", "<=", maxTs)
+      .get();
+    existing = snap.docs.map((d) => d.data().slotStartUtc.toMillis());
+    console.log(`listAvailableSlots: found ${existing.length} existing bookings in range`);
+  } catch (queryErr) {
+    console.error("listAvailableSlots: Firestore query failed (likely missing composite index):", queryErr.message);
+    existing = [];
+  }
 
   const bufferMs = BUFFER_MINUTES * 60 * 1000;
   const stepMs = SLOT_STEP_MINUTES * 60 * 1000;
-  const existing = snap.docs.map((d) => d.data().slotStartUtc.toMillis());
 
   const slots = [];
   let cursor = Math.ceil(minStartMs / stepMs) * stepMs;
@@ -241,6 +248,7 @@ exports.listAvailableSlots = functions.https.onCall(async (request) => {
     cursor += stepMs;
   }
 
+  console.log(`listAvailableSlots: generated ${slots.length} slots from ${new Date(minStartMs).toISOString()} to ${new Date(maxStartMs).toISOString()}`);
   return { slots, count: slots.length, slotDurationMinutes: SLOT_DURATION_MINUTES, bufferMinutes: BUFFER_MINUTES };
 });
 
@@ -250,7 +258,6 @@ exports.createBooking = functions.https.onCall(async (request) => {
 
   const required = {
     slotStartUtc: data.slotStartUtc,
-    service: data.service,
     name: data.name,
     email: data.email,
     businessName: data.businessName,
@@ -264,14 +271,19 @@ exports.createBooking = functions.https.onCall(async (request) => {
     }
   }
 
+  const services = Array.isArray(data.services) ? data.services.filter((s) => typeof s === "string" && s.length > 0) : [];
+  if (services.length === 0) {
+    throw new functions.https.HttpsError("invalid-argument", "At least one service must be selected");
+  }
+
   if (typeof data.name === "string" && data.name.length > 100) {
     throw new functions.https.HttpsError("invalid-argument", "name is too long");
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
     throw new functions.https.HttpsError("invalid-argument", "Invalid email");
   }
-  if (data.service === "other" && (!data.customService || data.customService.trim().length === 0)) {
-    throw new functions.https.HttpsError("invalid-argument", "customService is required when service is 'other'");
+  if (services.includes("other") && (!data.customService || data.customService.trim().length === 0)) {
+    throw new functions.https.HttpsError("invalid-argument", "customService is required when 'other' is selected");
   }
   if (!["whatsapp", "google_meet"].includes(data.callType)) {
     throw new functions.https.HttpsError("invalid-argument", "callType must be 'whatsapp' or 'google_meet'");
@@ -324,8 +336,8 @@ exports.createBooking = functions.https.onCall(async (request) => {
 
       language,
 
-      service: data.service.trim(),
-      customService: data.service === "other" ? data.customService.trim() : "",
+      services,
+      customService: services.includes("other") ? data.customService.trim() : "",
 
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
@@ -368,7 +380,7 @@ exports.createBooking = functions.https.onCall(async (request) => {
     marketing: "Marketing Technology",
     other: "Custom Service"
   };
-  const serviceTitle = SERVICE_TITLES[bookingDoc.service] || bookingDoc.service;
+  const serviceTitle = (bookingDoc.services || []).map((s) => SERVICE_TITLES[s] || s).join(", ") || "Discovery Call";
 
   const userMail = buildUserConfirmationEmail({ booking: bookingDoc, serviceTitle });
   await sendMailersendEmail({
@@ -501,8 +513,9 @@ exports.adminListBookings = functions.https.onCall(async (request) => {
       problem: data.problem,
       additionalInfo: data.additionalInfo,
       service: data.service,
+      services: data.services || (data.service ? [data.service] : []),
       customService: data.customService,
-      serviceTitle: SERVICE_TITLES[data.service] || data.service,
+      serviceTitle: (data.services || (data.service ? [data.service] : [])).map((s) => SERVICE_TITLES[s] || s).join(", "),
       callType: data.callType,
       language: data.language || "english",
       timezone: data.timezone,
