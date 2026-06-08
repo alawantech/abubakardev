@@ -215,31 +215,19 @@ function LanguageStep({ form, setForm, onNext, onBack }) {
         <p>Pick the language you're most comfortable speaking.</p>
       </div>
 
-      <div className="bc-language-grid">
-        <button
-          type="button"
-          className={`bc-language-card ${form.language === "english" ? "active" : ""}`}
-          onClick={() => setForm((f) => ({ ...f, language: "english" }))}
-        >
-          <div className="bc-language-flag">🇬🇧</div>
-          <div className="bc-language-info">
-            <div className="bc-language-name">English</div>
-            <div className="bc-language-desc">We'll speak English on the call.</div>
-          </div>
-          {form.language === "english" && <div className="bc-language-check"><FaCheck size={10} /></div>}
-        </button>
-        <button
-          type="button"
-          className={`bc-language-card ${form.language === "hausa" ? "active" : ""}`}
-          onClick={() => setForm((f) => ({ ...f, language: "hausa" }))}
-        >
-          <div className="bc-language-flag">🇳🇬</div>
-          <div className="bc-language-info">
-            <div className="bc-language-name">Hausa</div>
-            <div className="bc-language-desc">Za mu yi magana a harshen Hausa.</div>
-          </div>
-          {form.language === "hausa" && <div className="bc-language-check"><FaCheck size={10} /></div>}
-        </button>
+      <div className="bc-form">
+        <div className="bc-field">
+          <span className="bc-field-label">Choose a language</span>
+          <select
+            value={form.language || ""}
+            onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
+            className="bc-select"
+          >
+            <option value="" disabled>Select a language…</option>
+            <option value="english">🇬🇧 English</option>
+            <option value="hausa">🇳🇬 Hausa</option>
+          </select>
+        </div>
       </div>
 
       <div className="bc-step-footer">
@@ -817,7 +805,7 @@ function ConfirmationStep({ form, confirmation, onReset }) {
   const when = start ? formatInTimezone(start, tz, {
     weekday: "long", year: "numeric", month: "long", day: "numeric"
   }) : "";
-  const time = start ? formatInTimezone(start, tz, { hour: "numeric", minute: "2-digit" }) : "";
+  const time = start ? formatInTimezone(start, tz, { hour: "numeric", minute: "2-digit", hour12: true }) : "";
   const callTypeLabel = form.callType === "google_meet" ? "Google Meet" : "WhatsApp call";
   const languageLabel = form.language === "hausa" ? "Hausa" : "English";
 
@@ -853,7 +841,7 @@ function ConfirmationStep({ form, confirmation, onReset }) {
         </div>
         <div className="bc-confirm-row">
           <span className="bc-confirm-label">When</span>
-          <span className="bc-confirm-value">{when} · {time}</span>
+          <span className="bc-confirm-value">{when} at {time}</span>
         </div>
         <div className="bc-confirm-row">
           <span className="bc-confirm-label">Duration</span>
@@ -875,7 +863,6 @@ function ConfirmationStep({ form, confirmation, onReset }) {
       </p>
 
       <div className="bc-confirm-actions">
-        <button onClick={onReset} className="btn btn-ghost">Book another time</button>
         <a href="/" className="btn btn-secondary">Back to home</a>
       </div>
     </motion.div>
