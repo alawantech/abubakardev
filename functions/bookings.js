@@ -485,7 +485,7 @@ exports.adminAddMeetLink = functions.https.onCall(async (request) => {
     marketing: "Marketing Technology",
     other: "Custom Service"
   };
-  const serviceTitle = SERVICE_TITLES[updated.service] || updated.service;
+  const serviceTitle = (updated.services || []).map((s) => SERVICE_TITLES[s] || s).join(", ") || "Discovery Call";
 
   const email = buildMeetLinkEmail({ booking: updated, meetLink: trimmed, serviceTitle });
   await sendMailersendEmail({

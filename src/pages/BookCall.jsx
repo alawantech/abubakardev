@@ -824,7 +824,7 @@ function ConfirmationStep({ form, confirmation, onReset }) {
 
       <h2>You're booked. 🎉</h2>
       <p className="bc-confirm-lede">
-        We've sent a confirmation to <strong>{form.email}</strong>. Check your inbox (and your spam folder, just in case).
+        We've received your booking at <strong>{form.email}</strong>. We'll contact you shortly with all the details and a link to join the free call.
       </p>
 
       <div className="bc-confirm-card">
@@ -860,8 +860,8 @@ function ConfirmationStep({ form, confirmation, onReset }) {
       </div>
 
       <p className="bc-confirm-fine">
-        We'll review everything you sent and come prepared. Need to reschedule?
-        Just reply to the confirmation email.
+        We'll review your booking details and come prepared. Need to reschedule?
+        Contact us on WhatsApp or reply to the email we'll send you.
       </p>
 
       <div className="bc-confirm-actions">
