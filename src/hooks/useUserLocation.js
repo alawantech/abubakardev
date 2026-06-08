@@ -5,7 +5,10 @@ const CACHE_TTL = 24 * 60 * 60 * 1000 // 24h
 
 const fetchCountry = async () => {
   try {
-    const res = await fetch('https://api.country.is/', { cache: 'no-store' })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 4000)
+    const res = await fetch('https://api.country.is/', { cache: 'no-store', signal: controller.signal })
+    clearTimeout(timeout)
     if (!res.ok) throw new Error('geo lookup failed')
     const data = await res.json()
     return data?.country || null
@@ -15,7 +18,16 @@ const fetchCountry = async () => {
 }
 
 export const useUserLocation = () => {
-  const [country, setCountry] = useState(null)
+  const [country, setCountry] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && Date.now() - parsed.ts < CACHE_TTL) return parsed.country
+      }
+    } catch {}
+    return null
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,9 +46,7 @@ export const useUserLocation = () => {
             return
           }
         }
-      } catch (e) {
-        // ignore parse errors
-      }
+      } catch (e) {}
 
       const c = await fetchCountry()
       if (cancelled) return
@@ -44,9 +54,7 @@ export const useUserLocation = () => {
       setLoading(false)
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify({ country: c, ts: Date.now() }))
-      } catch (e) {
-        // localStorage may be disabled
-      }
+      } catch (e) {}
     }
 
     load()

@@ -112,9 +112,9 @@
 .footer-logo img {
   height: 32px;
   width: auto;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .footer-logo span {
