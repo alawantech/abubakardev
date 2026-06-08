@@ -802,10 +802,12 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
 function ConfirmationStep({ form, confirmation, onReset }) {
   const start = confirmation?.scheduledAt ? new Date(confirmation.scheduledAt) : null;
   const tz = form.timezone || "UTC";
-  const when = start ? formatInTimezone(start, tz, {
-    weekday: "long", year: "numeric", month: "long", day: "numeric"
-  }) : "";
-  const time = start ? formatInTimezone(start, tz, { hour: "numeric", minute: "2-digit", hour12: true }) : "";
+  const whenStr = start
+    ? formatInTimezone(start, tz, {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+        hour: "numeric", minute: "2-digit", hour12: true
+      })
+    : "";
   const callTypeLabel = form.callType === "google_meet" ? "Google Meet" : "WhatsApp call";
   const languageLabel = form.language === "hausa" ? "Hausa" : "English";
 
@@ -841,7 +843,7 @@ function ConfirmationStep({ form, confirmation, onReset }) {
         </div>
         <div className="bc-confirm-row">
           <span className="bc-confirm-label">When</span>
-          <span className="bc-confirm-value">{when} at {time}</span>
+          <span className="bc-confirm-value">{whenStr}</span>
         </div>
         <div className="bc-confirm-row">
           <span className="bc-confirm-label">Duration</span>

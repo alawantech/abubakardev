@@ -226,8 +226,26 @@ exports.listAvailableSlots = functions.https.onCall(async (request) => {
     existing = snap.docs.map((d) => d.data().slotStartUtc.toMillis());
     console.log(`listAvailableSlots: found ${existing.length} existing bookings in range`);
   } catch (queryErr) {
-    console.error("listAvailableSlots: Firestore query failed (likely missing composite index):", queryErr.message);
-    existing = [];
+    console.error("listAvailableSlots: composite index query failed, trying fallback:", queryErr.message);
+    try {
+      const minTs = admin.firestore.Timestamp.fromMillis(nowMs);
+      const maxTs = admin.firestore.Timestamp.fromMillis(maxStartMs + BUFFER_MINUTES * 60 * 1000);
+      const snap = await admin.firestore()
+        .collection("discovery_bookings")
+        .where("slotStartUtc", ">=", minTs)
+        .where("slotStartUtc", "<=", maxTs)
+        .get();
+      existing = snap.docs
+        .filter((d) => {
+          const st = d.data().status;
+          return st === "confirmed" || st === "pending";
+        })
+        .map((d) => d.data().slotStartUtc.toMillis());
+      console.log(`listAvailableSlots: fallback found ${existing.length} existing bookings`);
+    } catch (fallbackErr) {
+      console.error("listAvailableSlots: fallback query also failed:", fallbackErr.message);
+      existing = [];
+    }
   }
 
   let blocked = [];
