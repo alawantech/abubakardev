@@ -33,8 +33,8 @@
 .header-logo {
   height: 36px;
   width: auto;
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.85);
   transition: transform 0.3s ease, background 0.3s ease;
 }
@@ -351,21 +351,31 @@
 }
 
 @media (max-width: 768px) {
+  .header-logo {
+    height: 28px;
+    padding: 2px 5px;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
   .header-chat-btn span {
     display: none;
   }
 
   .header-chat-btn {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     justify-content: center;
   }
 
   .header-book-btn {
-    padding: 8px 14px;
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    white-space: nowrap;
     box-shadow: 0 3px 12px rgba(139, 92, 246, 0.4);
   }
 }

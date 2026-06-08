@@ -81,7 +81,6 @@ const Footer = () => {
             <div className="footer-brand" key="brand">
               <Link to="/" className="footer-logo">
                 <img src="/logo2.png" alt="ZedroTech" />
-                <span>ZedroTech</span>
               </Link>
               <p className="footer-description">
                 A senior software development and AI automation agency. We build web apps, mobile apps, custom software, and AI agents for ambitious teams worldwide.
