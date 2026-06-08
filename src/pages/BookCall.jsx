@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaCode,
@@ -146,8 +147,12 @@ function StepIndicator({ step }) {
 }
 
 function WelcomeStep({ onStart }) {
+  const navigate = useNavigate();
   return (
     <motion.div {...fadeUp} className="bc-step-content bc-welcome">
+      <button type="button" className="bc-back-home" onClick={() => navigate("/")}>
+        <FaArrowLeft size={12} /> Back to home
+      </button>
       <div className="bc-welcome-badge">
         <FaCalendarAlt size={12} /> Free 30-min discovery call
       </div>
