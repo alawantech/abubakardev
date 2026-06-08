@@ -46,6 +46,7 @@ const SERVICE_ICONS = {
 };
 
 const STEP_LABELS = [
+  "Language",
   "Service",
   "Your business",
   "Project",
@@ -204,6 +205,52 @@ function WelcomeStep({ onStart }) {
   );
 }
 
+function LanguageStep({ form, setForm, onNext, onBack }) {
+  return (
+    <motion.div {...fadeUp} className="bc-step-content">
+      <div className="bc-step-header">
+        <span className="eyebrow eyebrow-accent">Step 1 of 5</span>
+        <h2>What language should we use for the call?</h2>
+        <p>Pick the language you're most comfortable speaking.</p>
+      </div>
+
+      <div className="bc-language-grid">
+        <button
+          type="button"
+          className={`bc-language-card ${form.language === "english" ? "active" : ""}`}
+          onClick={() => setForm((f) => ({ ...f, language: "english" }))}
+        >
+          <div className="bc-language-flag">🇬🇧</div>
+          <div className="bc-language-info">
+            <div className="bc-language-name">English</div>
+            <div className="bc-language-desc">We'll speak English on the call.</div>
+          </div>
+          {form.language === "english" && <div className="bc-language-check"><FaCheck size={10} /></div>}
+        </button>
+        <button
+          type="button"
+          className={`bc-language-card ${form.language === "hausa" ? "active" : ""}`}
+          onClick={() => setForm((f) => ({ ...f, language: "hausa" }))}
+        >
+          <div className="bc-language-flag">🇳🇬</div>
+          <div className="bc-language-info">
+            <div className="bc-language-name">Hausa</div>
+            <div className="bc-language-desc">Za mu yi magana a harshen Hausa.</div>
+          </div>
+          {form.language === "hausa" && <div className="bc-language-check"><FaCheck size={10} /></div>}
+        </button>
+      </div>
+
+      <div className="bc-step-footer">
+        <button onClick={onBack} className="btn btn-ghost"><FaArrowLeft /> Back</button>
+        <button onClick={onNext} disabled={!form.language} className="btn btn-primary">
+          Continue <FaArrowRight />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 function ServiceStep({ form, setForm, onNext, onBack }) {
   const isOther = form.services.includes("other");
 
@@ -222,7 +269,7 @@ function ServiceStep({ form, setForm, onNext, onBack }) {
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 1 of 4</span>
+        <span className="eyebrow eyebrow-accent">Step 2 of 5</span>
         <h2>What do you need help with?</h2>
         <p>Select all that apply. Don't worry — we'll go deeper on the call.</p>
       </div>
@@ -335,30 +382,17 @@ function BusinessStep({ form, setForm, onNext, onBack }) {
     form.name.trim() &&
     validateEmail(form.email) &&
     form.countryCode &&
-    form.businessName.trim() &&
-    form.businessDescription.trim().length >= 10;
+    form.businessName.trim();
 
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 2 of 4</span>
+        <span className="eyebrow eyebrow-accent">Step 3 of 5</span>
         <h2>Tell us about your business</h2>
         <p>The basics. So we can do our homework before the call.</p>
       </div>
 
       <div className="bc-form">
-        <div className="bc-field">
-          <span className="bc-field-label">Language for the call</span>
-          <select
-            value={form.language || "english"}
-            onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
-            className="bc-select"
-          >
-            <option value="english">English</option>
-            <option value="hausa">Hausa</option>
-          </select>
-        </div>
-
         <div className="bc-form-row">
           <label className="bc-field">
             <span className="bc-field-label">Your name</span>
@@ -449,7 +483,7 @@ function BusinessStep({ form, setForm, onNext, onBack }) {
         </div>
 
         <label className="bc-field">
-          <span className="bc-field-label">Business / project name</span>
+          <span className="bc-field-label">Business or project name</span>
           <input
             type="text"
             value={form.businessName}
@@ -461,11 +495,11 @@ function BusinessStep({ form, setForm, onNext, onBack }) {
 
         <div className="bc-field">
           <span className="bc-field-label">What does your business do?</span>
-          <span className="bc-field-hint">A few sentences is plenty.</span>
+          <span className="bc-field-hint">Explain what you sell or offer, who your customers are, and how your business works.</span>
           <textarea
             value={form.businessDescription}
             onChange={(e) => setForm((f) => ({ ...f, businessDescription: e.target.value }))}
-            placeholder="What do you sell or offer? Who's it for? Where do you operate?"
+            placeholder="e.g. We sell building materials to contractors. We have a warehouse in Lagos and deliver across Nigeria. We currently take orders by phone and WhatsApp…"
             rows={4}
             className="bc-textarea"
           />
@@ -483,50 +517,84 @@ function BusinessStep({ form, setForm, onNext, onBack }) {
 }
 
 function ProjectStep({ form, setForm, onNext, onBack }) {
-  const canNext = form.projectDescription.trim().length >= 10;
+  const [hasSoftware, setHasSoftware] = useState(() => !!form.currentSoftware);
+  const canNext = true;
+
+  const toggleSoftware = (val) => {
+    setHasSoftware(val);
+    if (!val) setForm((f) => ({ ...f, currentSoftware: "" }));
+  };
+
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 3 of 4</span>
-        <h2>What are you trying to build?</h2>
-        <p>The more honest you are here, the more useful the call will be. Only the first one is required.</p>
+        <span className="eyebrow eyebrow-accent">Step 4 of 5</span>
+        <h2>Tell us about the project</h2>
+        <p>The more details you give, the more useful the call will be. Only the first question is required.</p>
       </div>
 
       <div className="bc-form">
         <div className="bc-field">
-          <span className="bc-field-label">What do you want to achieve?</span>
-          <span className="bc-field-hint">A website? An app? AI automation? Replacing a spreadsheet? A booking system?</span>
+          <span className="bc-field-label">What's the final outcome you want?</span>
+          <span className="bc-field-hint">Describe the result — a website, an app, a system, or a feature you need built.</span>
           <textarea
             value={form.projectDescription}
             onChange={(e) => setForm((f) => ({ ...f, projectDescription: e.target.value }))}
-            placeholder="e.g. We need a customer portal where our clients can log in, see their order history, and download invoices…"
+            placeholder="e.g. I want a website where my customers can place orders, track deliveries, and pay online…"
             rows={4}
             className="bc-textarea"
           />
         </div>
 
         <div className="bc-field">
-          <span className="bc-field-label">
-            Tools you already use <span className="bc-optional">(optional)</span>
-          </span>
-          <span className="bc-field-hint">CRM, marketing software, accounting, anything else relevant.</span>
-          <textarea
-            value={form.currentSoftware}
-            onChange={(e) => setForm((f) => ({ ...f, currentSoftware: e.target.value }))}
-            placeholder="e.g. HubSpot, Zoho, Excel spreadsheets, WhatsApp Business…"
-            rows={2}
-            className="bc-textarea"
-          />
+          <span className="bc-field-label">Do you use any software in your business?</span>
+          <span className="bc-field-hint">CRM, accounting, marketing tools, website, or anything else you use to run your business.</span>
+          <div className="bc-yesno">
+            <button
+              type="button"
+              className={`bc-yesno-btn ${hasSoftware ? "active" : ""}`}
+              onClick={() => toggleSoftware(true)}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`bc-yesno-btn ${!hasSoftware && form.currentSoftware === "" ? "" : !hasSoftware ? "active" : ""}`}
+              onClick={() => toggleSoftware(false)}
+            >
+              No
+            </button>
+          </div>
+          <AnimatePresence>
+            {hasSoftware && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <input
+                  type="text"
+                  value={form.currentSoftware}
+                  onChange={(e) => setForm((f) => ({ ...f, currentSoftware: e.target.value }))}
+                  placeholder="e.g. HubSpot, Zoho, WooCommerce, Excel…"
+                  className="bc-input"
+                  style={{ marginTop: 10 }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="bc-field">
           <span className="bc-field-label">
-            What's the biggest pain right now? <span className="bc-optional">(optional)</span>
+            What's your biggest challenge right now? <span className="bc-optional">(optional)</span>
           </span>
+          <span className="bc-field-hint">What problem are you trying to solve? What's slowing your business down?</span>
           <textarea
             value={form.problem}
             onChange={(e) => setForm((f) => ({ ...f, problem: e.target.value }))}
-            placeholder="e.g. We're losing leads because we can't reply on WhatsApp fast enough…"
+            placeholder="e.g. We're losing customers because we can't reply to WhatsApp messages fast enough…"
             rows={3}
             className="bc-textarea"
           />
@@ -534,12 +602,13 @@ function ProjectStep({ form, setForm, onNext, onBack }) {
 
         <div className="bc-field">
           <span className="bc-field-label">
-            Anything else we should know? <span className="bc-optional">(optional)</span>
+            Anything else? <span className="bc-optional">(optional)</span>
           </span>
+          <span className="bc-field-hint">Budget range, deadline, links to your current site, or anything else you want us to know.</span>
           <textarea
             value={form.additionalInfo}
             onChange={(e) => setForm((f) => ({ ...f, additionalInfo: e.target.value }))}
-            placeholder="Budget range, deadline, link to your current site, examples of what you like…"
+            placeholder="e.g. Budget is around ₦2M, need it ready by March, here's our current site: …"
             rows={3}
             className="bc-textarea"
           />
@@ -560,6 +629,7 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [slotError, setSlotError] = useState(null);
+  const [browsing, setBrowsing] = useState(false);
   const userTimezone = useUserTimezone();
   const tz = userTimezone || form.timezone || "UTC";
 
@@ -597,14 +667,31 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
       slotEndUtc: s.endUtc,
       slotDurationMinutes: s.durationMinutes
     }));
+    setBrowsing(false);
   };
+
+  const selectedSlot = form.slotId
+    ? slots.find((s) => s.id === form.slotId)
+    : null;
+
+  const selectedDayLabel = selectedSlot
+    ? new Intl.DateTimeFormat("en-US", {
+        weekday: "long", day: "numeric", month: "long", timeZone: tz
+      }).format(new Date(selectedSlot.startUtc))
+    : "";
+
+  const selectedTimeLabel = selectedSlot
+    ? new Intl.DateTimeFormat("en-US", {
+        hour: "numeric", minute: "2-digit", timeZone: tz, timeZoneName: "short"
+      }).format(new Date(selectedSlot.startUtc))
+    : "";
 
   const canSubmit = !!form.slotStartUtc && (form.callType === "whatsapp" || form.callType === "google_meet");
 
   return (
     <motion.div {...fadeUp} className="bc-step-content">
       <div className="bc-step-header">
-        <span className="eyebrow eyebrow-accent">Step 4 of 4</span>
+        <span className="eyebrow eyebrow-accent">Step 5 of 5</span>
         <h2>Pick a time that works for you</h2>
         <p>All times shown in <strong>{tz.replace(/_/g, " ")}</strong>. We'll send a confirmation email with the details.</p>
       </div>
@@ -657,6 +744,23 @@ function ScheduleStep({ form, setForm, onBack, onSubmit, isSubmitting, uploadSta
               >
                 <FaWhatsapp /> Chat on WhatsApp
               </a>
+            </div>
+          </div>
+        ) : selectedSlot && !browsing ? (
+          <div className="bc-slot-selected">
+            <div className="bc-slot-selected-card">
+              <FaCalendarAlt size={16} />
+              <div className="bc-slot-selected-info">
+                <div className="bc-slot-selected-day">{selectedDayLabel}</div>
+                <div className="bc-slot-selected-time">{selectedTimeLabel}</div>
+              </div>
+              <button
+                type="button"
+                className="bc-slot-change-btn"
+                onClick={() => setBrowsing(true)}
+              >
+                Change
+              </button>
             </div>
           </div>
         ) : (
@@ -868,7 +972,7 @@ export default function BookCall() {
       setConfirmation(res.data);
       setForm((f) => ({ ...f, ...payload, _finalStep: true }));
       clearDraft();
-      setStep(6);
+      setStep(7);
     } catch (err) {
       console.error("createBooking error:", err);
       const msg = err?.message || err?.details || "Something went wrong. Please try again.";
@@ -898,7 +1002,7 @@ export default function BookCall() {
       <div className="container">
         <div className="bc-shell">
           <div className="bc-shell-inner">
-            {step > 1 && step < 6 && <StepIndicator step={step - 1} />}
+            {step > 1 && step < 7 && <StepIndicator step={step - 1} />}
 
             <AnimatePresence mode="wait">
               {step === 1 && (
@@ -908,8 +1012,8 @@ export default function BookCall() {
                 />
               )}
               {step === 2 && (
-                <ServiceStep
-                  key="service"
+                <LanguageStep
+                  key="language"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(3)}
@@ -917,8 +1021,8 @@ export default function BookCall() {
                 />
               )}
               {step === 3 && (
-                <BusinessStep
-                  key="business"
+                <ServiceStep
+                  key="service"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(4)}
@@ -926,27 +1030,36 @@ export default function BookCall() {
                 />
               )}
               {step === 4 && (
-                <ProjectStep
-                  key="project"
+                <BusinessStep
+                  key="business"
                   form={form}
                   setForm={setForm}
                   onNext={() => goTo(5)}
                   onBack={() => goTo(3)}
                 />
               )}
-              {step === 5 && !confirmation && (
+              {step === 5 && (
+                <ProjectStep
+                  key="project"
+                  form={form}
+                  setForm={setForm}
+                  onNext={() => goTo(6)}
+                  onBack={() => goTo(4)}
+                />
+              )}
+              {step === 6 && !confirmation && (
                 <ScheduleStep
                   key="schedule"
                   form={form}
                   setForm={setForm}
-                  onBack={() => goTo(4)}
+                  onBack={() => goTo(5)}
                   onSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
                   uploadStatus={uploadStatus}
                   error={error}
                 />
               )}
-              {step === 6 && confirmation && (
+              {step === 7 && confirmation && (
                 <ConfirmationStep
                   key="confirm"
                   form={form}

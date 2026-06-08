@@ -229,13 +229,30 @@ exports.listAvailableSlots = functions.https.onCall(async (request) => {
     existing = [];
   }
 
+  let blocked = [];
+  try {
+    const minTs = admin.firestore.Timestamp.fromMillis(nowMs);
+    const maxTs = admin.firestore.Timestamp.fromMillis(maxStartMs + SLOT_DURATION_MINUTES * 60 * 1000);
+    const blockSnap = await admin.firestore()
+      .collection("blocked_slots")
+      .where("slotStartUtc", ">=", minTs)
+      .where("slotStartUtc", "<=", maxTs)
+      .get();
+    blocked = blockSnap.docs.map((d) => d.data().slotStartUtc.toMillis());
+    console.log(`listAvailableSlots: found ${blocked.length} blocked slots in range`);
+  } catch (blockErr) {
+    console.error("listAvailableSlots: blocked_slots query failed:", blockErr.message);
+    blocked = [];
+  }
+
   const bufferMs = BUFFER_MINUTES * 60 * 1000;
   const stepMs = SLOT_STEP_MINUTES * 60 * 1000;
 
   const slots = [];
   let cursor = Math.ceil(minStartMs / stepMs) * stepMs;
   while (cursor <= maxStartMs && slots.length < 240) {
-    const isBlocked = existing.some((b) => cursor >= b && cursor < b + bufferMs);
+    const isBlocked = existing.some((b) => cursor >= b && cursor < b + bufferMs)
+      || blocked.some((b) => cursor >= b && cursor < b + bufferMs);
     if (!isBlocked) {
       slots.push({
         id: `dyn-${cursor}`,
@@ -312,18 +329,23 @@ exports.createBooking = functions.https.onCall(async (request) => {
     const bufferMs = BUFFER_MINUTES * 60 * 1000;
     const minTs = admin.firestore.Timestamp.fromMillis(startMs);
     const maxTs = admin.firestore.Timestamp.fromMillis(startMs + bufferMs);
-    const conflictSnap = await tx.get(
-      admin.firestore().collection("discovery_bookings")
-        .where("status", "in", ["confirmed", "pending"])
-        .where("slotStartUtc", ">=", minTs)
-        .where("slotStartUtc", "<=", maxTs)
-    );
-    const realConflict = conflictSnap.docs.filter((d) => d.id !== bookingRef.id);
-    if (realConflict.length > 0) {
-      throw new functions.https.HttpsError(
-        "already-exists",
-        "This time was just booked or is too close to another booking. Please pick a different time."
+    try {
+      const conflictSnap = await tx.get(
+        admin.firestore().collection("discovery_bookings")
+          .where("status", "in", ["confirmed", "pending"])
+          .where("slotStartUtc", ">=", minTs)
+          .where("slotStartUtc", "<=", maxTs)
       );
+      const realConflict = conflictSnap.docs.filter((d) => d.id !== bookingRef.id);
+      if (realConflict.length > 0) {
+        throw new functions.https.HttpsError(
+          "already-exists",
+          "This time was just booked or is too close to another booking. Please pick a different time."
+        );
+      }
+    } catch (conflictErr) {
+      if (conflictErr instanceof functions.https.HttpsError) throw conflictErr;
+      console.error("createBooking: conflict check query failed:", conflictErr.message);
     }
 
     const startTs = admin.firestore.Timestamp.fromMillis(startMs);
@@ -337,7 +359,7 @@ exports.createBooking = functions.https.onCall(async (request) => {
       language,
 
       services,
-      customService: services.includes("other") ? data.customService.trim() : "",
+      customService: services.includes("other") ? (data.customService || "").trim() : "",
 
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
@@ -531,4 +553,61 @@ exports.adminListBookings = functions.https.onCall(async (request) => {
     bookings = bookings.filter((b) => b.status === filter);
   }
   return { bookings };
+});
+
+exports.adminBlockSlot = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Login required");
+  }
+  const { slotStartUtc, reason } = request.data || {};
+  if (!slotStartUtc) {
+    throw new functions.https.HttpsError("invalid-argument", "slotStartUtc is required");
+  }
+  const startMs = new Date(slotStartUtc).getTime();
+  if (!Number.isFinite(startMs)) {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid slotStartUtc");
+  }
+  const startTs = admin.firestore.Timestamp.fromMillis(startMs);
+  const endTs = admin.firestore.Timestamp.fromMillis(startMs + SLOT_DURATION_MINUTES * 60 * 1000);
+
+  await admin.firestore().collection("blocked_slots").add({
+    slotStartUtc: startTs,
+    slotEndUtc: endTs,
+    durationMinutes: SLOT_DURATION_MINUTES,
+    reason: (reason || "").trim(),
+    blockedBy: request.auth.uid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  return { success: true };
+});
+
+exports.adminUnblockSlot = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Login required");
+  }
+  const { blockId } = request.data || {};
+  if (!blockId) {
+    throw new functions.https.HttpsError("invalid-argument", "blockId is required");
+  }
+  await admin.firestore().collection("blocked_slots").doc(blockId).delete();
+  return { success: true };
+});
+
+exports.adminListBlockedSlots = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Login required");
+  }
+  const snap = await admin.firestore().collection("blocked_slots")
+    .orderBy("slotStartUtc", "asc")
+    .get();
+  const blocked = snap.docs.map((d) => ({
+    id: d.id,
+    slotStartUtc: d.data().slotStartUtc?.toDate().toISOString() || null,
+    slotEndUtc: d.data().slotEndUtc?.toDate().toISOString() || null,
+    reason: d.data().reason || "",
+    blockedBy: d.data().blockedBy || "",
+    createdAt: d.data().createdAt?.toDate().toISOString() || null
+  }));
+  return { blocked };
 });

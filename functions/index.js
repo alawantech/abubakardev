@@ -342,10 +342,16 @@ const {
   createBooking,
   adminAddMeetLink,
   adminSetBookingStatus,
-  adminListBookings
+  adminListBookings,
+  adminBlockSlot,
+  adminUnblockSlot,
+  adminListBlockedSlots
 } = require("./bookings");
 exports.listAvailableSlots = listAvailableSlots;
 exports.createBooking = createBooking;
 exports.adminAddMeetLink = adminAddMeetLink;
 exports.adminSetBookingStatus = adminSetBookingStatus;
 exports.adminListBookings = adminListBookings;
+exports.adminBlockSlot = adminBlockSlot;
+exports.adminUnblockSlot = adminUnblockSlot;
+exports.adminListBlockedSlots = adminListBlockedSlots;
