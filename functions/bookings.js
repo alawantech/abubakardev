@@ -325,72 +325,67 @@ exports.createBooking = functions.https.onCall(async (request) => {
   const bookingRef = clientBookingId
     ? admin.firestore().collection("discovery_bookings").doc(clientBookingId)
     : admin.firestore().collection("discovery_bookings").doc();
-  const result = await admin.firestore().runTransaction(async (tx) => {
-    const bufferMs = BUFFER_MINUTES * 60 * 1000;
-    const minTs = admin.firestore.Timestamp.fromMillis(startMs);
-    const maxTs = admin.firestore.Timestamp.fromMillis(startMs + bufferMs);
-    try {
-      const conflictSnap = await tx.get(
-        admin.firestore().collection("discovery_bookings")
-          .where("status", "in", ["confirmed", "pending"])
-          .where("slotStartUtc", ">=", minTs)
-          .where("slotStartUtc", "<=", maxTs)
+
+  const startTs = admin.firestore.Timestamp.fromMillis(startMs);
+  const endTs = admin.firestore.Timestamp.fromMillis(startMs + SLOT_DURATION_MINUTES * 60 * 1000);
+  const bufferMs = BUFFER_MINUTES * 60 * 1000;
+
+  try {
+    const conflictSnap = await admin.firestore()
+      .collection("discovery_bookings")
+      .where("status", "in", ["confirmed", "pending"])
+      .where("slotStartUtc", ">=", admin.firestore.Timestamp.fromMillis(startMs - bufferMs))
+      .where("slotStartUtc", "<=", admin.firestore.Timestamp.fromMillis(startMs + bufferMs))
+      .get();
+    const realConflict = conflictSnap.docs.filter((d) => d.id !== bookingRef.id);
+    if (realConflict.length > 0) {
+      throw new functions.https.HttpsError(
+        "already-exists",
+        "This time was just booked or is too close to another booking. Please pick a different time."
       );
-      const realConflict = conflictSnap.docs.filter((d) => d.id !== bookingRef.id);
-      if (realConflict.length > 0) {
-        throw new functions.https.HttpsError(
-          "already-exists",
-          "This time was just booked or is too close to another booking. Please pick a different time."
-        );
-      }
-    } catch (conflictErr) {
-      if (conflictErr instanceof functions.https.HttpsError) throw conflictErr;
-      console.error("createBooking: conflict check query failed:", conflictErr.message);
     }
+  } catch (conflictErr) {
+    if (conflictErr instanceof functions.https.HttpsError) throw conflictErr;
+    console.error("createBooking: conflict check query failed, proceeding anyway:", conflictErr.message);
+  }
 
-    const startTs = admin.firestore.Timestamp.fromMillis(startMs);
-    const endTs = admin.firestore.Timestamp.fromMillis(startMs + SLOT_DURATION_MINUTES * 60 * 1000);
+  const bookingDoc = {
+    slotStartUtc: startTs,
+    slotEndUtc: endTs,
+    durationMinutes: SLOT_DURATION_MINUTES,
 
-    const bookingDoc = {
-      slotStartUtc: startTs,
-      slotEndUtc: endTs,
-      durationMinutes: SLOT_DURATION_MINUTES,
+    language,
 
-      language,
+    services,
+    customService: services.includes("other") ? (data.customService || "").trim() : "",
 
-      services,
-      customService: services.includes("other") ? (data.customService || "").trim() : "",
+    name: data.name.trim(),
+    email: data.email.trim().toLowerCase(),
+    whatsapp: (data.whatsapp || "").replace(/[^\d]/g, ""),
+    countryCode: data.countryCode,
+    countryName: data.countryName || "",
+    countryDialCode: data.countryDialCode || "",
 
-      name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      whatsapp: (data.whatsapp || "").replace(/[^\d]/g, ""),
-      countryCode: data.countryCode,
-      countryName: data.countryName || "",
-      countryDialCode: data.countryDialCode || "",
+    businessName: data.businessName.trim(),
+    businessDescription: (data.businessDescription || "").trim(),
+    projectDescription: data.projectDescription.trim(),
+    currentSoftware: (data.currentSoftware || "").trim(),
+    problem: (data.problem || "").trim(),
+    additionalInfo: (data.additionalInfo || "").trim(),
 
-      businessName: data.businessName.trim(),
-      businessDescription: (data.businessDescription || "").trim(),
-      projectDescription: data.projectDescription.trim(),
-      currentSoftware: (data.currentSoftware || "").trim(),
-      problem: (data.problem || "").trim(),
-      additionalInfo: (data.additionalInfo || "").trim(),
+    callType: data.callType,
+    timezone: tz,
 
-      callType: data.callType,
-      timezone: tz,
+    status: "confirmed",
+    meetLink: "",
+    meetLinkSentAt: null,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    userAgent: request.rawRequest?.headers?.["user-agent"] || "",
+    ip: request.rawRequest?.ip || ""
+  };
 
-      status: "confirmed",
-      meetLink: "",
-      meetLinkSentAt: null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      userAgent: request.rawRequest?.headers?.["user-agent"] || "",
-      ip: request.rawRequest?.ip || ""
-    };
-
-    tx.set(bookingRef, bookingDoc);
-    return { bookingDoc, startTs, endTs, bookingId: bookingRef.id };
-  });
-
-  const { bookingDoc, bookingId } = result;
+  await bookingRef.set(bookingDoc);
+  const bookingId = bookingRef.id;
   bookingDoc.id = bookingId;
   bookingDoc.slotStartUtc = startMs;
 

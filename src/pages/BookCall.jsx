@@ -147,12 +147,8 @@ function StepIndicator({ step }) {
 }
 
 function WelcomeStep({ onStart }) {
-  const navigate = useNavigate();
   return (
     <motion.div {...fadeUp} className="bc-step-content bc-welcome">
-      <button type="button" className="bc-back-home" onClick={() => navigate("/")}>
-        <FaArrowLeft size={12} /> Back to home
-      </button>
       <div className="bc-welcome-badge">
         <FaCalendarAlt size={12} /> Free 30-min discovery call
       </div>
@@ -916,6 +912,7 @@ function getFlagEmoji(countryCode) {
 }
 
 export default function BookCall() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(() => loadDraft() || initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1006,6 +1003,11 @@ export default function BookCall() {
 
       <div className="container">
         <div className="bc-shell">
+          <div className="bc-back-home-wrap">
+            <button type="button" className="bc-back-home" onClick={() => navigate("/")}>
+              <FaArrowLeft size={12} /> Back to home
+            </button>
+          </div>
           <div className="bc-shell-inner">
             {step > 1 && step < 7 && <StepIndicator step={step - 1} />}
 
