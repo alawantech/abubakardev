@@ -31,6 +31,17 @@
   gap: 12px;
 }
 
+.header-left {
+  flex-shrink: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
 .header-logo {
   height: 36px;
   width: auto;
@@ -83,12 +94,6 @@
 
 .nav-list a.active::after {
   width: 100%;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
 .header-cta-group {
@@ -353,17 +358,17 @@
 
 @media (max-width: 768px) {
   .header-container {
-    padding: 0 16px;
-    gap: 10px;
+    padding: 0 14px;
+    gap: 14px;
   }
 
   .header-logo {
-    height: 28px;
-    padding: 2px 5px;
+    height: 26px;
+    padding: 2px 4px;
   }
 
   .header-right {
-    gap: 6px;
+    gap: 8px;
   }
 
   .header-chat-btn span {
@@ -371,16 +376,16 @@
   }
 
   .header-chat-btn {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border-radius: 8px;
     justify-content: center;
   }
 
   .header-book-btn {
-    padding: 6px 12px;
-    font-size: 0.78rem;
+    padding: 5px 10px;
+    font-size: 0.72rem;
     white-space: nowrap;
     box-shadow: 0 3px 12px rgba(139, 92, 246, 0.4);
   }

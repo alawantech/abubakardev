@@ -400,3 +400,31 @@
   .pricing-service-nav { border-radius: 16px; }
   .service-nav-btn { font-size: 12px; padding: 6px 12px; }
 }
+
+/* CSS animations — no framer-motion dependency */
+.pricing-fade-in {
+  animation: pricingFadeIn 0.5s ease both;
+}
+
+.pricing-stagger {
+  opacity: 0;
+  animation: pricingSlideUp 0.5s ease both;
+}
+
+@keyframes pricingFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pricingSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-fade-in,
+  .pricing-stagger {
+    animation: none;
+    opacity: 1;
+  }
+}

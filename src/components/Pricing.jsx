@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useInView } from "react-intersection-observer";
+import React, { useState } from "react";
 import {
   FaCheck,
   FaGlobe,
@@ -17,17 +15,8 @@ import { pricingByService } from "../data/pricing";
 import "./Pricing.css";
 
 const Pricing = () => {
-  const { ref, inView } = useInView({ threshold: 0.05, triggerOnce: true });
   const { symbol, isNigeria, loading, currency } = useUserLocation();
   const [activeService, setActiveService] = useState("all");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
-  const shouldAnimate = inView || mounted;
 
   const filteredServices = activeService === "all"
     ? services
@@ -39,43 +28,25 @@ const Pricing = () => {
   };
 
   return (
-    <section className="pricing-section section" id="pricing" ref={ref}>
+    <section className="pricing-section section" id="pricing">
       <div className="bg-orb bg-orb-1" style={{ opacity: 0.1, top: '5%', right: '5%' }} />
       <div className="bg-orb bg-orb-2" style={{ opacity: 0.1, bottom: '5%', left: '5%' }} />
 
-      <div className="container">
+      <div className="container pricing-fade-in">
         {/* HERO */}
         <div className="section-heading">
-          <motion.span
-            className="eyebrow eyebrow-accent"
-            initial={{ opacity: 0, y: 20 }}
-            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5 }}
-          >
+          <span className="eyebrow eyebrow-accent">
             Pricing
-          </motion.span>
-          <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
+          </span>
+          <h2>
             Honest pricing.<br/>
             <span className="gradient-text">Pick the service you need.</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          </h2>
+          <p>
             Every service, priced transparently. We adjust to your currency based on where you're browsing from. No hidden fees, no surprises.
-          </motion.p>
+          </p>
 
-          <motion.div
-            className="currency-indicator"
-            initial={{ opacity: 0, y: 20 }}
-            animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
+          <div className="currency-indicator">
             <FaGlobe size={12} />
             {loading ? (
               <span><FaSpinner className="spin" size={11} /> Detecting your region…</span>
@@ -85,16 +56,11 @@ const Pricing = () => {
                 {isNigeria ? " 🇳🇬" : " 🌍"} · One-time fees unless noted
               </span>
             )}
-          </motion.div>
+          </div>
         </div>
 
         {/* SERVICE NAV (sticky pills) */}
-        <motion.div
-          className="pricing-service-nav"
-          initial={{ opacity: 0, y: 20 }}
-          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
+        <div className="pricing-service-nav">
           <button
             className={`service-nav-btn ${activeService === 'all' ? 'active' : ''}`}
             onClick={() => setActiveService('all')}
@@ -118,7 +84,7 @@ const Pricing = () => {
               </button>
             )
           })}
-        </motion.div>
+        </div>
 
         {/* SERVICE SECTIONS */}
         <div className="pricing-services">
@@ -128,14 +94,14 @@ const Pricing = () => {
             if (!pricing) return null
 
             return (
-              <motion.div
+              <div
                 key={service.id}
                 id={`pricing-${service.id}`}
-                className="pricing-service"
-                style={{ '--service-accent': service.accent }}
-                initial={{ opacity: 0, y: 40 }}
-                animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: 0.1 + sIdx * 0.08 }}
+                className="pricing-service pricing-stagger"
+                style={{
+                  '--service-accent': service.accent,
+                  animationDelay: `${sIdx * 0.08}s`
+                }}
               >
                 <div className="service-header">
                   <div className="service-header-icon">
@@ -194,18 +160,13 @@ const Pricing = () => {
                     )
                   })}
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>
 
         {/* FOOTER CARD */}
-        <motion.div
-          className="pricing-help"
-          initial={{ opacity: 0, y: 30 }}
-          animate={shouldAnimate ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
+        <div className="pricing-help pricing-stagger" style={{ animationDelay: '0.4s' }}>
           <div className="help-card">
             <div className="help-icon"><FaQuestionCircle size={20} /></div>
             <div className="help-text">
@@ -227,7 +188,7 @@ const Pricing = () => {
               <strong>Payment terms:</strong> 50% upfront, 50% on delivery. International clients pay in USD via invoice.
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
