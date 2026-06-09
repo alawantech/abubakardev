@@ -8,52 +8,93 @@ export const pricingByService = {
       {
         id: 'web-starter',
         name: 'Starter Website',
-        tagline: '5–7 pages · CMS · SEO-ready',
-        priceNGN: 300000,
-        priceUSD: 200,
-        timeline: '2–3 weeks',
+        tagline: '1–5 pages · Landing page · Perfect for small businesses',
+        priceNGN: 200000,
+        priceUSD: 140,
+        timeline: '1–2 weeks',
         features: [
-          '5–7 pages (Home, About, Services, etc.)',
+          '1–5 pages (Home, About, Services, Contact)',
+          'Professional landing page',
           'Mobile-responsive & fast',
-          'Contact form + basic CMS',
-          'On-page SEO setup',
+          'Contact form + Google Maps',
+          'Basic SEO setup',
           'Free domain (1 year)',
-          '1 month free support'
+          '14 days free support'
         ],
         cta: 'Start a website'
       },
       {
         id: 'web-business',
         name: 'Business Website',
-        tagline: 'E-commerce · Payments · Dashboard',
-        priceNGN: 800000,
-        priceUSD: 550,
-        timeline: '4–6 weeks',
+        tagline: 'E-commerce · Payments · Login · Dashboard',
+        priceNGN: 300000,
+        priceUSD: 200,
+        timeline: '2–3 weeks',
         features: [
           'Everything in Starter, plus:',
-          'E-commerce or advanced features',
+          'E-commerce functionality',
           'Payment gateway integration',
-          'Product/service dashboard',
-          'Blog + email capture',
-          'Analytics & conversion tracking'
+          'User login & accounts',
+          'Admin dashboard & database',
+          'Product/service management',
+          'Blog + email capture'
         ],
         cta: 'Get started',
         popular: true
       },
       {
-        id: 'web-advanced',
-        name: 'Advanced SaaS Platform',
-        tagline: 'Multi-tenant · Auth · Complex workflows',
-        priceNGN: 2500000,
-        priceUSD: 1700,
-        timeline: '8–16 weeks',
+        id: 'web-professional',
+        name: 'Professional Website',
+        tagline: 'Advanced features · Custom workflows · Integrations',
+        priceNGN: 450000,
+        priceUSD: 310,
+        timeline: '3–5 weeks',
         features: [
           'Everything in Business, plus:',
-          'User accounts, roles, permissions',
+          'Custom user roles & permissions',
+          'Advanced search & filtering',
+          'Email/SMS notifications',
+          'API integrations (3rd party tools)',
+          'Multi-language support',
+          'Analytics & reporting dashboard',
+          '30 days free support'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'web-enterprise',
+        name: 'Enterprise Website',
+        tagline: 'Multi-tenant · Scalable · Complex architecture',
+        priceNGN: 800000,
+        priceUSD: 550,
+        timeline: '6–10 weeks',
+        features: [
+          'Everything in Professional, plus:',
           'Multi-tenant architecture',
-          'API integrations',
-          'Custom admin dashboard',
-          'Load testing & scaling'
+          'Advanced security & encryption',
+          'Load balancing & performance optimization',
+          'Custom API development',
+          'Automated workflows & scheduling',
+          'Priority support & maintenance',
+          '60 days free support'
+        ],
+        cta: 'Get a quote'
+      },
+      {
+        id: 'web-custom',
+        name: 'Custom Solution',
+        tagline: 'Fully tailored · Enterprise-grade · Ongoing partnership',
+        priceNGN: null,
+        priceUSD: null,
+        timeline: 'Custom timeline',
+        features: [
+          'Fully custom-built to your specs',
+          'Dedicated project manager',
+          'Unlimited revisions during build',
+          'Source code ownership',
+          'Deployment & infrastructure setup',
+          'Ongoing maintenance & updates',
+          'SLA-backed support'
         ],
         cta: 'Get a quote'
       }
