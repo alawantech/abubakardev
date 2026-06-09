@@ -18,7 +18,6 @@ export const pricingByService = {
           'Mobile-responsive & fast',
           'Contact form + Google Maps',
           'Basic SEO setup',
-          'Free domain (1 year)',
           '14 days free support'
         ],
         cta: 'Start a website'

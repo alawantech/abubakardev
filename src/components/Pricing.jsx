@@ -181,7 +181,7 @@ const Pricing = () => {
 
           <div className="pricing-fineprint">
             <p>
-              <strong>All prices shown are one-time development fees.</strong> Any third-party services your project needs to subscribe to or purchase — such as OpenAI / LLM API usage, Twilio (calls/WhatsApp), hosting, domains, or SMS providers — are billed separately by those providers, directly to you (the project owner). We help you set them up, but the subscription costs are not included in our development price.
+              <strong>Please note:</strong> All prices shown are one-time development fees only. Any third-party services your project requires — such as hosting, domain names, email services, payment gateways, AI/LLM APIs, SMS providers, or other subscription-based tools — are billed separately and paid directly by you (the project owner). We help you set up and integrate these services, but their ongoing subscription costs are not included in our development price.
               <br/><br/>
               <strong>What's included in every project:</strong> Source code, deployment, 30 days of bug-fix support, and a 30-minute handover call.
               <br/>
