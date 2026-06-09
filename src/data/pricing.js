@@ -333,6 +333,137 @@ export const pricingByService = {
         cta: 'Request proposal'
       }
     ]
+  },
+
+  vtu: {
+    tiers: [
+      {
+        id: 'vtu-website',
+        name: 'VTU Website Only',
+        tagline: 'Data · Airtime · Bills · Payments',
+        priceNGN: 150000,
+        priceUSD: 105,
+        timeline: '2–3 weeks',
+        features: [
+          'Data sales (MTN, Airtel, Glo, 9mobile)',
+          'Airtime sales (all networks)',
+          'Electricity bill payment (prepaid & postpaid)',
+          'Cable TV subscription (DSTV, GOTV, Startimes)',
+          'Exam pins (WAEC, NECO, JAMB)',
+          'Bulk SMS',
+          'Airtime to cash conversion',
+          'Payment gateway integration',
+          'Admin dashboard',
+          'Mobile-responsive website'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-app',
+        name: 'VTU Mobile App',
+        tagline: 'Android + iOS · Native app',
+        priceNGN: 200000,
+        priceUSD: 140,
+        timeline: '4–6 weeks',
+        features: [
+          'All website features, plus:',
+          'Native Android & iOS apps',
+          'Push notifications',
+          'In-app wallet & top-up',
+          'Transaction history',
+          'Biometric login (fingerprint/face)',
+          'Share & referral system',
+          'Customer support chat'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-app-playstore',
+        name: 'VTU App + Play Store',
+        tagline: 'Android + iOS · Play Store upload',
+        priceNGN: 250000,
+        priceUSD: 175,
+        timeline: '5–7 weeks',
+        features: [
+          'All mobile app features, plus:',
+          'Google Play Store upload & publishing',
+          'Play Store optimization (ASO)',
+          'App listing & screenshots',
+          'Launch support'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-app-appstore',
+        name: 'VTU App + App Store',
+        tagline: 'Android + iOS · Play Store + App Store',
+        priceNGN: 430000,
+        priceUSD: 300,
+        timeline: '6–8 weeks',
+        features: [
+          'All mobile app features, plus:',
+          'Google Play Store upload',
+          'Apple App Store upload',
+          'App Store optimization (ASO)',
+          'iOS & Android listing setup',
+          'Launch support'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-all-no-upload',
+        name: 'VTU Complete (No Store Upload)',
+        tagline: 'Website + Android + iOS',
+        priceNGN: 350000,
+        priceUSD: 245,
+        timeline: '6–8 weeks',
+        features: [
+          'All website features',
+          'Native Android & iOS apps',
+          'Push notifications',
+          'In-app wallet & top-up',
+          'Transaction history',
+          'Biometric login',
+          'Admin dashboard',
+          'We deploy the website online'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-all-playstore',
+        name: 'VTU Complete + Play Store',
+        tagline: 'Website + Android + iOS + Play Store',
+        priceNGN: 400000,
+        priceUSD: 280,
+        timeline: '7–9 weeks',
+        features: [
+          'All complete features, plus:',
+          'Google Play Store upload & publishing',
+          'Play Store optimization (ASO)',
+          'Launch support'
+        ],
+        cta: 'Get started'
+      },
+      {
+        id: 'vtu-all-everything',
+        name: 'VTU Full Package',
+        tagline: 'Website + Android + iOS + All Store Uploads',
+        priceNGN: 580000,
+        priceUSD: 405,
+        timeline: '8–10 weeks',
+        features: [
+          'All complete features, plus:',
+          'Google Play Store upload',
+          'Apple App Store upload',
+          'App Store optimization (ASO)',
+          'iOS & Android listing setup',
+          'Priority support',
+          '90 days free support'
+        ],
+        cta: 'Get started',
+        popular: true
+      }
+    ]
   }
 }
 

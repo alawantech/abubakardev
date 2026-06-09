@@ -3,7 +3,8 @@ import {
   FaMobile,
   FaRobot,
   FaCogs,
-  FaBullhorn
+  FaBullhorn,
+  FaSignal
 } from 'react-icons/fa'
 
 export const services = [
@@ -64,6 +65,18 @@ export const services = [
     features: ['Email automation', 'CRM integration', 'Analytics & dashboards', 'Lead funnels'],
     size: 'small',
     accent: '#f59e0b',
+    pricingTier: 'business',
+    examples: []
+  },
+  {
+    id: 'vtu',
+    icon: FaSignal,
+    title: 'VTU Website & App',
+    shortTitle: 'VTU Vending',
+    description: 'Data, airtime, electricity, cable subscription, and bill payment platforms — the complete vending solution for the Nigerian market.',
+    features: ['Data & airtime sales', 'Electricity bills', 'Cable TV subscription', 'Exam pins & bulk SMS'],
+    size: 'large',
+    accent: '#10b981',
     pricingTier: 'business',
     examples: []
   }
