@@ -439,4 +439,23 @@
   .code-card { width: 100%; }
   .metric-card { right: 0; width: 200px; }
   .status-card { left: 0; width: 240px; }
+  .hero-scroll-cue {
+    bottom: 10px;
+    gap: 6px;
+  }
+  .hero-scroll-cue span {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+  }
+  .scroll-line {
+    height: 30px;
+  }
+  .scroll-dot {
+    height: 14px;
+    animation: scroll-down-mobile 2s ease-in-out infinite;
+  }
+  @keyframes scroll-down-mobile {
+    0% { top: -14px; }
+    100% { top: 30px; }
+  }
 }
