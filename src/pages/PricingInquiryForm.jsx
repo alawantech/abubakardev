@@ -189,6 +189,7 @@ const PricingInquiryForm = () => {
                 placeholder="John Doe"
                 required
               />
+              <span className="pi-hint">Your full name as you'd like us to address you</span>
             </div>
 
             <div className="pi-field">
@@ -199,6 +200,7 @@ const PricingInquiryForm = () => {
                 onChange={(e) => update("businessName", e.target.value)}
                 placeholder="Acme Corp"
               />
+              <span className="pi-hint">Leave blank if you don't have one yet</span>
             </div>
 
             <div className="pi-field">
@@ -210,6 +212,7 @@ const PricingInquiryForm = () => {
                 placeholder="john@acme.com"
                 required
               />
+              <span className="pi-hint">We'll use this to send you project updates</span>
             </div>
 
             <div className="pi-field">
@@ -225,6 +228,7 @@ const PricingInquiryForm = () => {
                   </option>
                 ))}
               </select>
+              <span className="pi-hint">This helps us understand your timezone and currency</span>
             </div>
 
             <div className="pi-field">
@@ -236,6 +240,7 @@ const PricingInquiryForm = () => {
                 placeholder="+234 800 000 0000"
                 required
               />
+              <span className="pi-hint">Include country code, e.g. +234 for Nigeria</span>
             </div>
 
             <div className="pi-field">
@@ -247,6 +252,7 @@ const PricingInquiryForm = () => {
                 placeholder="+234 800 000 0000"
                 disabled={form.sameAsPhone}
               />
+              <span className="pi-hint">We'll use this to reach you quickly if needed</span>
               <label className="pi-checkbox">
                 <input
                   type="checkbox"
@@ -269,6 +275,7 @@ const PricingInquiryForm = () => {
                 placeholder="e.g. We run a logistics company that delivers packages across West Africa..."
                 rows={3}
               />
+              <span className="pi-hint">What products or services do you offer? Who are your customers?</span>
             </div>
 
             <div className="pi-field">
@@ -301,6 +308,7 @@ const PricingInquiryForm = () => {
                     onChange={(e) => update("softwareName", e.target.value)}
                     placeholder="e.g. Salesforce, custom CRM, etc."
                   />
+                  <span className="pi-hint">What tool or app are you currently using?</span>
                 </div>
                 <div className="pi-field">
                   <label>What does it do?</label>
@@ -310,6 +318,7 @@ const PricingInquiryForm = () => {
                     placeholder="e.g. It manages our customer database and sends invoices..."
                     rows={2}
                   />
+                  <span className="pi-hint">Briefly describe what you use it for</span>
                 </div>
               </div>
             )}
@@ -322,6 +331,7 @@ const PricingInquiryForm = () => {
                 placeholder="e.g. I need an online booking system, payment integration, and a customer dashboard..."
                 rows={4}
               />
+              <span className="pi-hint">Describe the outcome you're looking for — the more detail, the better we can prepare</span>
             </div>
           </div>
 
