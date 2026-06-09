@@ -264,15 +264,26 @@ const PricingInquiriesManagement = () => {
                   )}
 
                   <div className="pim-actions">
-                    <select
-                      value={inquiry.status || "new"}
-                      onChange={(e) => updateStatus(inquiry.id, e.target.value)}
-                      className="pim-status-select"
-                    >
-                      <option value="new">New</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                    <div className="pim-status-buttons">
+                      <button
+                        className={`pim-status-btn new ${(inquiry.status || "new") === "new" ? "active" : ""}`}
+                        onClick={() => updateStatus(inquiry.id, "new")}
+                      >
+                        New
+                      </button>
+                      <button
+                        className={`pim-status-btn contacted ${inquiry.status === "contacted" ? "active" : ""}`}
+                        onClick={() => updateStatus(inquiry.id, "contacted")}
+                      >
+                        Contacted
+                      </button>
+                      <button
+                        className={`pim-status-btn closed ${inquiry.status === "closed" ? "active" : ""}`}
+                        onClick={() => updateStatus(inquiry.id, "closed")}
+                      >
+                        Closed
+                      </button>
+                    </div>
                     <a
                       href={`mailto:${inquiry.email}`}
                       className="pim-action-btn"

@@ -13,12 +13,13 @@
   font-size: 20px;
   font-weight: 700;
   margin: 0;
+  color: #1e293b;
 }
 
 .pim-refresh {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text, #e2e8f0);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
@@ -30,7 +31,7 @@
 }
 
 .pim-refresh:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #e2e8f0;
 }
 
 .pim-stats {
@@ -50,21 +51,21 @@
 }
 
 .pim-stat-new {
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  background: #fef9c3;
+  border: 1px solid #fde047;
+  color: #a16207;
 }
 
 .pim-stat-contacted {
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #1d4ed8;
 }
 
 .pim-stat-closed {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  color: #4ade80;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #15803d;
 }
 
 .pim-controls {
@@ -78,8 +79,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 8px 12px;
   flex: 1;
@@ -87,14 +88,14 @@
 }
 
 .pim-search svg {
-  color: var(--text-muted, #94a3b8);
+  color: #9ca3af;
   font-size: 13px;
 }
 
 .pim-search input {
   background: none;
   border: none;
-  color: var(--text, #e2e8f0);
+  color: #1e293b;
   font-size: 13px;
   outline: none;
   width: 100%;
@@ -108,9 +109,9 @@
 
 .pim-filter-btn {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted, #94a3b8);
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #6b7280;
   border-radius: 6px;
   font-size: 12px;
   font-family: inherit;
@@ -119,16 +120,16 @@
 }
 
 .pim-filter-btn.active {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.4);
-  color: #c4b5fd;
+  background: #ede9fe;
+  border-color: #a78bfa;
+  color: #6d28d9;
 }
 
 .pim-loading,
 .pim-empty {
   text-align: center;
   padding: 40px;
-  color: var(--text-muted, #94a3b8);
+  color: #9ca3af;
   font-size: 14px;
 }
 
@@ -139,27 +140,28 @@
 }
 
 .pim-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
   overflow: hidden;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .pim-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: #d1d5db;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .pim-card.status-new {
-  border-left: 3px solid #fbbf24;
+  border-left: 3px solid #f59e0b;
 }
 
 .pim-card.status-contacted {
-  border-left: 3px solid #60a5fa;
+  border-left: 3px solid #3b82f6;
 }
 
 .pim-card.status-closed {
-  border-left: 3px solid #4ade80;
+  border-left: 3px solid #22c55e;
 }
 
 .pim-card-header {
@@ -185,8 +187,12 @@
   font-size: 14px;
 }
 
+.pim-card-name strong {
+  color: #1e293b;
+}
+
 .pim-card-name .pim-icon {
-  color: var(--text-muted, #94a3b8);
+  color: #6b7280;
   font-size: 12px;
   flex-shrink: 0;
 }
@@ -200,17 +206,17 @@
 .pim-tier {
   font-size: 12px;
   font-weight: 600;
-  color: #a78bfa;
+  color: #7c3aed;
 }
 
 .pim-service {
   font-size: 12px;
-  color: var(--text-muted, #94a3b8);
+  color: #6b7280;
 }
 
 .pim-price {
   font-size: 12px;
-  color: #4ade80;
+  color: #16a34a;
   font-weight: 600;
 }
 
@@ -225,34 +231,34 @@
 .pim-status-badge {
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 4px;
   text-transform: uppercase;
 }
 
 .pim-status-badge.status-new {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
+  background: #fef9c3;
+  color: #a16207;
 }
 
 .pim-status-badge.status-contacted {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .pim-status-badge.status-closed {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .pim-date {
   font-size: 11px;
-  color: var(--text-muted, #94a3b8);
+  color: #9ca3af;
 }
 
 .pim-card-body {
   padding: 0 16px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #f3f4f6;
 }
 
 .pim-detail-grid {
@@ -269,7 +275,7 @@
 }
 
 .pim-detail-icon {
-  color: var(--text-muted, #94a3b8);
+  color: #6b7280;
   font-size: 13px;
   margin-top: 2px;
   flex-shrink: 0;
@@ -277,7 +283,7 @@
 
 .pim-detail-label {
   font-size: 11px;
-  color: var(--text-muted, #94a3b8);
+  color: #9ca3af;
   display: block;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -286,11 +292,12 @@
 .pim-detail a,
 .pim-detail span {
   font-size: 13px;
-  color: var(--text, #e2e8f0);
+  color: #1e293b;
 }
 
 .pim-detail a {
   text-decoration: none;
+  color: #2563eb;
 }
 
 .pim-detail a:hover {
@@ -299,13 +306,13 @@
 
 .pim-section {
   padding: 10px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid #f3f4f6;
 }
 
 .pim-section h4 {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted, #94a3b8);
+  color: #6b7280;
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -316,7 +323,7 @@
 
 .pim-section p {
   font-size: 13px;
-  color: var(--text, #e2e8f0);
+  color: #374151;
   margin: 0;
   line-height: 1.5;
 }
@@ -326,27 +333,67 @@
   align-items: center;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid #f3f4f6;
 }
 
 .pim-status-select {
   padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: var(--text, #e2e8f0);
+  color: #1e293b;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
+}
+
+.pim-status-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.pim-status-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pim-status-btn:hover {
+  background: #f9fafb;
+}
+
+.pim-status-btn.new.active {
+  background: #fef9c3;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.pim-status-btn.contacted.active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.pim-status-btn.closed.active {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
 }
 
 .pim-action-btn {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted, #94a3b8);
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,14 +404,14 @@
 }
 
 .pim-action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text, #e2e8f0);
+  background: #f9fafb;
+  color: #1e293b;
 }
 
 .pim-action-btn.pim-delete:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
 }
 
 @media (max-width: 640px) {
