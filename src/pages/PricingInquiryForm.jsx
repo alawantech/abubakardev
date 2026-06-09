@@ -159,12 +159,7 @@ const PricingInquiryForm = () => {
             <span className="pi-pkg-label">Service</span>
             <span className="pi-pkg-value">{service.title}</span>
           </div>
-          {tier?.tagline && (
-            <div className="pi-pkg-row">
-              <span className="pi-pkg-label">Includes</span>
-              <span className="pi-pkg-value">{tier.tagline}</span>
-            </div>
-          )}
+
           <div className="pi-pkg-row pi-pkg-price">
             <span className="pi-pkg-label">Price</span>
             <span className="pi-pkg-value">
