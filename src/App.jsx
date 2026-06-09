@@ -29,6 +29,8 @@ const Process = React.lazy(() => import('./components/Process'));
 const Testimonials = React.lazy(() => import('./components/Testimonials'));
 const CTABanner = React.lazy(() => import('./components/CTABanner'));
 const BookCall = React.lazy(() => import('./pages/BookCall'));
+const TermsAndConditions = React.lazy(() => import('./pages/TermsAndConditions'));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 
 const Courses = React.lazy(() => import('./components/Courses'));
 const CoursePage = React.lazy(() => import('./components/CoursePage'));
@@ -328,6 +330,26 @@ function App() {
               <div className="App bc-chrome-hidden">
                 <React.Suspense fallback={null}>
                   <BookCall />
+                </React.Suspense>
+              </div>
+            }
+          />
+          <Route
+            path="/terms"
+            element={
+              <div className="App">
+                <React.Suspense fallback={null}>
+                  <TermsAndConditions />
+                </React.Suspense>
+              </div>
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <div className="App">
+                <React.Suspense fallback={null}>
+                  <PrivacyPolicy />
                 </React.Suspense>
               </div>
             }

@@ -165,8 +165,8 @@ const Footer = () => {
             <p>Built with care in Nigeria</p>
           </div>
           <div className="footer-bottom-right">
-            <Link to="/#privacy">Privacy</Link>
-            <Link to="/#terms">Terms</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
             <button onClick={scrollToTop} className="back-to-top">
               Back to top <FaArrowUp size={11} />
             </button>
