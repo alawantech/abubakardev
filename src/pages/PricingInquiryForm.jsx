@@ -239,7 +239,7 @@ const PricingInquiryForm = () => {
             </div>
 
             <div className="pi-field">
-              <label>WhatsApp Number</label>
+              <label>WhatsApp Number (optional)</label>
               <input
                 type="tel"
                 value={form.whatsapp}
