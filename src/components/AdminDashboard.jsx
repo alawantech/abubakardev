@@ -10,6 +10,7 @@ import AdminProfile from './AdminProfile';
 import LinksManagement from './LinksManagement';
 import KnowledgeBase from './Admin/KnowledgeBase/KnowledgeBase';
 import BookingsManagement from './BookingsManagement';
+import PricingInquiriesManagement from './PricingInquiriesManagement';
 import './SchoolInquiries.css';
 import './AdminDashboard.css';
 import './BookingsManagement.css';
@@ -122,6 +123,8 @@ const AdminDashboard = () => {
         return <InquiriesManagement />;
       case 'bookings':
         return <BookingsManagement />;
+      case 'pricing-inquiries':
+        return <PricingInquiriesManagement />;
       case 'profile':
         return <AdminProfile />;
       case 'links':
@@ -163,6 +166,7 @@ const AdminDashboard = () => {
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'inquiries', label: 'Inquiries', icon: '📩' },
             { id: 'bookings', label: 'Bookings', icon: '📅' },
+            { id: 'pricing-inquiries', label: 'Pricing Inquiries', icon: '💰' },
             { id: 'knowledge-base', label: 'AI Knowledge', icon: '🧠' },
             { id: 'links', label: 'Links', icon: '🔗' },
             { id: 'profile', label: 'Profile', icon: '⚙️' },

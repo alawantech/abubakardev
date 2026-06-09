@@ -39,6 +39,7 @@ const CourseDashboard = React.lazy(() => import('./components/CourseDashboard'))
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const RenewPayment = React.lazy(() => import('./components/RenewPayment'));
 const Pricing = React.lazy(() => import('./components/Pricing'));
+const PricingInquiryForm = React.lazy(() => import('./pages/PricingInquiryForm'));
 const Login = React.lazy(() => import('./components/Login'));
 const Register = React.lazy(() => import('./components/Register'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
@@ -303,6 +304,16 @@ function App() {
                   <Pricing />
                 </React.Suspense>
                 <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/inquire"
+            element={
+              <div className="App bc-chrome-hidden">
+                <React.Suspense fallback={null}>
+                  <PricingInquiryForm />
+                </React.Suspense>
               </div>
             }
           />

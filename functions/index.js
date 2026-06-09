@@ -355,3 +355,52 @@ exports.adminListBookings = adminListBookings;
 exports.adminBlockSlot = adminBlockSlot;
 exports.adminUnblockSlot = adminUnblockSlot;
 exports.adminListBlockedSlots = adminListBlockedSlots;
+
+// Pricing inquiry notification
+exports.sendPricingInquiryNotification = functions.https.onCall(async (request) => {
+  const { serviceName, tierName, price, currency, fullName, email, phone, country, businessName } = request.data || {};
+  if (!fullName || !email) {
+    throw new functions.https.HttpsError("invalid-argument", "fullName and email are required.");
+  }
+  const API_TOKEN = process.env.MAILERSEND_API_TOKEN || null;
+  if (!API_TOKEN) {
+    console.error("MailerSend API token not configured");
+    throw new functions.https.HttpsError("failed-precondition", "Email service not configured.");
+  }
+  const symbol = currency === "NGN" ? "₦" : "$";
+  const priceStr = price != null ? `${symbol}${Number(price).toLocaleString()} ${currency}` : "Not specified";
+  const recipients = [
+    { email: "info@zedrotech.com", name: "ZedroTech Admin" },
+    { email: "abubakarlawan671@gmail.com", name: "Lawan Abubakar" }
+  ];
+  const emailData = {
+    from: { email: "notifications@zedrotech.com", name: "ZedroTech Pricing" },
+    to: recipients,
+    subject: `New Pricing Inquiry: ${tierName} — ${fullName}`,
+    text: `New pricing inquiry from ${fullName} (${email}).\nPackage: ${tierName} (${serviceName})\nPrice: ${priceStr}\nPhone: ${phone || "N/A"}\nCountry: ${country || "N/A"}\nBusiness: ${businessName || "N/A"}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;padding:20px;color:#333;">
+        <h2 style="color:#6366f1;">New Pricing Inquiry</h2>
+        <table style="border-collapse:collapse;width:100%;max-width:500px;">
+          <tr><td style="padding:6px 12px;font-weight:600;">Name</td><td style="padding:6px 12px;">${fullName}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Email</td><td style="padding:6px 12px;"><a href="mailto:${email}">${email}</a></td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Phone</td><td style="padding:6px 12px;">${phone || "N/A"}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Country</td><td style="padding:6px 12px;">${country || "N/A"}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Business</td><td style="padding:6px 12px;">${businessName || "N/A"}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Package</td><td style="padding:6px 12px;">${tierName} (${serviceName})</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;">Price</td><td style="padding:6px 12px;">${priceStr}</td></tr>
+        </table>
+        <br/>
+        <a href="https://zedrotech.com/dashboard" style="background:#6366f1;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">View in Dashboard</a>
+      </div>
+    `
+  };
+  try {
+    await axios.post("https://api.mailersend.com/v1/email", emailData, {
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_TOKEN}` }
+    });
+  } catch (err) {
+    console.warn("Email failed (inquiry still saved):", err.response?.data || err.message);
+  }
+  return { success: true };
+});

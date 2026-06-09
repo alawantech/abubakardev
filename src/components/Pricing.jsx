@@ -153,7 +153,7 @@ const Pricing = () => {
                           ))}
                         </ul>
 
-                        <Link to="/#contact" className="tier-cta">
+                        <Link to={`/pricing/inquire?service=${service.id}&tier=${tier.id}`} className="tier-cta">
                           {tier.cta} <FaArrowRight size={12} />
                         </Link>
                       </div>
@@ -174,7 +174,7 @@ const Pricing = () => {
               <p>Book a free 30-minute call. We'll review your situation and recommend the right tier — even if it's not us.</p>
             </div>
             <div className="help-actions">
-              <Link to="/#contact" className="btn btn-primary">Book a free call</Link>
+              <Link to="/book" className="btn btn-primary">Book a free call</Link>
               <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer" className="btn btn-secondary"><FaWhatsapp size={13} /> Chat on WhatsApp</a>
             </div>
           </div>
