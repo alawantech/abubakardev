@@ -548,7 +548,7 @@ function ProjectStep({ form, setForm, onNext, onBack }) {
             </button>
             <button
               type="button"
-              className={`bc-yesno-btn ${!hasSoftware && form.currentSoftware === "" ? "" : !hasSoftware ? "active" : ""}`}
+              className={`bc-yesno-btn ${!hasSoftware ? "active" : ""}`}
               onClick={() => toggleSoftware(false)}
             >
               No
