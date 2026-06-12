@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaEnvelope, FaWhatsapp, FaPaperPlane, FaCheckCircle, FaClock, FaMapMarkerAlt, FaPhone, FaLinkedin, FaInstagram, FaTwitter } from 'react-icons/fa';
+import { FaEnvelope, FaWhatsapp, FaPaperPlane, FaCheckCircle, FaClock, FaMapMarkerAlt, FaLinkedin, FaInstagram, FaTwitter } from 'react-icons/fa';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import './SchoolContact.css';
@@ -60,14 +60,6 @@ const SchoolContact = () => {
       link: "https://api.whatsapp.com/send?phone=2348156853636&text=Hi,%20I%20want%20to%20enroll%20in%20a%20course.",
       color: "#10b981",
       bg: "rgba(16,185,129,0.08)"
-    },
-    {
-      icon: <FaPhone />,
-      title: "Call Us",
-      value: "+234 815 685 3636",
-      link: "tel:+2348156853636",
-      color: "#8b5cf6",
-      bg: "rgba(139,92,246,0.08)"
     },
     {
       icon: <FaMapMarkerAlt />,
