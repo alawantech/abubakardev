@@ -1,153 +1,240 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { useInView } from 'react-intersection-observer'
-import CountUp from 'react-countup'
-import { FaGraduationCap, FaChalkboardTeacher, FaUsers, FaCertificate, FaRocket, FaCode, FaMicrochip, FaGlobe } from 'react-icons/fa'
-import './About.css'
+import React, { useEffect, useRef } from 'react';
+import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import {
+  FaGraduationCap, FaChalkboardTeacher, FaUsers, FaCertificate,
+  FaRocket, FaCode, FaMicrochip, FaGlobe, FaCheck
+} from 'react-icons/fa';
+import './SchoolAbout.css';
 
 const SchoolAbout = () => {
-    const stats = [
-        { number: 500, label: "Students Trained", icon: <FaGraduationCap />, suffix: "+" },
-        { number: 1, label: "Primary Mentor", icon: <FaChalkboardTeacher />, suffix: "" },
-        { number: 850, label: "Projects Completed", icon: <FaCertificate />, suffix: "+" },
-        { number: 2000, label: "Community", icon: <FaUsers />, suffix: "+" }
-    ]
+  const heroRef = useRef(null);
+  const heroInView = useInView(heroRef, { once: true, margin: "-80px" });
+  const missionRef = useRef(null);
+  const missionInView = useInView(missionRef, { once: true, margin: "-80px" });
+  const valuesRef = useRef(null);
+  const valuesInView = useInView(valuesRef, { once: true, margin: "-80px" });
 
-    const values = [
-        {
-            title: "Project-First Approach",
-            description: "We don't just teach syntax. We teach you how to build real-world products that solve actual business problems.",
-            icon: <FaRocket />,
-            color: "#0ea5e9"
-        },
-        {
-            title: "Industry Standards",
-            description: "Learn the exact tools and workflows used by top tech companies globally, from Git to Cloud Deployment.",
-            icon: <FaCode />,
-            color: "#f59e0b"
-        },
-        {
-            title: "Future-Ready Skills",
-            description: "My curriculum is constantly updated to include emerging technologies like AI, Software Development, and Modern Web & Mobile Frameworks.",
-            icon: <FaMicrochip />,
-            color: "#10b981"
-        },
-        {
-            title: "Global Reach",
-            description: "Join a community of learners from across the globe, sharing insights and collaborating on innovative local solutions.",
-            icon: <FaGlobe />,
-            color: "#ef4444"
-        }
-    ]
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.title = "About Us | ZedroTech Academy";
+  }, []);
 
-    const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.15 })
+  const stats = [
+    { number: '500+', label: 'Students Trained', icon: <FaGraduationCap />, color: '#3b82f6' },
+    { number: '1-on-1', label: 'Direct Mentorship', icon: <FaChalkboardTeacher />, color: '#8b5cf6' },
+    { number: '850+', label: 'Projects Completed', icon: <FaCertificate />, color: '#10b981' },
+    { number: '2,000+', label: 'Community Members', icon: <FaUsers />, color: '#f59e0b' },
+  ];
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.2, delayChildren: 0.3 }
-        }
+  const values = [
+    {
+      icon: <FaRocket />,
+      title: "Project-First Approach",
+      description: "We don't just teach syntax. We teach you how to build real-world products that solve actual business problems.",
+      color: "#3b82f6"
+    },
+    {
+      icon: <FaCode />,
+      title: "Industry Standards",
+      description: "Learn the exact tools and workflows used by top tech companies globally, from Git to Cloud Deployment.",
+      color: "#8b5cf6"
+    },
+    {
+      icon: <FaMicrochip />,
+      title: "Future-Ready Skills",
+      description: "Our curriculum is constantly updated to include emerging technologies like AI, Software Development, and Modern Web & Mobile Frameworks.",
+      color: "#10b981"
+    },
+    {
+      icon: <FaGlobe />,
+      title: "Global Reach",
+      description: "Join a community of learners from across the globe, sharing insights and collaborating on innovative local solutions.",
+      color: "#f59e0b"
     }
+  ];
 
-    const itemVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] } }
-    }
+  const milestones = [
+    { year: '2022', title: 'Founded', desc: 'ZedroTech Academy launched with a vision to bridge the gap between theory and practice.' },
+    { year: '2023', title: '500+ Students', desc: 'Reached our first 500 students across Nigeria and beyond.' },
+    { year: '2024', title: 'Expanded Curriculum', desc: 'Added AI, Mobile Development, and UI/UX Design tracks.' },
+    { year: '2025', title: 'Community Growth', desc: 'Grew to 2,000+ community members with alumni in top tech companies.' },
+  ];
 
-    return (
-        <section id="about" className="about-section">
-            <div className="about-bg-elements">
-                <div className="about-blob about-blob-1"></div>
-                <div className="about-blob about-blob-2"></div>
+  return (
+    <div className="sa-page">
+      {/* Hero */}
+      <section className="sa-hero" ref={heroRef}>
+        <div className="sa-hero-bg">
+          <div className="sa-orb sa-orb-1" />
+          <div className="sa-orb sa-orb-2" />
+        </div>
+        <div className="sa-hero-content">
+          <motion.span
+            className="sa-tag"
+            initial={{ opacity: 0, y: 20 }}
+            animate={heroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            About ZedroTech Academy
+          </motion.span>
+          <motion.h1
+            className="sa-hero-title"
+            initial={{ opacity: 0, y: 40 }}
+            animate={heroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.7, delay: 0.2 }}
+          >
+            Empowering the Next{' '}
+            <span className="sa-gradient">Tech Leaders</span>
+          </motion.h1>
+          <motion.p
+            className="sa-hero-sub"
+            initial={{ opacity: 0, y: 30 }}
+            animate={heroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            We bridge the gap between academic theory and industrial practice.
+            Everyone has the potential to become a world-class engineer — with the right mentorship.
+          </motion.p>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="sa-stats">
+        <div className="sa-stats-grid">
+          {stats.map((s, i) => (
+            <motion.div
+              key={i}
+              className="sa-stat-card"
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+            >
+              <div className="sa-stat-icon" style={{ color: s.color }}>{s.icon}</div>
+              <div className="sa-stat-num" style={{ color: s.color }}>{s.number}</div>
+              <div className="sa-stat-label">{s.label}</div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Mission */}
+      <section className="sa-mission" ref={missionRef}>
+        <div className="sa-mission-grid">
+          <motion.div
+            className="sa-mission-text"
+            initial={{ opacity: 0, x: -40 }}
+            animate={missionInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7 }}
+          >
+            <span className="sa-tag">Our Mission</span>
+            <h2>Learning That Actually Works</h2>
+            <p>
+              ZedroTech Academy was founded with a single goal: to bridge the gap between
+              academic theory and industrial practice. We believe that everyone has the
+              potential to become a world-class engineer if given the right mentorship and projects.
+            </p>
+            <p>
+              We provide a direct, hands-on learning experience that focuses on building.
+              Our method skips the fluff and dives straight into the core concepts and
+              technologies that drive the modern digital economy.
+            </p>
+            <div className="sa-mission-checks">
+              <span><FaCheck /> No theory-only classrooms</span>
+              <span><FaCheck /> Real-world projects from day one</span>
+              <span><FaCheck /> 1-on-1 mentorship throughout</span>
+              <span><FaCheck /> Career support after graduation</span>
             </div>
-
-            <div className="container">
-                <motion.div
-                    className="about-grid"
-                    ref={ref}
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate={inView ? "visible" : "hidden"}
-                >
-                    <motion.div className="about-text-content" variants={itemVariants}>
-                        <span className="overline" style={{ color: '#60a5fa', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px', display: 'block' }}>Our Mission</span>
-                        <h2 className="section-title">Empowering the Next <span className="highlight">Tech Leaders</span></h2>
-                        <div className="about-description">
-                            <p>
-                                ZedroTech Academy was founded with a single goal: to bridge the gap between academic theory and industrial practice. We believe that everyone has the potential to become a world-class engineer if given the right mentorship and projects.
-                            </p>
-                            <p>
-                                I provide a direct, hands-on learning experience that focuses on building. My method skips the fluff and dives straight into the core concepts and technologies that drive the modern digital economy.
-                            </p>
-                        </div>
-
-                        <div className="about-stats-grid">
-                            {stats.map((stat, index) => (
-                                <div key={index} className="about-stat-card">
-                                    <div className="stat-icon">{stat.icon}</div>
-                                    <div className="stat-info">
-                                        <h4 className="stat-val">
-                                            <CountUp end={stat.number} duration={2.5} start={inView ? 0 : null} />
-                                            {stat.suffix}
-                                        </h4>
-                                        <span className="stat-name">{stat.label}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                    <motion.div className="about-visual-content" variants={itemVariants}>
-                        <div className="image-stack">
-                            <div className="main-image-wrapper">
-                                <img
-                                    src="https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg"
-                                    alt="Academy Mentorship"
-                                    className="about-main-img"
-                                />
-                            </div>
-                            <motion.div
-                                className="floating-experience-card"
-                                animate={{ y: [0, -15, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                                <div className="exp-icon"><FaRocket /></div>
-                                <div className="exp-text">
-                                    <h5>Practical</h5>
-                                    <span>Career Focused</span>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </motion.div>
-                </motion.div>
-
-                <motion.div
-                    className="values-section"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={inView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.8, delay: 0.6 }}
-                >
-                    <h3 className="values-header">Why Learn at <span className="highlight">ZedroTech Academy</span></h3>
-                    <div className="values-grid">
-                        {values.map((value, index) => (
-                            <motion.div
-                                key={index}
-                                className="value-card-premium"
-                                whileHover={{ y: -10 }}
-                            >
-                                <div className="value-icon-wrapper" style={{ backgroundColor: `${value.color}20`, color: value.color }}>
-                                    {value.icon}
-                                </div>
-                                <h4 className="value-card-title">{value.title}</h4>
-                                <p className="value-card-desc">{value.description}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </motion.div>
+          </motion.div>
+          <motion.div
+            className="sa-mission-visual"
+            initial={{ opacity: 0, x: 40 }}
+            animate={missionInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7, delay: 0.2 }}
+          >
+            <div className="sa-mission-img-wrap">
+              <img
+                src="https://images.pexels.com/photos/1181263/pexels-photo-1181263.jpeg"
+                alt="Mentorship at ZedroTech Academy"
+                className="sa-mission-img"
+              />
             </div>
-        </section>
-    )
-}
+            <div className="sa-floating-card">
+              <FaRocket className="sa-fc-icon" />
+              <div>
+                <strong>Practical</strong>
+                <span>Career Focused</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-export default SchoolAbout
+      {/* Values */}
+      <section className="sa-values" ref={valuesRef}>
+        <motion.div
+          className="sa-section-header"
+          initial={{ opacity: 0, y: 40 }}
+          animate={valuesInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="sa-tag">Our Values</span>
+          <h2>Why Learn at ZedroTech Academy</h2>
+          <p>We focus on what matters — building skills that get you hired.</p>
+        </motion.div>
+        <div className="sa-values-grid">
+          {values.map((v, i) => (
+            <motion.div
+              key={i}
+              className="sa-value-card"
+              initial={{ opacity: 0, y: 40 }}
+              animate={valuesInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
+              whileHover={{ y: -6 }}
+            >
+              <div className="sa-value-icon" style={{ color: v.color, background: `${v.color}12` }}>
+                {v.icon}
+              </div>
+              <h3>{v.title}</h3>
+              <p>{v.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Timeline */}
+      <section className="sa-timeline">
+        <motion.div
+          className="sa-section-header"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="sa-tag">Our Journey</span>
+          <h2>From Zero to Impact</h2>
+        </motion.div>
+        <div className="sa-timeline-list">
+          {milestones.map((m, i) => (
+            <motion.div
+              key={i}
+              className="sa-timeline-item"
+              initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+            >
+              <div className="sa-timeline-dot" />
+              <div className="sa-timeline-content">
+                <span className="sa-timeline-year">{m.year}</span>
+                <h3>{m.title}</h3>
+                <p>{m.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default SchoolAbout;

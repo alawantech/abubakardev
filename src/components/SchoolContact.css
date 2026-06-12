@@ -1,0 +1,368 @@
+.sc-page {
+  background: #020617;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Hero ── */
+.sc-hero {
+  position: relative;
+  padding: 160px 40px 80px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.sc-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.sc-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.2;
+}
+
+.sc-orb-1 {
+  width: 400px;
+  height: 400px;
+  background: #10b981;
+  top: 0;
+  left: 20%;
+}
+
+.sc-orb-2 {
+  width: 350px;
+  height: 350px;
+  background: #3b82f6;
+  bottom: 0;
+  right: 15%;
+}
+
+.sc-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.sc-tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+.sc-hero-title {
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+
+.sc-gradient {
+  background: linear-gradient(135deg, #34d399, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sc-hero-sub {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ── Methods ── */
+.sc-methods {
+  padding: 0 40px 80px;
+}
+
+.sc-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.sc-method-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: #fff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.sc-method-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.sc-method-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sc-method-card div strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #f1f5f9;
+}
+
+.sc-method-card div span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.sc-method-arrow {
+  margin-left: auto;
+  color: #475569;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.sc-method-card:hover .sc-method-arrow {
+  color: #3b82f6;
+}
+
+/* ── Form Section ── */
+.sc-form-section {
+  padding: 80px 40px 100px;
+}
+
+.sc-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ── Info Side ── */
+.sc-info h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.sc-info > p {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.sc-info-features {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-info-feature {
+  display: flex;
+  gap: 16px;
+  align-items: start;
+}
+
+.sc-info-num {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sc-info-feature strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.sc-info-feature span {
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* ── Form Card ── */
+.sc-form-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 32px;
+}
+
+.sc-form-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.sc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sc-field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sc-field input,
+.sc-field textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: #f1f5f9;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  resize: vertical;
+}
+
+.sc-field input:focus,
+.sc-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.sc-field input::placeholder,
+.sc-field textarea::placeholder {
+  color: #475569;
+}
+
+.sc-submit {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.3s;
+}
+
+.sc-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sc-submit-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: scSpin 0.7s linear infinite;
+}
+
+@keyframes scSpin {
+  to { transform: rotate(360deg); }
+}
+
+.sc-success {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sc-hero {
+    padding: 130px 20px 60px;
+  }
+
+  .sc-methods {
+    padding: 0 20px 60px;
+  }
+
+  .sc-methods-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sc-form-section {
+    padding: 60px 20px 80px;
+  }
+
+  .sc-form-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .sc-form-card {
+    padding: 24px;
+  }
+
+  .sc-form-row {
+    grid-template-columns: 1fr;
+  }
+}

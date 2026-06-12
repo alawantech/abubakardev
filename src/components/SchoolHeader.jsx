@@ -43,7 +43,7 @@ const SchoolHeader = () => {
     ]
 
     return (
-        <header className={`header ${isScrolled ? 'scrolled' : 'transparent'}`}>
+        <header className={`header school-header ${isScrolled ? 'scrolled' : 'transparent'}`}>
             <div className="header-container">
                 <div className="header-left">
                     <Link to="/" className="logo-link" onClick={() => setIsMobileMenuOpen(false)}>

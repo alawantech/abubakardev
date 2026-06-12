@@ -430,3 +430,38 @@
   color: white;
   box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
 }
+
+/* ── School Header Mobile Overrides ── */
+@media (max-width: 768px) {
+  .school-header .header-logo {
+    height: 22px;
+    padding: 2px 3px;
+  }
+
+  .school-header .courses-button {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    gap: 5px;
+  }
+
+  .school-header .courses-button span {
+    display: none;
+  }
+
+  .school-header .header-right {
+    gap: 6px;
+  }
+
+  .school-header .login-pill {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .school-header .login-pill span {
+    display: none;
+  }
+
+  .school-header .mobile-toggle {
+    font-size: 1.2rem;
+  }
+}
