@@ -14,7 +14,10 @@
 }
 
 .wa-float {
-    position: relative;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2147483646;
     pointer-events: auto;
     display: flex;
     align-items: center;
@@ -167,16 +170,11 @@
 }
 
 @media (max-width: 600px) {
-    .wa-float-wrap {
+    .wa-float {
         bottom: 18px;
         right: 18px;
-        gap: 8px;
+        width: 56px;
+        height: 56px;
     }
-    .wa-float { width: 56px; height: 56px; }
     .wa-float-icon { width: 27px; height: 27px; }
-    .wa-float-tooltip {
-        min-width: 200px;
-        max-width: 220px;
-        padding: 12px 14px 10px;
-    }
 }

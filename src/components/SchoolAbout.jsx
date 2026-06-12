@@ -1,19 +1,14 @@
-import React, { useEffect, useRef } from 'react';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   FaGraduationCap, FaChalkboardTeacher, FaUsers, FaCertificate,
-  FaRocket, FaCode, FaMicrochip, FaGlobe, FaCheck
+  FaRocket, FaCode, FaMicrochip, FaGlobe, FaCheck, FaStar, FaHandshake, FaLightbulb
 } from 'react-icons/fa';
 import './SchoolAbout.css';
 
-const SchoolAbout = () => {
-  const heroRef = useRef(null);
-  const heroInView = useInView(heroRef, { once: true, margin: "-80px" });
-  const missionRef = useRef(null);
-  const missionInView = useInView(missionRef, { once: true, margin: "-80px" });
-  const valuesRef = useRef(null);
-  const valuesInView = useInView(valuesRef, { once: true, margin: "-80px" });
+const EASE = [0.22, 1, 0.36, 1];
 
+const SchoolAbout = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     document.title = "About Us | ZedroTech Academy";
@@ -50,6 +45,18 @@ const SchoolAbout = () => {
       title: "Global Reach",
       description: "Join a community of learners from across the globe, sharing insights and collaborating on innovative local solutions.",
       color: "#f59e0b"
+    },
+    {
+      icon: <FaHandshake />,
+      title: "Real Mentorship",
+      description: "Every student gets direct 1-on-1 sessions with experienced engineers who've built products at scale.",
+      color: "#ec4899"
+    },
+    {
+      icon: <FaLightbulb />,
+      title: "Innovation Mindset",
+      description: "We teach you to think like a founder — spotting problems, prototyping fast, and shipping solutions that matter.",
+      color: "#06b6d4"
     }
   ];
 
@@ -63,25 +70,29 @@ const SchoolAbout = () => {
   return (
     <div className="sa-page">
       {/* Hero */}
-      <section className="sa-hero" ref={heroRef}>
+      <section className="sa-hero">
         <div className="sa-hero-bg">
+          <div className="sa-grid-pattern" />
           <div className="sa-orb sa-orb-1" />
           <div className="sa-orb sa-orb-2" />
+          <div className="sa-orb sa-orb-3" />
         </div>
         <div className="sa-hero-content">
           <motion.span
             className="sa-tag"
             initial={{ opacity: 0, y: 20 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
           >
             About ZedroTech Academy
           </motion.span>
           <motion.h1
             className="sa-hero-title"
             initial={{ opacity: 0, y: 40 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
           >
             Empowering the Next{' '}
             <span className="sa-gradient">Tech Leaders</span>
@@ -89,12 +100,23 @@ const SchoolAbout = () => {
           <motion.p
             className="sa-hero-sub"
             initial={{ opacity: 0, y: 30 }}
-            animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.35, ease: EASE }}
           >
             We bridge the gap between academic theory and industrial practice.
             Everyone has the potential to become a world-class engineer — with the right mentorship.
           </motion.p>
+          <motion.div
+            className="sa-hero-cta"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.5, ease: EASE }}
+          >
+            <a href="/courses" className="sa-btn sa-btn-primary">Explore Courses</a>
+            <a href="/contact" className="sa-btn sa-btn-ghost">Talk to Us</a>
+          </motion.div>
         </div>
       </section>
 
@@ -106,10 +128,11 @@ const SchoolAbout = () => {
               key={i}
               className="sa-stat-card"
               initial={{ opacity: 0, y: 30 }}
-              animate={heroInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}
             >
-              <div className="sa-stat-icon" style={{ color: s.color }}>{s.icon}</div>
+              <div className="sa-stat-icon" style={{ color: s.color, background: `${s.color}15` }}>{s.icon}</div>
               <div className="sa-stat-num" style={{ color: s.color }}>{s.number}</div>
               <div className="sa-stat-label">{s.label}</div>
             </motion.div>
@@ -118,13 +141,14 @@ const SchoolAbout = () => {
       </section>
 
       {/* Mission */}
-      <section className="sa-mission" ref={missionRef}>
+      <section className="sa-mission">
         <div className="sa-mission-grid">
           <motion.div
             className="sa-mission-text"
             initial={{ opacity: 0, x: -40 }}
-            animate={missionInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, ease: EASE }}
           >
             <span className="sa-tag">Our Mission</span>
             <h2>Learning That Actually Works</h2>
@@ -148,8 +172,9 @@ const SchoolAbout = () => {
           <motion.div
             className="sa-mission-visual"
             initial={{ opacity: 0, x: 40 }}
-            animate={missionInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
           >
             <div className="sa-mission-img-wrap">
               <img
@@ -157,12 +182,20 @@ const SchoolAbout = () => {
                 alt="Mentorship at ZedroTech Academy"
                 className="sa-mission-img"
               />
+              <div className="sa-mission-img-overlay" />
             </div>
-            <div className="sa-floating-card">
-              <FaRocket className="sa-fc-icon" />
+            <div className="sa-floating-card sa-fc-1">
+              <FaStar className="sa-fc-icon" style={{ color: '#f59e0b' }} />
               <div>
-                <strong>Practical</strong>
-                <span>Career Focused</span>
+                <strong>4.9/5 Rating</strong>
+                <span>From 200+ students</span>
+              </div>
+            </div>
+            <div className="sa-floating-card sa-fc-2">
+              <FaRocket className="sa-fc-icon" style={{ color: '#3b82f6' }} />
+              <div>
+                <strong>Practical & Focused</strong>
+                <span>Career-oriented training</span>
               </div>
             </div>
           </motion.div>
@@ -170,15 +203,16 @@ const SchoolAbout = () => {
       </section>
 
       {/* Values */}
-      <section className="sa-values" ref={valuesRef}>
+      <section className="sa-values">
         <motion.div
           className="sa-section-header"
           initial={{ opacity: 0, y: 40 }}
-          animate={valuesInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: EASE }}
         >
-          <span className="sa-tag">Our Values</span>
-          <h2>Why Learn at ZedroTech Academy</h2>
+          <span className="sa-tag">Why Choose Us</span>
+          <h2>Built for Real-World Success</h2>
           <p>We focus on what matters — building skills that get you hired.</p>
         </motion.div>
         <div className="sa-values-grid">
@@ -187,11 +221,12 @@ const SchoolAbout = () => {
               key={i}
               className="sa-value-card"
               initial={{ opacity: 0, y: 40 }}
-              animate={valuesInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.15 + i * 0.1 }}
-              whileHover={{ y: -6 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: EASE }}
+              whileHover={{ y: -6, transition: { duration: 0.25 } }}
             >
-              <div className="sa-value-icon" style={{ color: v.color, background: `${v.color}12` }}>
+              <div className="sa-value-icon" style={{ color: v.color, background: `${v.color}15` }}>
                 {v.icon}
               </div>
               <h3>{v.title}</h3>
@@ -208,7 +243,7 @@ const SchoolAbout = () => {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, ease: EASE }}
         >
           <span className="sa-tag">Our Journey</span>
           <h2>From Zero to Impact</h2>
@@ -221,7 +256,7 @@ const SchoolAbout = () => {
               initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
+              transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}
             >
               <div className="sa-timeline-dot" />
               <div className="sa-timeline-content">
@@ -232,6 +267,24 @@ const SchoolAbout = () => {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* CTA */}
+      <section className="sa-cta">
+        <motion.div
+          className="sa-cta-inner"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: EASE }}
+        >
+          <h2>Ready to Start Your Tech Journey?</h2>
+          <p>Join hundreds of students already building their future with ZedroTech Academy.</p>
+          <div className="sa-cta-btns">
+            <a href="/courses" className="sa-btn sa-btn-primary">Browse Courses</a>
+            <a href="/contact" className="sa-btn sa-btn-outline">Contact Us</a>
+          </div>
+        </motion.div>
       </section>
     </div>
   );
