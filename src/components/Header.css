@@ -439,13 +439,9 @@
   }
 
   .school-header .courses-button {
-    padding: 6px 10px;
+    padding: 6px 12px;
     font-size: 0.78rem;
     gap: 5px;
-  }
-
-  .school-header .courses-button span {
-    display: none;
   }
 
   .school-header .header-right {
