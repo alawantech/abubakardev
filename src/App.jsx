@@ -15,6 +15,7 @@ import SchoolFooter from './components/SchoolFooter';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Courses from './components/Courses';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
 
 // Lazy load page content
 const Contact = React.lazy(() => import('./components/Contact'));
@@ -24,7 +25,6 @@ const SchoolAbout = React.lazy(() => import('./components/SchoolAbout'));
 const SchoolLanding = React.lazy(() => import('./components/SchoolLanding'));
 const Links = React.lazy(() => import('./components/Links'));
 const Chatbot = React.lazy(() => import('./components/chatbot/Chatbot'));
-const FloatingWhatsApp = React.lazy(() => import('./components/FloatingWhatsApp'));
 const Hero = React.lazy(() => import('./components/Hero'));
 const Services = React.lazy(() => import('./components/Services'));
 const AIAutomation = React.lazy(() => import('./components/AIAutomation'));
@@ -84,11 +84,7 @@ function PrefetchLink({ to, children, className, onClick }) {
 function RouteAwareFloatingWhatsApp() {
   const { pathname } = useLocation();
   if (pathname === '/book') return null;
-  return (
-    <React.Suspense fallback={null}>
-      <FloatingWhatsApp />
-    </React.Suspense>
-  );
+  return <FloatingWhatsApp />;
 }
 
 function App() {
