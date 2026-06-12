@@ -11,6 +11,10 @@ import Footer from './components/Footer';
 import SchoolHeader from './components/SchoolHeader';
 import SchoolFooter from './components/SchoolFooter';
 
+// Eager-load school-critical components (prevents blank page on navigation)
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+
 // Lazy load page content
 const Contact = React.lazy(() => import('./components/Contact'));
 const SchoolContact = React.lazy(() => import('./components/SchoolContact'));
@@ -38,11 +42,9 @@ const CourseLearning = React.lazy(() => import('./components/CourseLearning'));
 const CourseSignUp = React.lazy(() => import('./components/CourseSignUp'));
 const CoursePayment = React.lazy(() => import('./components/CoursePayment'));
 const CourseDashboard = React.lazy(() => import('./components/CourseDashboard'));
-const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const RenewPayment = React.lazy(() => import('./components/RenewPayment'));
 const Pricing = React.lazy(() => import('./components/Pricing'));
 const PricingInquiryForm = React.lazy(() => import('./pages/PricingInquiryForm'));
-const Login = React.lazy(() => import('./components/Login'));
 const Register = React.lazy(() => import('./components/Register'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const ExtendSubscription = React.lazy(() => import('./components/ExtendSubscription'));
@@ -62,7 +64,6 @@ function PrefetchLink({ to, children, className, onClick }) {
   const handleMouseEnter = () => {
     const routeMap = {
       '/pricing': () => import('./components/Pricing'),
-      '/login': () => import('./components/Login'),
       '/register': () => import('./components/Register'),
       '/contact': () => import('./components/Contact'),
       '/about': () => import('./components/About'),
@@ -70,6 +71,7 @@ function PrefetchLink({ to, children, className, onClick }) {
       '/services': () => import('./components/Services'),
       '/book': () => import('./pages/BookCall'),
       '/courses': () => import('./components/Courses'),
+      '/login': () => import('./components/Login'),
     };
     if (routeMap[to]) prefetch(routeMap[to]);
   };
@@ -99,13 +101,15 @@ function App() {
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      prefetch(() => import('./components/Login'));
-      prefetch(() => import('./components/Pricing'));
       if (isSchool) {
-        prefetch(() => import('./components/Dashboard'));
         prefetch(() => import('./components/Courses'));
+        prefetch(() => import('./components/CoursePage'));
+        prefetch(() => import('./components/CourseLearning'));
+        prefetch(() => import('./components/CourseSignUp'));
+        prefetch(() => import('./components/CoursePayment'));
+        prefetch(() => import('./components/CourseDashboard'));
       }
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [isSchool]);
 
@@ -320,9 +324,10 @@ function App() {
             }
           />
           <Route path="/login" element={
-            <React.Suspense fallback={null}>
+            <div className="App">
+              <NavHeader />
               <Login />
-            </React.Suspense>
+            </div>
           } />
           <Route
             path="/book"
@@ -371,9 +376,7 @@ function App() {
                 <div className="App">
                   <div className="course-content">
                     <NavHeader />
-                    <React.Suspense fallback={null}>
-                      <Dashboard />
-                    </React.Suspense>
+                    <Dashboard />
                   </div>
                 </div>
               </SchoolRoute>
