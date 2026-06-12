@@ -1,13 +1,12 @@
-import React, { useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import {
   FaGraduationCap, FaChalkboardTeacher, FaUsers, FaCertificate,
   FaWhatsapp, FaRocket, FaCode, FaBriefcase, FaArrowRight,
   FaPlay, FaStar, FaCheck, FaLaptopCode, FaHandshake, FaGlobe
 } from 'react-icons/fa';
+import Courses from './Courses';
 import './SchoolLanding.css';
-
-const Courses = lazy(() => import('./Courses'));
 
 const useScrollReveal = (margin = "-80px") => {
   const ref = useRef(null);
@@ -341,9 +340,7 @@ const SchoolLanding = () => {
           <h2>Popular Learning Paths</h2>
           <p>Carefully curated paths to take you from Zero to Hero.</p>
         </motion.div>
-        <Suspense fallback={<div className="sl-loading">Loading courses…</div>}>
-          <Courses />
-        </Suspense>
+        <Courses />
       </section>
 
       {/* ── CTA ── */}

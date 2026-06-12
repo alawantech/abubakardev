@@ -14,6 +14,7 @@ import SchoolFooter from './components/SchoolFooter';
 // Eager-load school-critical components (prevents blank page on navigation)
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Courses from './components/Courses';
 
 // Lazy load page content
 const Contact = React.lazy(() => import('./components/Contact'));
@@ -36,7 +37,6 @@ const BookCall = React.lazy(() => import('./pages/BookCall'));
 const TermsAndConditions = React.lazy(() => import('./pages/TermsAndConditions'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 
-const Courses = React.lazy(() => import('./components/Courses'));
 const CoursePage = React.lazy(() => import('./components/CoursePage'));
 const CourseLearning = React.lazy(() => import('./components/CourseLearning'));
 const CourseSignUp = React.lazy(() => import('./components/CourseSignUp'));
@@ -70,7 +70,6 @@ function PrefetchLink({ to, children, className, onClick }) {
       '/portfolio': () => import('./components/Portfolio'),
       '/services': () => import('./components/Services'),
       '/book': () => import('./pages/BookCall'),
-      '/courses': () => import('./components/Courses'),
       '/login': () => import('./components/Login'),
     };
     if (routeMap[to]) prefetch(routeMap[to]);
@@ -102,7 +101,6 @@ function App() {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (isSchool) {
-        prefetch(() => import('./components/Courses'));
         prefetch(() => import('./components/CoursePage'));
         prefetch(() => import('./components/CourseLearning'));
         prefetch(() => import('./components/CourseSignUp'));
@@ -202,9 +200,7 @@ function App() {
                 <div className="App">
                   <div className="course-content">
                     <NavHeader />
-                    <React.Suspense fallback={null}>
-                      <Courses />
-                    </React.Suspense>
+                    <Courses />
                   </div>
                   <NavFooter />
                 </div>
