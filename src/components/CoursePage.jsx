@@ -101,11 +101,20 @@ const CoursePage = () => {
 
   // Choose display price according to admin settings (monthly/yearly/one-time)
   const getDisplayedPrice = () => {
-    if (course.displayPricing === "monthly" && course.pricing?.monthly)
-      return course.pricing.monthly;
-    if (course.displayPricing === "yearly" && course.pricing?.yearly)
-      return course.pricing.yearly;
-    return course.price || 49000;
+    const pricing = course.pricing || {};
+    const display = course.displayPricing;
+
+    // Try the selected display pricing first
+    if (display === "monthly" && pricing.monthly) return pricing.monthly;
+    if (display === "yearly" && pricing.yearly) return pricing.yearly;
+    if (display === "one-time" && course.price) return course.price;
+
+    // Fallback: try whichever price is available
+    if (pricing.yearly) return pricing.yearly;
+    if (pricing.monthly) return pricing.monthly;
+    if (course.price) return course.price;
+
+    return 49000;
   };
 
   const containerVariants = {

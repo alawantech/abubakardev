@@ -640,15 +640,14 @@ const CourseManagement = () => {
                       <input
                         type="text"
                         value={courseData.pricing.monthly}
-                        onChange={(e) =>
-                          setCourseData({
-                            ...courseData,
-                            pricing: {
-                              ...courseData.pricing,
-                              monthly: e.target.value,
-                            },
-                          })
-                        }
+                        onChange={(e) => {
+                          const newPricing = { ...courseData.pricing, monthly: e.target.value };
+                          const updates = { ...courseData, pricing: newPricing };
+                          if (!e.target.value && courseData.displayPricing === "monthly") {
+                            updates.displayPricing = newPricing.yearly ? "yearly" : courseData.price ? "one-time" : "yearly";
+                          }
+                          setCourseData(updates);
+                        }}
                         placeholder="e.g., 9500"
                         pattern="[0-9]*"
                       />
@@ -663,15 +662,14 @@ const CourseManagement = () => {
                       <input
                         type="text"
                         value={courseData.pricing.yearly}
-                        onChange={(e) =>
-                          setCourseData({
-                            ...courseData,
-                            pricing: {
-                              ...courseData.pricing,
-                              yearly: e.target.value,
-                            },
-                          })
-                        }
+                        onChange={(e) => {
+                          const newPricing = { ...courseData.pricing, yearly: e.target.value };
+                          const updates = { ...courseData, pricing: newPricing };
+                          if (!e.target.value && courseData.displayPricing === "yearly") {
+                            updates.displayPricing = newPricing.monthly ? "monthly" : courseData.price ? "one-time" : "monthly";
+                          }
+                          setCourseData(updates);
+                        }}
                         placeholder="e.g., 57000"
                         pattern="[0-9]*"
                       />
@@ -685,12 +683,13 @@ const CourseManagement = () => {
                       <input
                         type="text"
                         value={courseData.price}
-                        onChange={(e) =>
-                          setCourseData({
-                            ...courseData,
-                            price: e.target.value,
-                          })
-                        }
+                        onChange={(e) => {
+                          const updates = { ...courseData, price: e.target.value };
+                          if (!e.target.value && courseData.displayPricing === "one-time") {
+                            updates.displayPricing = courseData.pricing.yearly ? "yearly" : courseData.pricing.monthly ? "monthly" : "yearly";
+                          }
+                          setCourseData(updates);
+                        }}
                         placeholder="Optional: one-time access price"
                         pattern="[0-9]*"
                       />
@@ -711,13 +710,22 @@ const CourseManagement = () => {
                           })
                         }
                       >
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                        <option value="one-time">One-time</option>
+                        {courseData.pricing.monthly && (
+                          <option value="monthly">Monthly</option>
+                        )}
+                        {courseData.pricing.yearly && (
+                          <option value="yearly">Yearly</option>
+                        )}
+                        {courseData.price && (
+                          <option value="one-time">One-time</option>
+                        )}
+                        {!courseData.pricing.monthly && !courseData.pricing.yearly && !courseData.price && (
+                          <option value="yearly">Yearly (set a price first)</option>
+                        )}
                       </select>
                       <small className="field-hint">
                         Choose which price will be prominently shown to students
-                        on the course page.
+                        on the course page. Only available options are shown.
                       </small>
                     </div>
                   </>
