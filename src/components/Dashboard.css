@@ -977,6 +977,7 @@
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
+  color: #1f2937; /* force dark text */
 }
 
 .bank-details-box h3,
@@ -1009,9 +1010,26 @@
 }
 
 .bank-item span {
-  color: #1f2937;
+  color: #1f2937 !important;
   font-size: 15px;
   font-weight: 600;
+}
+
+/* Ensure bank details are visible inside blocked screen (which has white text) */
+.blocked-screen .bank-details-box {
+  color: #1f2937;
+}
+
+.blocked-screen .bank-item label {
+  color: #6b7280 !important;
+}
+
+.blocked-screen .bank-item span {
+  color: #1f2937 !important;
+}
+
+.blocked-screen .upload-receipt-box {
+  color: #1f2937;
 }
 
 .upload-area {
