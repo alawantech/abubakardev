@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from '../utils/subscription';
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
 
@@ -9,6 +10,9 @@ const StudentManagement = () => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPlanType, setFilterPlanType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [extendModal, setExtendModal] = useState({
     isOpen: false,
     enrollment: null,
@@ -332,6 +336,23 @@ const StudentManagement = () => {
     }
   };
 
+  const handleRestrictToggle = async (enrollment) => {
+    const newBlocked = !enrollment.blocked;
+    const action = newBlocked ? 'restrict' : 'grant access to';
+    if (!window.confirm(`Are you sure you want to ${action} ${enrollment.user.fullName}?`)) return;
+
+    try {
+      await restrictEnrollment(enrollment.id, newBlocked);
+
+      setEnrollments(prev => prev.map(e =>
+        e.id === enrollment.id ? { ...e, blocked: newBlocked } : e
+      ));
+    } catch (error) {
+      console.error('Error toggling restrict:', error);
+      alert('Failed to update access. Please try again.');
+    }
+  };
+
   const handleExtendSubscription = async () => {
     if (!extendModal.enrollment || extendModal.months < 1) return;
 
@@ -505,6 +526,32 @@ const StudentManagement = () => {
 
       {selectedCourse && (
         <div className="enrollments-list">
+          {/* Search & Filters */}
+          <div className="student-search-filters">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="filter-pills">
+              <select value={filterPlanType} onChange={(e) => setFilterPlanType(e.target.value)}>
+                <option value="">All Plans</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="onetime">One-Time</option>
+              </select>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="expiring">Expiring Soon (≤2 days)</option>
+                <option value="expired">Expired</option>
+                <option value="pending">Pending Payment</option>
+              </select>
+            </div>
+          </div>
           {/* Pending Approvals Section */}
           {(() => {
             const initialPayments = pendingPayments.filter(p => !p.type || p.type === 'initial' || p.isRenewal === false);
@@ -583,113 +630,168 @@ const StudentManagement = () => {
             <h3>Enrolled Students ({enrollments.length})</h3>
           </div>
 
-          {enrollments.length === 0 ? (
-            <div className="no-enrollments-card">
-              <span className="icon">📂</span>
-              <p>No students enrolled in this course yet.</p>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table View */}
-              <div className="table-container desktop-only">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Student</th>
-                      <th>Contact</th>
-                      <th>Plan Info</th>
-                      <th>Dates</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {enrollments.map(enrollment => {
-                      const plan = enrollment.planType ? enrollment.planType.toUpperCase() : 'FREE';
-                      return (
-                        <tr key={enrollment.id}>
-                          <td>
-                            <div className="student-info">
-                              <span className="name">{enrollment.user.fullName}</span>
-                              <span className="email">{enrollment.user.email}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="whatsapp-badge">
-                              {enrollment.user.whatsappNumber}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`plan-tag ${enrollment.planType}`}>
-                              {plan}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="date-stack">
-                              <span className="date-item"><strong>In:</strong> {formatDate(enrollment.enrollmentDate)}</span>
-                              <span className="date-item"><strong>Due:</strong> {formatDate(enrollment.dueDate)}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
-                              <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
-                              <div className="block-toggle">
-                                <input
-                                  type="checkbox"
-                                  checked={enrollment.blocked}
-                                  onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
-                                />
-                                <span>Block</span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+          {(() => {
+            const filteredEnrollments = enrollments.filter(e => {
+              const matchesSearch = !searchQuery || [
+                e.user.fullName,
+                e.user.email,
+                e.user.whatsappNumber
+              ].some(v => v?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-              {/* Mobile Card View */}
-              <div className="mobile-only student-cards">
-                {enrollments.map(enrollment => (
-                  <div key={enrollment.id} className="student-mobile-card">
-                    <div className="card-header">
-                      <div className="student-primary">
-                        <h4>{enrollment.user.fullName}</h4>
-                        <p>{enrollment.user.email}</p>
+              const matchesPlan = !filterPlanType || e.planType === filterPlanType;
+
+              let matchesStatus = true;
+              if (filterStatus) {
+                const { expired, daysRemaining } = checkEnrollmentExpiry(e);
+                if (filterStatus === 'expired') matchesStatus = expired || e.blocked;
+                else if (filterStatus === 'expiring') matchesStatus = !expired && daysRemaining !== null && daysRemaining <= 2;
+                else if (filterStatus === 'active') matchesStatus = !expired && !e.blocked && (!daysRemaining || daysRemaining > 2);
+                else if (filterStatus === 'pending') matchesStatus = e.paymentStatus === 'pending' || e.paymentStatus === 'receipt_required' || e.paymentStatus === 'receipt_pending_upload';
+              }
+
+              return matchesSearch && matchesPlan && matchesStatus;
+            });
+
+            if (filteredEnrollments.length === 0) {
+              return (
+                <div className="no-enrollments-card">
+                  <span className="icon">📂</span>
+                  <p>{enrollments.length === 0 ? 'No students enrolled in this course yet.' : 'No students match your filters.'}</p>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {/* Desktop Table View */}
+                <div className="table-container desktop-only">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Contact</th>
+                        <th>Plan Info</th>
+                        <th>Status</th>
+                        <th>Dates</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEnrollments.map(enrollment => {
+                        const plan = enrollment.planType ? enrollment.planType.toUpperCase() : 'FREE';
+                        const subStatus = getSubscriptionStatus(enrollment);
+                        return (
+                          <tr key={enrollment.id}>
+                            <td>
+                              <div className="student-info">
+                                <span className="name">{enrollment.user.fullName}</span>
+                                <span className="email">{enrollment.user.email}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="whatsapp-badge">
+                                {enrollment.user.whatsappNumber}
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`plan-tag ${enrollment.planType}`}>
+                                {plan}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="status-badge" style={{ backgroundColor: subStatus.color + '20', color: subStatus.color, border: `1px solid ${subStatus.color}40` }}>
+                                {subStatus.label}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="date-stack">
+                                <span className="date-item"><strong>In:</strong> {formatDate(enrollment.enrollmentDate)}</span>
+                                <span className="date-item"><strong>Due:</strong> {formatDate(enrollment.dueDate)}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="action-buttons">
+                                <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
+                                <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
+                                <button
+                                  className={enrollment.blocked ? 'restrict-btn restricted' : 'restrict-btn'}
+                                  onClick={() => handleRestrictToggle(enrollment)}
+                                  title={enrollment.blocked ? 'Grant Access' : 'Restrict'}
+                                >
+                                  {enrollment.blocked ? '🔓' : '🔒'}
+                                </button>
+                                <div className="block-toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={enrollment.blocked}
+                                    onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
+                                  />
+                                  <span>Block</span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="mobile-only student-cards">
+                  {filteredEnrollments.map(enrollment => {
+                    const subStatus = getSubscriptionStatus(enrollment);
+                    return (
+                      <div key={enrollment.id} className="student-mobile-card">
+                        <div className="card-header">
+                          <div className="student-primary">
+                            <h4>{enrollment.user.fullName}</h4>
+                            <p>{enrollment.user.email}</p>
+                          </div>
+                          <div className="card-tags">
+                            <span className={`plan-tag ${enrollment.planType}`}>
+                              {enrollment.planType?.toUpperCase()}
+                            </span>
+                            <span className="status-badge" style={{ backgroundColor: subStatus.color + '20', color: subStatus.color }}>
+                              {subStatus.label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="card-body">
+                          <div className="info-row">
+                            <span>WhatsApp:</span>
+                            <strong>{enrollment.user.whatsappNumber}</strong>
+                          </div>
+                          <div className="info-row">
+                            <span>Due Date:</span>
+                            <strong>{formatDate(enrollment.dueDate)}</strong>
+                          </div>
+                        </div>
+                        <div className="card-actions">
+                          <button onClick={() => openPaymentHistory(enrollment)}>History</button>
+                          <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
+                          <button
+                            className={enrollment.blocked ? 'restrict-btn restricted' : 'restrict-btn'}
+                            onClick={() => handleRestrictToggle(enrollment)}
+                          >
+                            {enrollment.blocked ? '🔓 Grant' : '🔒 Restrict'}
+                          </button>
+                          <div className="block-control">
+                            <span>Block:</span>
+                            <input
+                              type="checkbox"
+                              checked={enrollment.blocked}
+                              onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <span className={`plan-tag ${enrollment.planType}`}>
-                        {enrollment.planType?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="card-body">
-                      <div className="info-row">
-                        <span>WhatsApp:</span>
-                        <strong>{enrollment.user.whatsappNumber}</strong>
-                      </div>
-                      <div className="info-row">
-                        <span>Due Date:</span>
-                        <strong>{formatDate(enrollment.dueDate)}</strong>
-                      </div>
-                    </div>
-                    <div className="card-actions">
-                      <button onClick={() => openPaymentHistory(enrollment)}>History</button>
-                      <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
-                      <div className="block-control">
-                        <span>Block:</span>
-                        <input
-                          type="checkbox"
-                          checked={enrollment.blocked}
-                          onChange={(e) => handleBlockToggle(enrollment.id, enrollment.userId, e.target.checked)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 

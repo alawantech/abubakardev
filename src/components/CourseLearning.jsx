@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, whe
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDescription } from '../utils/formatDescription';
+import { checkEnrollmentExpiry, autoExpireEnrollments } from '../utils/subscription';
 import './CourseLearning.css';
 
 const CourseLearning = () => {
@@ -127,6 +128,19 @@ const CourseLearning = () => {
       // Process Plan Data (check if blocked or unapproved)
       if (!planSnapshot.empty) {
         const planData = planSnapshot.docs[0].data();
+
+        // 0. Auto-expire if past expiry date
+        await autoExpireEnrollments(currentUser.uid);
+        const { expired } = checkEnrollmentExpiry(planData);
+        if (expired) {
+          navigate('/dashboard', {
+            state: {
+              message: 'Your subscription has expired. Please renew to continue learning.',
+              paymentSuccess: false
+            }
+          });
+          return;
+        }
 
         // 1. Check if user or plan is explicitly blocked
         if (planData.blocked || userData?.blocked) {

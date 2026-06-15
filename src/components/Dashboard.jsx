@@ -44,6 +44,7 @@ import {
     FaUniversity,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { autoExpireEnrollments, checkEnrollmentExpiry, getSubscriptionStatus } from "../utils/subscription";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -110,8 +111,24 @@ const Dashboard = () => {
                 if (d.exists()) coursesMap[d.id] = d.data();
             });
 
-            // 4. Assemble enrollment data
-            const enrollmentsData = enrollmentDocs.map(enrollmentDoc => {
+            // 4. Auto-expire any enrollments past their expiry date
+            await autoExpireEnrollments(currentUser.uid);
+
+            // 5. Re-fetch enrollments after auto-expire updates
+            const updatedSnapshot = await getDocs(query(collection(db, "enrollmentPlans"), where("userId", "==", currentUser.uid)));
+            const updatedDocs = updatedSnapshot.docs;
+
+            // 6. Rebuild courses map for any new data
+            const updatedCourseIds = [...new Set(updatedDocs.map(d => d.data().courseId))];
+            const updatedCourseDocs = await Promise.all(
+                updatedCourseIds.map(id => getDoc(doc(db, "courses", id)))
+            );
+            updatedCourseDocs.forEach(d => {
+                if (d.exists()) coursesMap[d.id] = d.data();
+            });
+
+            // 7. Assemble enrollment data with auto-expiry applied
+            const enrollmentsData = updatedDocs.map(enrollmentDoc => {
                 const enrollmentData = enrollmentDoc.data();
                 const courseData = coursesMap[enrollmentData.courseId] || null;
                 const paymentData = allPayments.find(p => p.courseId === enrollmentData.courseId);
@@ -552,6 +569,36 @@ const Dashboard = () => {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Expiry Warning Banner */}
+                {enrollments.filter(e => {
+                    const { daysRemaining } = checkEnrollmentExpiry(e);
+                    return daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0 && !e.blocked;
+                }).map(enrollment => {
+                    const { daysRemaining } = checkEnrollmentExpiry(enrollment);
+                    return (
+                        <motion.div
+                            key={`expiry-${enrollment.id}`}
+                            className={`expiry-warning-banner ${daysRemaining <= 2 ? 'critical' : ''}`}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <FaExclamationTriangle className="expiry-warn-icon" />
+                            <div className="expiry-warn-content">
+                                <strong>
+                                    {enrollment.courseName} — {daysRemaining} day{daysRemaining === 1 ? '' : 's'} left
+                                </strong>
+                                <p>Your subscription expires soon. Renew now to keep learning without interruption.</p>
+                            </div>
+                            <button
+                                className="expiry-renew-btn"
+                                onClick={() => navigate('/renew', { state: { courseId: enrollment.courseId } })}
+                            >
+                                <FaArrowUp /> Renew Now
+                            </button>
+                        </motion.div>
+                    );
+                })}
 
                 {/* Header */}
                 <motion.div

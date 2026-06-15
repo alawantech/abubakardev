@@ -53,6 +53,123 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Search & Filter Bar */
+.student-search-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #333;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: white;
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-pills select {
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-pills select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* Restrict Button */
+.restrict-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.restrict-btn:hover {
+  background: #e5e7eb;
+}
+
+.restrict-btn.restricted {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.restrict-btn.restricted:hover {
+  background: #fee2e2;
+}
+
+/* Card Tags */
+.card-tags {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .student-search-filters {
+    flex-direction: column;
+  }
+
+  .filter-pills {
+    width: 100%;
+  }
+
+  .filter-pills select {
+    flex: 1;
+  }
+}
+
 .enrollments-table h3 {
   color: #1f2937;
   font-size: 1.5rem;
