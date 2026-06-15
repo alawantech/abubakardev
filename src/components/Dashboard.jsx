@@ -368,7 +368,11 @@ const Dashboard = () => {
     const isPending = targetPayment?.status === 'pending';
     const isRejected = targetPayment?.status === 'rejected';
     const getDisplayAmount = (enrollment) => {
-        if (!enrollment || !enrollment.course) return "₦6,500";
+        if (!enrollment) return "₦6,500";
+        // Use the enrollment's planAmount (what user agreed to pay) as primary source
+        if (enrollment.planAmount) return `₦${Number(enrollment.planAmount).toLocaleString()}`;
+        // Fallback to course pricing if planAmount not set
+        if (!enrollment.course) return "₦6,500";
         const plan = enrollment.planType || 'monthly';
         const pricing = enrollment.course.pricing;
         if (plan === 'monthly' && pricing?.monthly) return `₦${Number(pricing.monthly).toLocaleString()}`;
@@ -378,6 +382,25 @@ const Dashboard = () => {
     };
     const displayAmount = getDisplayAmount(targetEnrollment);
     const planLabel = targetEnrollment?.planType ? `(${targetEnrollment.planType.charAt(0).toUpperCase() + targetEnrollment.planType.slice(1)})` : '(Monthly)';
+
+    if (dashboardLoading || loading) {
+        return (
+            <div className="dashboard-wrapper">
+                <div className="dashboard-blob dashboard-blob-1"></div>
+                <div className="dashboard-blob dashboard-blob-2"></div>
+                <div className="dashboard-container">
+                    <div className="dashboard-loading">
+                        <div className="spinner-large"></div>
+                        <p>Loading your dashboard...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!currentUser) {
+        return null;
+    }
 
     // Account Level Block or All Courses Pending screen
     if (isUserBlocked) {
@@ -392,6 +415,18 @@ const Dashboard = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
+                        {/* User Info Card */}
+                        <div className="user-info-card">
+                            <div className="user-avatar">
+                                {userData?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="user-details">
+                                <h2 className="user-name">{userData?.fullName || 'Student'}</h2>
+                                <p className="user-email">{userData?.email || currentUser?.email}</p>
+                                <p className="user-phone">{userData?.whatsappNumber || 'Phone not set'}</p>
+                            </div>
+                        </div>
+
                         <div className={`blocked-icon ${isPending ? 'pending' : (isRejected ? 'rejected' : isInitialPayment ? 'initial' : '')}`}>
                             {isPending ? <FaClock /> : (isRejected ? <FaTimes /> : isInitialPayment ? <FaBook /> : <FaExclamationTriangle />)}
                         </div>
@@ -518,17 +553,6 @@ const Dashboard = () => {
                             </div>
                         )}
                     </motion.div>
-                </div>
-            </div>
-        );
-    }
-
-    if (dashboardLoading || loading) {
-        return (
-            <div className="dashboard-wrapper">
-                <div className="dashboard-loading">
-                    <div className="spinner-large"></div>
-                    <p>Loading your dashboard...</p>
                 </div>
             </div>
         );
