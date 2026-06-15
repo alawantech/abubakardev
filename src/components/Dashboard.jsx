@@ -559,6 +559,7 @@ const Dashboard = () => {
     }
 
     if (!currentUser) {
+        navigate('/login', { replace: true });
         return null;
     }
 
