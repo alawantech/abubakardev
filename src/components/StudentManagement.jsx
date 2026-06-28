@@ -44,9 +44,19 @@ const StudentManagement = () => {
 
   useEffect(() => {
     if (selectedCourse) {
+      // Reset filters when course changes
+      setSearchQuery('');
+      setFilterPlanType('');
+      setFilterStatus('');
+      
       fetchFullCourseData(selectedCourse);
       fetchEnrollments(selectedCourse);
       fetchPendingPayments(selectedCourse);
+    } else {
+      // Clear data when no course selected
+      setEnrollments([]);
+      setPendingPayments([]);
+      setSelectedCourseData(null);
     }
   }, [selectedCourse]);
 
