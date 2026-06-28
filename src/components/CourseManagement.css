@@ -221,14 +221,15 @@
   border: 2px solid #e0e0e0;
   border-radius: 6px;
   font-size: 1rem;
-  color: #333;
-  background-color: #fff;
+  color: #333 !important;
+  background-color: #fff !important;
   transition: border-color 0.3s ease;
 }
 
 .form-group select {
   cursor: pointer;
-  background-color: white;
+  background-color: white !important;
+  color: #333 !important;
 }
 
 .form-group input:focus,
@@ -240,7 +241,19 @@
 
 .form-group input::placeholder,
 .form-group textarea::placeholder {
-  color: #999;
+  color: #999 !important;
+  opacity: 1;
+}
+
+/* Force text color for ReactQuill editor */
+.ql-editor {
+  color: #333 !important;
+  background-color: #fff !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: #999 !important;
+  font-style: normal;
 }
 
 .form-row {
