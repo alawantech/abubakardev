@@ -44,6 +44,12 @@ const CoursePayment = React.lazy(() => import('./components/CoursePayment'));
 const CourseDashboard = React.lazy(() => import('./components/CourseDashboard'));
 const RenewPayment = React.lazy(() => import('./components/RenewPayment'));
 const Pricing = React.lazy(() => import('./components/Pricing'));
+const PricingWeb = React.lazy(() => import('./pages/PricingWeb'));
+const PricingMobile = React.lazy(() => import('./pages/PricingMobile'));
+const PricingAI = React.lazy(() => import('./pages/PricingAI'));
+const PricingCustom = React.lazy(() => import('./pages/PricingCustom'));
+const PricingMarketing = React.lazy(() => import('./pages/PricingMarketing'));
+const PricingVTU = React.lazy(() => import('./pages/PricingVTU'));
 const PricingInquiryForm = React.lazy(() => import('./pages/PricingInquiryForm'));
 const Register = React.lazy(() => import('./components/Register'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
@@ -64,6 +70,12 @@ function PrefetchLink({ to, children, className, onClick }) {
   const handleMouseEnter = () => {
     const routeMap = {
       '/pricing': () => import('./components/Pricing'),
+      '/pricing/web': () => import('./pages/PricingWeb'),
+      '/pricing/mobile': () => import('./pages/PricingMobile'),
+      '/pricing/ai': () => import('./pages/PricingAI'),
+      '/pricing/custom': () => import('./pages/PricingCustom'),
+      '/pricing/marketing': () => import('./pages/PricingMarketing'),
+      '/pricing/vtu': () => import('./pages/PricingVTU'),
       '/register': () => import('./components/Register'),
       '/contact': () => import('./components/Contact'),
       '/about': () => import('./components/About'),
@@ -300,6 +312,78 @@ function App() {
                 <NavHeader />
                 <React.Suspense fallback={null}>
                   <Pricing />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/web"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingWeb />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/mobile"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingMobile />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/ai"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingAI />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/custom"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingCustom />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/marketing"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingMarketing />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/pricing/vtu"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <PricingVTU />
                 </React.Suspense>
                 <NavFooter />
               </div>

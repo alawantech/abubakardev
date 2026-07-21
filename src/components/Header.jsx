@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { FaUser, FaSignOutAlt, FaTh, FaBars, FaTimes, FaPhoneAlt } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaBars, FaTimes, FaPhoneAlt, FaChevronDown } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import './Header.css'
 
@@ -9,6 +9,7 @@ const Header = () => {
   const navigate = useNavigate()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isPricingOpen, setIsPricingOpen] = useState(false)
   const { currentUser, signOut } = useAuth()
   const location = useLocation()
 
@@ -47,8 +48,18 @@ const Header = () => {
     { name: 'About', path: '/about' },
     { name: 'Services', path: '/services' },
     { name: 'Projects', path: '/portfolio' },
-    { name: 'Pricing', path: '/pricing' },
+    { name: 'Pricing', path: '/pricing', hasDropdown: true },
     { name: 'Contact', path: '/contact' },
+  ]
+
+  const pricingDropdownItems = [
+    { name: 'All Services', path: '/pricing' },
+    { name: 'Web Applications', path: '/pricing/web' },
+    { name: 'Mobile Apps', path: '/pricing/mobile' },
+    { name: 'AI Automation', path: '/pricing/ai' },
+    { name: 'Custom Software', path: '/pricing/custom' },
+    { name: 'Marketing Tech', path: '/pricing/marketing' },
+    { name: 'VTU Platform', path: '/pricing/vtu' },
   ]
 
   return (
@@ -63,13 +74,52 @@ const Header = () => {
         <nav className="desktop-nav">
           <ul className="nav-list">
             {navLinks.map((link) => (
-              <li key={link.path}>
-                <Link
-                  to={link.path}
-                  className={location.pathname === link.path ? 'active' : ''}
-                >
-                  {link.name}
-                </Link>
+              <li key={link.path} className={link.hasDropdown ? 'has-dropdown' : ''}>
+                {link.hasDropdown ? (
+                  <>
+                    <button
+                      className={`nav-link dropdown-toggle ${location.pathname === link.path ? 'active' : ''}`}
+                      onMouseEnter={() => setIsPricingOpen(true)}
+                      onMouseLeave={() => setIsPricingOpen(false)}
+                      aria-haspopup="true"
+                      aria-expanded={isPricingOpen}
+                    >
+                      {link.name}
+                      <FaChevronDown className="chevron" />
+                    </button>
+                    <motion.div
+                      className="pricing-dropdown"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      onMouseEnter={() => setIsPricingOpen(true)}
+                      onMouseLeave={() => setIsPricingOpen(false)}
+                    >
+                      <ul className="dropdown-list">
+                        {pricingDropdownItems.map((item) => (
+                          <li key={item.path}>
+                            <Link
+                              to={item.path}
+                              className={`dropdown-link ${location.pathname === item.path ? 'active' : ''}`}
+                              onClick={() => setIsPricingOpen(false)}
+                            >
+                              {item.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  </>
+                ) : (
+                  <Link
+                    to={link.path}
+                    className={`nav-link ${location.pathname === link.path ? 'active' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -123,13 +173,40 @@ const Header = () => {
             <ul className="mobile-nav-list">
               {navLinks.map((link) => (
                 <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={location.pathname === link.path ? 'active' : ''}
-                  >
-                    {link.name}
-                  </Link>
+                  {link.hasDropdown ? (
+                    <>
+                      <button
+                        className={`mobile-nav-link dropdown-toggle ${location.pathname === link.path ? 'active' : ''}`}
+                        onClick={() => setIsPricingOpen(!isPricingOpen)}
+                      >
+                        {link.name}
+                        <FaChevronDown className={`chevron ${isPricingOpen ? 'open' : ''}`} />
+                      </button>
+                      {isPricingOpen && (
+                        <ul className="mobile-dropdown">
+                          {pricingDropdownItems.map((item) => (
+                            <li key={item.path}>
+                              <Link
+                                to={item.path}
+                                className={`mobile-dropdown-link ${location.pathname === item.path ? 'active' : ''}`}
+                                onClick={() => { setIsMobileMenuOpen(false); setIsPricingOpen(false); }}
+                              >
+                                {item.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      to={link.path}
+                      className={`mobile-nav-link ${location.pathname === link.path ? 'active' : ''}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
               <li className="mobile-cta-row">
