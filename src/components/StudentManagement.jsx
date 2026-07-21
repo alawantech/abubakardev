@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../firebase';
 import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from '../utils/subscription';
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
@@ -37,6 +38,11 @@ const StudentManagement = () => {
     payment: null
   });
   const [selectedCourseData, setSelectedCourseData] = useState(null);
+  const [passwordResetModal, setPasswordResetModal] = useState({
+    isOpen: false,
+    enrollment: null,
+    newPassword: ''
+  });
 
   useEffect(() => {
     fetchCourses();
@@ -360,6 +366,23 @@ const StudentManagement = () => {
     } catch (error) {
       console.error('Error toggling restrict:', error);
       alert('Failed to update access. Please try again.');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const { enrollment, newPassword } = passwordResetModal;
+    if (!enrollment || !newPassword) return;
+
+    if (!window.confirm(`Reset password for ${enrollment.user.fullName}? Their current password will stop working immediately.`)) return;
+
+    try {
+      const resetFn = httpsCallable(functions, 'adminResetUserPassword');
+      await resetFn({ userId: enrollment.userId, newPassword });
+      setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' });
+      alert(`Password for ${enrollment.user.fullName} has been updated successfully.`);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      alert('Failed to reset password. ' + (error.message || 'Please try again.'));
     }
   };
 
@@ -724,6 +747,10 @@ const StudentManagement = () => {
                                 <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
                                 <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
                                 <button
+                                  onClick={() => setPasswordResetModal({ isOpen: true, enrollment, newPassword: '' })}
+                                  title="Reset Password"
+                                >🔑</button>
+                                <button
                                   className={enrollment.blocked ? 'restrict-btn restricted' : 'restrict-btn'}
                                   onClick={() => handleRestrictToggle(enrollment)}
                                   title={enrollment.blocked ? 'Grant Access' : 'Restrict'}
@@ -780,6 +807,7 @@ const StudentManagement = () => {
                         <div className="card-actions">
                           <button onClick={() => openPaymentHistory(enrollment)}>History</button>
                           <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
+                          <button onClick={() => setPasswordResetModal({ isOpen: true, enrollment, newPassword: '' })}>🔑 Password</button>
                           <button
                             className={enrollment.blocked ? 'restrict-btn restricted' : 'restrict-btn'}
                             onClick={() => handleRestrictToggle(enrollment)}
@@ -969,6 +997,57 @@ const StudentManagement = () => {
                 className="px-6 bg-white border border-gray-300 rounded-xl font-bold hover:bg-gray-50"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {passwordResetModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Reset Password for {passwordResetModal.enrollment?.user.fullName}
+            </h3>
+
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-sm text-amber-800">
+                <strong>Warning:</strong> The user's current password will stop working immediately. They will need to use the new password you set to log in.
+              </p>
+            </div>
+
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Password (min 6 characters):
+              </label>
+              <input
+                type="text"
+                value={passwordResetModal.newPassword}
+                onChange={(e) => setPasswordResetModal(prev => ({ ...prev, newPassword: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter new password"
+                minLength={6}
+              />
+            </div>
+
+            <p className="text-xs text-gray-500 mb-4">
+              Tell the user their new password so they can log in.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' })}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordReset}
+                disabled={!passwordResetModal.newPassword || passwordResetModal.newPassword.length < 6}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors"
+              >
+                Save New Password
               </button>
             </div>
           </div>

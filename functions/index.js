@@ -404,3 +404,28 @@ exports.sendPricingInquiryNotification = functions.https.onCall(async (request) 
   }
   return { success: true };
 });
+
+// Admin reset user password
+exports.adminResetUserPassword = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be authenticated.");
+  }
+
+  const callerUid = request.auth.uid;
+  const callerDoc = await admin.firestore().collection("users").doc(callerUid).get();
+  if (!callerDoc.exists || callerDoc.data().role !== "admin") {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const { userId, newPassword } = request.data || {};
+  if (!userId || typeof userId !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "userId is required.");
+  }
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+    throw new functions.https.HttpsError("invalid-argument", "newPassword must be at least 6 characters.");
+  }
+
+  await admin.auth().updateUser(userId, { password: newPassword });
+  console.log(`Admin ${callerUid} reset password for user ${userId}`);
+  return { success: true };
+});
