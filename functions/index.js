@@ -406,26 +406,55 @@ exports.sendPricingInquiryNotification = functions.https.onCall(async (request) 
 });
 
 // Admin reset user password
-exports.adminResetUserPassword = functions.https.onCall(async (request) => {
-  if (!request.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be authenticated.");
+exports.adminResetUserPassword = functions.https.onRequest({ cors: true }, async (req, res) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  });
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send('');
   }
 
-  const callerUid = request.auth.uid;
-  const callerDoc = await admin.firestore().collection("users").doc(callerUid).get();
-  if (!callerDoc.exists || callerDoc.data().role !== "admin") {
-    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { userId, newPassword } = request.data || {};
-  if (!userId || typeof userId !== "string") {
-    throw new functions.https.HttpsError("invalid-argument", "userId is required.");
-  }
-  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-    throw new functions.https.HttpsError("invalid-argument", "newPassword must be at least 6 characters.");
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Unauthenticated' });
   }
 
-  await admin.auth().updateUser(userId, { password: newPassword });
-  console.log(`Admin ${callerUid} reset password for user ${userId}`);
-  return { success: true };
+  const idToken = authHeader.split('Bearer ')[1];
+  let callerUid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    callerUid = decoded.uid;
+  } catch (e) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+
+  const callerDoc = await admin.firestore().collection('users').doc(callerUid).get();
+  if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+
+  const { userId, newPassword } = req.body || {};
+  if (!userId || typeof userId !== 'string') {
+    return res.status(400).json({ success: false, message: 'userId is required' });
+  }
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+    return res.status(400).json({ success: false, message: 'newPassword must be at least 6 characters' });
+  }
+
+  try {
+    await admin.auth().updateUser(userId, { password: newPassword });
+    console.log(`Admin ${callerUid} reset password for user ${userId}`);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 });

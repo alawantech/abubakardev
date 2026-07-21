@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../firebase';
+import { db, auth } from '../firebase';
 import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from '../utils/subscription';
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
@@ -376,8 +375,17 @@ const StudentManagement = () => {
     if (!window.confirm(`Reset password for ${enrollment.user.fullName}? Their current password will stop working immediately.`)) return;
 
     try {
-      const resetFn = httpsCallable(functions, 'adminResetUserPassword');
-      await resetFn({ userId: enrollment.userId, newPassword });
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('https://us-central1-abubakardev-b43b5.cloudfunctions.net/adminResetUserPassword', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ userId: enrollment.userId, newPassword })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
       setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' });
       alert(`Password for ${enrollment.user.fullName} has been updated successfully.`);
     } catch (error) {
