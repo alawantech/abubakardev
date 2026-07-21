@@ -406,7 +406,7 @@ exports.sendPricingInquiryNotification = functions.https.onCall(async (request) 
 });
 
 // Admin reset user password
-exports.adminResetUserPassword = functions.https.onCall({ cors: true }, async (request) => {
+exports.adminResetUserPassword = functions.https.onCall(async (request) => {
   if (!request.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Must be authenticated.");
   }
