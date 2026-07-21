@@ -69,6 +69,10 @@ const PricingVTU = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers development and integration only. Third-party services (VTU API providers, payment gateways, SMS, hosting, app store fees, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'vtu', tier: tier.id, tierName: tier.name }}

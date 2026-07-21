@@ -220,6 +220,18 @@
   margin-top: 2px;
 }
 
+.card-disclaimer {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.5;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .cta-btn {
   display: inline-flex;
   align-items: center;

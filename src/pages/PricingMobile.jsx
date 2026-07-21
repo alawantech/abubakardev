@@ -70,6 +70,10 @@ const PricingMobile = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers development only. Third-party services (hosting, domains, APIs, app store fees, SSL, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'mobile', tier: tier.id, tierName: tier.name }}

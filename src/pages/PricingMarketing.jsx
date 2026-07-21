@@ -69,6 +69,10 @@ const PricingMarketing = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers setup and integration only. Third-party platforms (CRM, email, analytics, SMS, hosting, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'marketing', tier: tier.id, tierName: tier.name }}

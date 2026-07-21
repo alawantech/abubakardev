@@ -70,6 +70,10 @@ const PricingWeb = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers development only. Third-party services (hosting, domains, APIs, SSL, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'web', tier: tier.id, tierName: tier.name }}

@@ -69,6 +69,10 @@ const PricingCustom = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers development only. Third-party services (hosting, databases, domains, payment gateways, email APIs, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'custom', tier: tier.id, tierName: tier.name }}

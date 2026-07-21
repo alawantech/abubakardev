@@ -69,6 +69,10 @@ const PricingAI = () => {
                 ))}
               </ul>
 
+              <div className="card-disclaimer">
+                Price covers development and training only. Third-party services (LLM APIs, voice providers, hosting, domains, WhatsApp API, etc.) are billed separately to the project owner.
+              </div>
+
               <Link
                 to="/pricing/inquire"
                 state={{ service: 'ai', tier: tier.id, tierName: tier.name }}
