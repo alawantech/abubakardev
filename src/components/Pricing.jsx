@@ -153,6 +153,10 @@ const Pricing = () => {
                           ))}
                         </ul>
 
+                        <div className="tier-disclaimer">
+                          Dev fee only. Third-party costs (hosting, APIs, domains, etc.) are your responsibility.
+                        </div>
+
                         <Link to={`/pricing/inquire?service=${service.id}&tier=${tier.id}`} className="tier-cta">
                           {tier.cta} <FaArrowRight size={12} />
                         </Link>
@@ -189,7 +193,7 @@ const Pricing = () => {
               <br/><br/>
               <strong>What's included in every project:</strong> Source code, deployment, 30 days of bug-fix support, and a 30-minute handover call.
               <br/>
-              <strong>Payment terms:</strong> 50% upfront, 50% on delivery. International clients pay in USD via invoice.
+              <strong>Payment terms:</strong> International clients pay in USD via invoice.
             </p>
           </div>
         </div>
