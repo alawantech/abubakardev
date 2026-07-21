@@ -364,7 +364,7 @@ export const pricingByService = {
         tagline: 'Android + iOS · Native app',
         priceNGN: 200000,
         priceUSD: 140,
-        timeline: '4–6 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All website features, plus:',
           'Native Android & iOS apps',
@@ -383,7 +383,7 @@ export const pricingByService = {
         tagline: 'Android + iOS · Play Store upload',
         priceNGN: 250000,
         priceUSD: 175,
-        timeline: '5–7 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All mobile app features, plus:',
           'Google Play Store upload & publishing',
@@ -399,7 +399,7 @@ export const pricingByService = {
         tagline: 'Android + iOS · Play Store + App Store',
         priceNGN: 430000,
         priceUSD: 300,
-        timeline: '6–8 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All mobile app features, plus:',
           'Google Play Store upload',
@@ -416,7 +416,7 @@ export const pricingByService = {
         tagline: 'Website + Android + iOS',
         priceNGN: 350000,
         priceUSD: 245,
-        timeline: '6–8 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All website features',
           'Native Android & iOS apps',
@@ -435,7 +435,7 @@ export const pricingByService = {
         tagline: 'Website + Android + iOS + Play Store',
         priceNGN: 400000,
         priceUSD: 280,
-        timeline: '7–9 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All complete features, plus:',
           'Google Play Store upload & publishing',
@@ -450,7 +450,7 @@ export const pricingByService = {
         tagline: 'Website + Android + iOS + All Store Uploads',
         priceNGN: 580000,
         priceUSD: 405,
-        timeline: '8–10 weeks',
+        timeline: '2–3 weeks',
         features: [
           'All complete features, plus:',
           'Google Play Store upload',
