@@ -458,7 +458,7 @@ export const pricingByService = {
           'App Store optimization (ASO)',
           'iOS & Android listing setup',
           'Priority support',
-          '90 days free support'
+          '30 days free support'
         ],
         cta: 'Get started',
         popular: true
