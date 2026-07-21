@@ -87,29 +87,33 @@ const Header = () => {
                       {link.name}
                       <FaChevronDown className="chevron" />
                     </button>
-                    <motion.div
-                      className="pricing-dropdown"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      onMouseEnter={() => setIsPricingOpen(true)}
-                      onMouseLeave={() => setIsPricingOpen(false)}
-                    >
-                      <ul className="dropdown-list">
-                        {pricingDropdownItems.map((item) => (
-                          <li key={item.path}>
-                            <Link
-                              to={item.path}
-                              className={`dropdown-link ${location.pathname === item.path ? 'active' : ''}`}
-                              onClick={() => setIsPricingOpen(false)}
-                            >
-                              {item.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </motion.div>
+                    <AnimatePresence>
+                      {isPricingOpen && (
+                        <motion.div
+                          className="pricing-dropdown"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.15 }}
+                          onMouseEnter={() => setIsPricingOpen(true)}
+                          onMouseLeave={() => setIsPricingOpen(false)}
+                        >
+                          <ul className="dropdown-list">
+                            {pricingDropdownItems.map((item) => (
+                              <li key={item.path}>
+                                <Link
+                                  to={item.path}
+                                  className={`dropdown-link ${location.pathname === item.path ? 'active' : ''}`}
+                                  onClick={() => setIsPricingOpen(false)}
+                                >
+                                  {item.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </>
                 ) : (
                   <Link
