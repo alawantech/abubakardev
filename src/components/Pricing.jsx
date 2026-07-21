@@ -160,6 +160,10 @@ const Pricing = () => {
                     )
                   })}
                 </div>
+
+                <Link to={`/pricing/${service.id}`} className="view-full-pricing">
+                  View full {service.shortTitle} pricing <FaArrowRight size={12} />
+                </Link>
               </div>
             )
           })}

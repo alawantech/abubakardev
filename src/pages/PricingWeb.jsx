@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCode, FaArrowRight, FaGlobe, FaSpinner, FaCheck } from 'react-icons/fa';
+import { FaCode, FaArrowRight, FaGlobe, FaSpinner, FaCheck, FaClock } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserLocation } from '../hooks/useUserLocation';
 import { services } from '../data/services';
