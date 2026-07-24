@@ -10,7 +10,6 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    onSnapshot
 } from "firebase/firestore";
 import {
     updateProfile,
@@ -53,6 +52,7 @@ const Dashboard = () => {
     const { currentUser, userData, loading } = useAuth();
     const [enrollments, setEnrollments] = useState([]);
     const [dashboardLoading, setDashboardLoading] = useState(true);
+    const [dashboardError, setDashboardError] = useState(null);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showProfileEdit, setShowProfileEdit] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -78,6 +78,7 @@ const Dashboard = () => {
     const fetchData = async () => {
         if (!currentUser) return;
         setDashboardLoading(true);
+        setDashboardError(null);
         setLoadingPayments(true);
 
         try {
@@ -148,6 +149,7 @@ const Dashboard = () => {
             setLoadingPayments(false);
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
+            setDashboardError("Failed to load your dashboard. Please check your connection and try again.");
             setDashboardLoading(false);
             setLoadingPayments(false);
         }
@@ -170,17 +172,8 @@ const Dashboard = () => {
     useEffect(() => {
         if (!currentUser) return;
 
-        // Real-time listener for enrollment changes
-        const q = query(collection(db, "enrollmentPlans"), where("userId", "==", currentUser.uid));
-        const unsubscribe = onSnapshot(q, () => {
-            fetchData();
-        });
-
-        // Initial fetch and profile load
         fetchData();
         loadProfileData();
-
-        return () => unsubscribe();
     }, [currentUser]);
 
     useEffect(() => {
@@ -383,6 +376,28 @@ const Dashboard = () => {
     const displayAmount = getDisplayAmount(targetEnrollment);
     const planLabel = targetEnrollment?.planType ? `(${targetEnrollment.planType.charAt(0).toUpperCase() + targetEnrollment.planType.slice(1)})` : '(Monthly)';
 
+    if (dashboardError) {
+        return (
+            <div className="dashboard-wrapper">
+                <div className="dashboard-blob dashboard-blob-1"></div>
+                <div className="dashboard-blob dashboard-blob-2"></div>
+                <div className="dashboard-container">
+                    <div className="dashboard-loading">
+                        <FaExclamationTriangle size={40} style={{ color: '#f59e0b' }} />
+                        <p>{dashboardError}</p>
+                        <button
+                            onClick={() => { setDashboardError(null); fetchData(); }}
+                            className="btn-primary"
+                            style={{ marginTop: '16px' }}
+                        >
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (dashboardLoading || loading) {
         return (
             <div className="dashboard-wrapper">
@@ -399,6 +414,7 @@ const Dashboard = () => {
     }
 
     if (!currentUser) {
+        navigate('/login', { replace: true });
         return null;
     }
 
@@ -556,11 +572,6 @@ const Dashboard = () => {
                 </div>
             </div>
         );
-    }
-
-    if (!currentUser) {
-        navigate('/login', { replace: true });
-        return null;
     }
 
     const totalCourses = enrollments.length;

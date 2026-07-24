@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     let unsubscribeAuth;
@@ -28,41 +27,44 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 8000);
+
     unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
 
       if (user && db) {
-        // Use a real-time listener for the user document
         unsubscribeProfile = onSnapshot(
           doc(db, 'users', user.uid),
           (snapshot) => {
             if (snapshot.exists()) {
               setUserData(snapshot.id ? { uid: snapshot.id, ...snapshot.data() } : snapshot.data());
             } else {
-              setUserData(null);
+              setUserData({ uid: user.uid });
             }
             setLoading(false);
+            clearTimeout(safetyTimeout);
           },
           (err) => {
             console.error('User profile listener error:', err);
+            setUserData({ uid: user.uid });
             setLoading(false);
+            clearTimeout(safetyTimeout);
           }
         );
       } else {
         setUserData(null);
         if (unsubscribeProfile) unsubscribeProfile();
         setLoading(false);
+        clearTimeout(safetyTimeout);
       }
     });
-
-    const timeout = setTimeout(() => {
-      if (loading) setLoading(false);
-    }, 10000);
 
     return () => {
       if (unsubscribeAuth) unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
-      clearTimeout(timeout);
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
@@ -83,7 +85,6 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userData,
     loading,
-    error,
     signOut,
     isAuthenticated: !!currentUser,
   };
