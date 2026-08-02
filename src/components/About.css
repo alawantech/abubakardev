@@ -88,20 +88,20 @@
   align-items: center;
   gap: 14px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.1);
   border-radius: var(--radius);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .visual-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  transform: translateY(-6px) scale(1.02);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 0 40px rgba(99, 102, 241, 0.08);
 }
 
 .vc-icon {

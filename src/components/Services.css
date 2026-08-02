@@ -19,10 +19,10 @@
 
 .service-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
   padding: 32px;
   cursor: pointer;
@@ -37,28 +37,25 @@
 .service-card::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: var(--radius-lg);
-  padding: 1px;
-  background: linear-gradient(135deg, transparent 0%, var(--accent) 50%, transparent 100%);
-  background-size: 300% 300%;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.4s ease;
   pointer-events: none;
+  z-index: 2;
 }
 
 .service-card:hover {
-  transform: translateY(-6px) scale(1.01);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  transform: translateY(-8px) scale(1.015);
+  border-color: var(--accent);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1);
 }
 
 .service-card:hover::before {
   opacity: 1;
-  animation: border-dance 3s linear infinite;
 }
 
 .service-glow {
@@ -69,13 +66,13 @@
   height: 250px;
   background: var(--accent);
   filter: blur(100px);
-  opacity: 0.15;
-  transition: opacity 0.4s;
+  opacity: 0.12;
+  transition: opacity 0.5s;
   pointer-events: none;
 }
 
 .service-card:hover .service-glow {
-  opacity: 0.3;
+  opacity: 0.35;
 }
 
 .service-content {
@@ -90,20 +87,22 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--accent);
   margin-bottom: 24px;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .service-card:hover .service-icon-wrap {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
+  transform: scale(1.1) rotate(-5deg);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
 
 .service-title {
