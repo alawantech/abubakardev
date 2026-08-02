@@ -129,8 +129,16 @@ const CourseLearning = () => {
       if (!planSnapshot.empty) {
         const planData = planSnapshot.docs[0].data();
 
-        // 0. Auto-expire if past expiry date
-        await autoExpireEnrollments(currentUser.uid);
+        // 0. Auto-expire if past expiry date (with timeout protection)
+        try {
+          await Promise.race([
+            autoExpireEnrollments(currentUser.uid),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+          ]);
+        } catch (e) {
+          console.warn('Auto-expire skipped:', e.message);
+        }
+
         const { expired } = checkEnrollmentExpiry(planData);
         if (expired) {
           navigate('/dashboard', {
@@ -153,15 +161,9 @@ const CourseLearning = () => {
           return;
         }
 
-        // 2. Access Check: We allow access if:
-        // - planData.paymentStatus is 'paid' (often set for seeded/approved users)
-        // - OR there is an approved payment in the payments collection
-        // - OR there is NO payment record at all (typical for seeded users)
-        // We ONLY redirect if there is a payment record and its status is 'pending' or similar.
-
+        // 2. Access Check
         const isMarkedPaid = planData.paymentStatus === 'paid';
 
-        // Fetch all payments for this course to check for pending status
         const paymentsQuery = query(
           collection(db, 'payments'),
           where('userId', '==', currentUser.uid),
@@ -183,8 +185,7 @@ const CourseLearning = () => {
           return;
         }
 
-        // Otherwise, if they have a plan and it's not blocked, and they don't have a pending block, let them in.
-        // This covers the case of seeded users (no payment doc) and approved users.
+        // Otherwise, if they have a plan and it's not blocked, let them in.
       } else {
         // No enrollment plan found at all
         navigate('/courses');
@@ -237,13 +238,14 @@ const CourseLearning = () => {
   };
 
   const goToNextLesson = () => {
-    if (!selectedLesson || !course) return;
+    if (!selectedLesson || !course?.topics) return;
 
     const { topicIndex, lessonIndex } = selectedLesson;
     const currentTopic = course.topics[topicIndex];
+    if (!currentTopic) return;
 
     // Check if there's a next lesson in current topic
-    if (lessonIndex + 1 < currentTopic.lessons.length) {
+    if (currentTopic.lessons && lessonIndex + 1 < currentTopic.lessons.length) {
       setSelectedLesson({ topicIndex, lessonIndex: lessonIndex + 1 });
     }
     // Check if there's a next topic
@@ -255,7 +257,7 @@ const CourseLearning = () => {
   };
 
   const goToPreviousLesson = () => {
-    if (!selectedLesson || !course) return;
+    if (!selectedLesson || !course?.topics) return;
 
     const { topicIndex, lessonIndex } = selectedLesson;
 
@@ -266,9 +268,11 @@ const CourseLearning = () => {
     // Check if there's a previous topic
     else if (topicIndex > 0) {
       const prevTopicIndex = topicIndex - 1;
-      const prevTopicLessons = course.topics[prevTopicIndex].lessons.length;
-      setExpandedTopics(prev => [...new Set([...prev, prevTopicIndex])]);
-      setSelectedLesson({ topicIndex: prevTopicIndex, lessonIndex: prevTopicLessons - 1 });
+      const prevTopicLessons = course.topics[prevTopicIndex]?.lessons?.length || 0;
+      if (prevTopicLessons > 0) {
+        setExpandedTopics(prev => [...new Set([...prev, prevTopicIndex])]);
+        setSelectedLesson({ topicIndex: prevTopicIndex, lessonIndex: prevTopicLessons - 1 });
+      }
     }
   };
 
@@ -440,7 +444,7 @@ const CourseLearning = () => {
   }
 
   const currentLesson = selectedLesson
-    ? course.topics[selectedLesson.topicIndex]?.lessons[selectedLesson.lessonIndex]
+    ? course.topics?.[selectedLesson.topicIndex]?.lessons?.[selectedLesson.lessonIndex]
     : null;
 
   // Debug video info
@@ -728,8 +732,8 @@ const CourseLearning = () => {
                 <button
                   onClick={goToNextLesson}
                   disabled={
-                    selectedLesson.topicIndex === course.topics.length - 1 &&
-                    selectedLesson.lessonIndex === course.topics[course.topics.length - 1].lessons.length - 1
+                    !course?.topics || selectedLesson.topicIndex === course.topics.length - 1 &&
+                    selectedLesson.lessonIndex === (course.topics[course.topics.length - 1]?.lessons?.length || 1) - 1
                   }
                   className="nav-button next"
                 >

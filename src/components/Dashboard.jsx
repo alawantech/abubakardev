@@ -81,6 +81,13 @@ const Dashboard = () => {
         setDashboardError(null);
         setLoadingPayments(true);
 
+        // Safety timeout: if fetchData takes > 15s, show error
+        const fetchTimeout = setTimeout(() => {
+            setDashboardError("Loading is taking longer than expected. Please check your connection and try again.");
+            setDashboardLoading(false);
+            setLoadingPayments(false);
+        }, 15000);
+
         try {
             // 1. Fetch enrollments and payments in parallel
             const [enrollmentsSnapshot, paymentsSnapshot, bankDoc] = await Promise.all([
@@ -112,8 +119,15 @@ const Dashboard = () => {
                 if (d.exists()) coursesMap[d.id] = d.data();
             });
 
-            // 4. Auto-expire any enrollments past their expiry date
-            await autoExpireEnrollments(currentUser.uid);
+            // 4. Auto-expire any enrollments past their expiry date (with timeout)
+            try {
+                await Promise.race([
+                    autoExpireEnrollments(currentUser.uid),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('auto-expire timeout')), 8000))
+                ]);
+            } catch (expireErr) {
+                console.warn('Auto-expire skipped:', expireErr.message);
+            }
 
             // 5. Re-fetch enrollments after auto-expire updates
             const updatedSnapshot = await getDocs(query(collection(db, "enrollmentPlans"), where("userId", "==", currentUser.uid)));
@@ -144,10 +158,12 @@ const Dashboard = () => {
                 };
             });
 
+            clearTimeout(fetchTimeout);
             setEnrollments(enrollmentsData);
             setDashboardLoading(false);
             setLoadingPayments(false);
         } catch (error) {
+            clearTimeout(fetchTimeout);
             console.error("Error fetching dashboard data:", error);
             setDashboardError("Failed to load your dashboard. Please check your connection and try again.");
             setDashboardLoading(false);

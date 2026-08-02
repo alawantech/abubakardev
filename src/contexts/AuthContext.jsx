@@ -29,33 +29,42 @@ export const AuthProvider = ({ children }) => {
 
     const safetyTimeout = setTimeout(() => {
       setLoading(false);
-    }, 8000);
+    }, 5000);
 
     unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
 
       if (user && db) {
+        // Clean up previous profile listener if any
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = null;
+        }
+
         unsubscribeProfile = onSnapshot(
           doc(db, 'users', user.uid),
           (snapshot) => {
             if (snapshot.exists()) {
-              setUserData(snapshot.id ? { uid: snapshot.id, ...snapshot.data() } : snapshot.data());
+              setUserData({ uid: snapshot.id, ...snapshot.data() });
             } else {
-              setUserData({ uid: user.uid });
+              setUserData({ uid: user.uid, email: user.email });
             }
             setLoading(false);
             clearTimeout(safetyTimeout);
           },
           (err) => {
             console.error('User profile listener error:', err);
-            setUserData({ uid: user.uid });
+            setUserData({ uid: user.uid, email: user.email });
             setLoading(false);
             clearTimeout(safetyTimeout);
           }
         );
       } else {
         setUserData(null);
-        if (unsubscribeProfile) unsubscribeProfile();
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = null;
+        }
         setLoading(false);
         clearTimeout(safetyTimeout);
       }

@@ -37,18 +37,19 @@ const Login = () => {
       );
 
       const user = userCredential.user;
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.role === 'admin') {
+      // Check role, but don't let Firestore failure block login
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists() && userDoc.data().role === 'admin') {
           navigate('/admin');
-        } else {
-          navigate('/dashboard');
+          return;
         }
-      } else {
-        navigate('/dashboard');
+      } catch (docErr) {
+        console.warn('Could not check user role:', docErr.message);
       }
+
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error logging in:', error);
       switch (error.code) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, addDoc, collection } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, addDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
@@ -136,7 +136,16 @@ const CourseSignUp = () => {
           createdAt: serverTimestamp(),
         });
 
-        await addDoc(collection(db, "payments"), {
+        // Check for existing pending payment — update instead of creating duplicate
+        const existingPaymentQuery = query(
+          collection(db, "payments"),
+          where("userId", "==", user.uid),
+          where("courseId", "==", planToSend.courseId),
+          where("status", "in", ["receipt_pending_upload", "receipt_required", "pending"]),
+        );
+        const existingSnapshot = await getDocs(existingPaymentQuery);
+
+        const paymentData = {
           userId: user.uid,
           customerEmail: formData.email,
           courseId: planToSend.courseId,
@@ -147,7 +156,14 @@ const CourseSignUp = () => {
           paymentMethod: "bank_transfer",
           submittedAt: serverTimestamp(),
           isRenewal: false,
-        });
+        };
+
+        if (!existingSnapshot.empty) {
+          // Update the existing pending payment with the new plan details
+          await updateDoc(existingSnapshot.docs[0].ref, paymentData);
+        } else {
+          await addDoc(collection(db, "payments"), paymentData);
+        }
       } catch (err) {
         console.error("Error creating pending enrollment/payment:", err);
       }
