@@ -80,43 +80,30 @@ const About = () => {
             </div>
           </motion.div>
 
-          <motion.div
-            className="about-right"
-            initial={{ opacity: 0, x: 40 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
-          >
+          <div className="about-right">
             <div className="about-visual">
-              <div className="visual-card vc-1">
-                <div className="vc-icon">🚀</div>
-                <div>
-                  <div className="vc-title">Based in Nigeria</div>
-                  <div className="vc-sub">Engineering for the world</div>
-                </div>
-              </div>
-              <div className="visual-card vc-2">
-                <div className="vc-icon">💎</div>
-                <div>
-                  <div className="vc-title">Senior only</div>
-                  <div className="vc-sub">No juniors learning on your dime</div>
-                </div>
-              </div>
-              <div className="visual-card vc-3">
-                <div className="vc-icon">🌍</div>
-                <div>
-                  <div className="vc-title">Remote-first</div>
-                  <div className="vc-sub">Async by default, sync when it matters</div>
-                </div>
-              </div>
-              <div className="visual-card vc-4">
-                <div className="vc-icon">⚡</div>
-                <div>
-                  <div className="vc-title">Fast feedback</div>
-                  <div className="vc-sub">Daily updates, weekly demos, monthly metrics</div>
-                </div>
-              </div>
+              {[
+                { icon: '🚀', title: 'Based in Nigeria', sub: 'Engineering for the world', delay: 0.25 },
+                { icon: '💎', title: 'Senior only', sub: 'No juniors learning on your dime', delay: 0.35 },
+                { icon: '🌍', title: 'Remote-first', sub: 'Async by default, sync when it matters', delay: 0.45 },
+                { icon: '⚡', title: 'Fast feedback', sub: 'Daily updates, weekly demos, monthly metrics', delay: 0.55 }
+              ].map((card, i) => (
+                <motion.div
+                  key={i}
+                  className={`visual-card vc-${i + 1}`}
+                  initial={{ opacity: 0, y: 24, scale: 0.95 }}
+                  animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                  transition={{ duration: 0.6, delay: card.delay, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="vc-icon">{card.icon}</div>
+                  <div>
+                    <div className="vc-title">{card.title}</div>
+                    <div className="vc-sub">{card.sub}</div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          </motion.div>
+          </div>
         </div>
 
         <div className="values-section">

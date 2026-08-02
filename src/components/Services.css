@@ -19,8 +19,10 @@
 
 .service-card {
   position: relative;
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
   padding: 32px;
   cursor: pointer;
@@ -29,12 +31,34 @@
   will-change: transform;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.service-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent);
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(99, 102, 241, 0.3);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.service-card:hover::before {
+  opacity: 1;
+  animation: border-dance 3s linear infinite;
 }
 
 .service-glow {

@@ -31,17 +31,21 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius);
   text-decoration: none;
   color: inherit;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 a.contact-method:hover {
   border-color: var(--method-color);
-  transform: translateX(4px);
+  transform: translateX(6px) scale(1.02);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .method-icon {
@@ -162,10 +166,15 @@ a.contact-method:hover .method-icon {
 
 /* Right: contact form */
 .contact-form-wrap {
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
   padding: 40px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .contact-form {
@@ -220,7 +229,8 @@ a.contact-method:hover .method-icon {
 .form-group textarea:focus {
   border-color: var(--accent);
   background: var(--bg-elevated);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), 0 0 24px rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
 }
 
 .form-group select {

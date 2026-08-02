@@ -194,6 +194,115 @@ body {
 .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
 
 /* ============================================
+   UI/UX PRO MAX — Enhanced Design Utilities
+   ============================================ */
+
+/* Glassmorphism card — premium layered glass effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Gradient border animation — premium hover effect */
+.gradient-border {
+  position: relative;
+  background: var(--bg-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+  animation: border-dance 3s linear infinite;
+}
+
+@keyframes border-dance {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Subtle glow effect on hover */
+.glow-hover {
+  position: relative;
+}
+
+.glow-hover::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-hover:hover::after {
+  opacity: 0.08;
+}
+
+/* Smooth scale on hover */
+.scale-hover {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scale-hover:hover {
+  transform: translateY(-4px) scale(1.01);
+}
+
+/* Focus ring — enhanced input focus states */
+.focus-ring:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 0 20px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Reduced motion — respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .hero-video { opacity: 0.15 !important; }
+  .bg-orb { animation: none !important; }
+  .float-orb { animation: none !important; }
+  .scroll-dot { animation: none !important; }
+  .step-pulse { animation: none !important; }
+  .badge-dot { animation: none !important; }
+  .status-pulse { animation: none !important; }
+}
+
+/* ============================================
    SHARED COMPONENTS
    ============================================ */
 .glass {

@@ -54,6 +54,8 @@
   align-items: center;
   gap: 8px;
   background: rgba(59, 130, 246, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: #60a5fa;
   padding: 8px 20px;
   border-radius: 99px;
@@ -61,6 +63,14 @@
   font-weight: 600;
   border: 1px solid rgba(59, 130, 246, 0.2);
   margin-bottom: 28px;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s;
+}
+
+.sl-badge:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 .sl-badge-dot {
@@ -296,15 +306,36 @@
   text-align: center;
   padding: 40px 28px;
   background: rgba(30, 41, 59, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
-  transition: all 0.35s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  overflow: hidden;
+}
+
+.sl-step::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--step-color, #3b82f6), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
 }
 
 .sl-step:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.15);
   background: rgba(30, 41, 59, 0.4);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.sl-step:hover::before {
+  opacity: 1;
 }
 
 .sl-step-num {
@@ -352,13 +383,40 @@
 .sl-feature-card {
   padding: 36px 28px;
   background: rgba(30, 41, 59, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
-  transition: all 0.35s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sl-feature-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.3) 50%, transparent 100%);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
 }
 
 .sl-feature-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.sl-feature-card:hover::before {
+  opacity: 1;
+  animation: border-dance 3s linear infinite;
 }
 
 .sl-feature-icon {
@@ -402,13 +460,31 @@
 .sl-testimonial-card {
   padding: 32px 28px;
   background: rgba(30, 41, 59, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 20px;
-  transition: all 0.35s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sl-testimonial-card::before {
+  content: "\201C";
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-size: 4rem;
+  font-family: Georgia, serif;
+  color: rgba(59, 130, 246, 0.15);
+  line-height: 1;
+  pointer-events: none;
 }
 
 .sl-testimonial-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
 .sl-testimonial-stars {
@@ -487,10 +563,13 @@
   margin: 0 auto;
   padding: 64px 44px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.08));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .sl-cta-glow {
@@ -632,5 +711,21 @@
   .sl-badge {
     font-size: 0.75rem;
     padding: 6px 14px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sl-step,
+  .sl-feature-card,
+  .sl-testimonial-card,
+  .sl-stat,
+  .sl-btn {
+    transition: none !important;
+  }
+  .sl-step:hover,
+  .sl-feature-card:hover,
+  .sl-testimonial-card:hover {
+    transform: none !important;
   }
 }
