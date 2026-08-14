@@ -54,6 +54,12 @@ const Register = () => {
 
     setLoading(true);
 
+    if (!auth) {
+      setError('Service temporarily unavailable. Please try again later.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -73,9 +79,10 @@ const Register = () => {
       });
 
       navigate('/login');
-    } catch (error) {
-      console.error('Error registering user:', error);
-      switch (error.code) {
+    } catch (err) {
+      console.error('Error registering user:', err);
+      const code = err.code || '';
+      switch (code) {
         case 'auth/email-already-in-use':
           setError('This email is already registered.');
           break;
@@ -88,8 +95,18 @@ const Register = () => {
         case 'auth/weak-password':
           setError('Password is too weak.');
           break;
+        case 'auth/too-many-requests':
+          setError('Too many attempts. Please wait a few minutes and try again.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Check your connection and try again.');
+          break;
         default:
-          setError('Failed to create account. Please try again.');
+          if (!code.startsWith('auth/')) {
+            setError('Network error. Check your connection and try again.');
+          } else {
+            setError('Failed to create account. Please try again.');
+          }
       }
     } finally {
       setLoading(false);

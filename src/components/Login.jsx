@@ -29,6 +29,12 @@ const Login = () => {
     setError('');
     setLoading(true);
 
+    if (!auth) {
+      setError('Service temporarily unavailable. Please try again later.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -50,9 +56,10 @@ const Login = () => {
       }
 
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Error logging in:', error);
-      switch (error.code) {
+    } catch (err) {
+      console.error('Error logging in:', err);
+      const code = err.code || '';
+      switch (code) {
         case 'auth/invalid-email':
           setError('Invalid email address.');
           break;
@@ -68,8 +75,24 @@ const Login = () => {
         case 'auth/invalid-credential':
           setError('Invalid email or password.');
           break;
+        case 'auth/too-many-requests':
+          setError('Too many failed attempts. Please wait a few minutes and try again.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Check your connection and try again.');
+          break;
+        case 'auth/operation-not-allowed':
+          setError('Email/password login is not enabled. Contact support.');
+          break;
+        case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
+          setError('Service configuration error. Please contact support.');
+          break;
         default:
-          setError('Failed to log in. Please try again.');
+          if (!code.startsWith('auth/')) {
+            setError('Network error. Check your connection and try again.');
+          } else {
+            setError('Failed to log in. Please try again.');
+          }
       }
     } finally {
       setLoading(false);
