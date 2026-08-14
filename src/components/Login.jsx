@@ -57,8 +57,15 @@ const Login = () => {
 
       navigate('/dashboard');
     } catch (err) {
-      console.error('Error logging in:', err);
+      console.error('Login error:', {
+        code: err.code,
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+        full: JSON.stringify(err, Object.getOwnPropertyNames(err))
+      });
       const code = err.code || '';
+      const msg = (err.message || '').toLowerCase();
       switch (code) {
         case 'auth/invalid-email':
           setError('Invalid email address.');
@@ -88,8 +95,10 @@ const Login = () => {
           setError('Service configuration error. Please contact support.');
           break;
         default:
-          if (!code.startsWith('auth/')) {
-            setError('Network error. Check your connection and try again.');
+          if (msg.includes('network') || msg.includes('fetch') || msg.includes('cors')) {
+            setError('Connection error. Check your internet and try again.');
+          } else if (code && !code.startsWith('auth/')) {
+            setError(`Login error: ${code}`);
           } else {
             setError('Failed to log in. Please try again.');
           }

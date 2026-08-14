@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -39,7 +39,17 @@ try {
   app = initializeApp(firebaseConfig);
   analytics = getAnalytics(app);
   auth = getAuth(app);
-  db = getFirestore(app);
+  // Initialize Firestore with settings that avoid QUIC protocol errors
+  // Some networks/ISPs block or throttle QUIC, causing ERR_QUIC_PROTOCOL_ERROR
+  try {
+    db = initializeFirestore(app, {
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false,
+    });
+  } catch (e) {
+    // Fallback if already initialized
+    db = getFirestore(app);
+  }
   storage = getStorage(app);
   functions = getFunctions(app);
   console.log('Firebase initialized successfully');

@@ -41,6 +41,23 @@ export const AuthProvider = ({ children }) => {
           unsubscribeProfile = null;
         }
 
+        // Use onSnapshot for real-time profile, with getDoc fallback on connection error
+        const fetchProfileOnce = async () => {
+          try {
+            const snap = await getDoc(doc(db, 'users', user.uid));
+            if (snap.exists()) {
+              setUserData({ uid: snap.id, ...snap.data() });
+            } else {
+              setUserData({ uid: user.uid, email: user.email });
+            }
+          } catch (e) {
+            console.warn('Fallback profile fetch error:', e.message);
+            setUserData({ uid: user.uid, email: user.email });
+          }
+          setLoading(false);
+          clearTimeout(safetyTimeout);
+        };
+
         unsubscribeProfile = onSnapshot(
           doc(db, 'users', user.uid),
           (snapshot) => {
@@ -53,10 +70,10 @@ export const AuthProvider = ({ children }) => {
             clearTimeout(safetyTimeout);
           },
           (err) => {
-            console.error('User profile listener error:', err);
-            setUserData({ uid: user.uid, email: user.email });
-            setLoading(false);
-            clearTimeout(safetyTimeout);
+            console.warn('Firestore listener failed, using fallback:', err.message);
+            // onSnapshot failed (QUIC/network issue) — fall back to one-time read
+            unsubscribeProfile = null;
+            fetchProfileOnce();
           }
         );
       } else {
