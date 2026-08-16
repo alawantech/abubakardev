@@ -132,6 +132,45 @@
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
 }
 
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.retry-message {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  color: #fde68a;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: retryPulse 1.5s ease-in-out infinite;
+}
+
+.retry-icon {
+  animation: retrySpin 1s linear infinite;
+}
+
+@keyframes retryPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes retrySpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .form-group small {
   color: #64748b;
   font-size: 0.8rem;

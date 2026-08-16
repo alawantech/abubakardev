@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -44,7 +44,6 @@ try {
   try {
     db = initializeFirestore(app, {
       experimentalAutoDetectLongPolling: true,
-      useFetchStreams: false,
     });
   } catch (e) {
     // Fallback if already initialized

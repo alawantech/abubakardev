@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaExclamationCircle, FaUser, FaEnvelope, FaWhatsapp, FaLock } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaUser, FaEnvelope, FaWhatsapp, FaLock, FaWifi } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import './Register.css';
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2500;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -19,7 +22,14 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
+  const abortRef = useRef(false);
+
+  useEffect(() => {
+    return () => { abortRef.current = true; };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -44,9 +54,24 @@ const Register = () => {
     return true;
   };
 
-  const handleSubmit = async (e) => {
+  const isNetworkError = useCallback((err) => {
+    const code = err.code || '';
+    const msg = (err.message || '').toLowerCase();
+    if (code === 'auth/network-request-failed') return true;
+    if (!code.startsWith('auth/') && (
+      msg.includes('network') || msg.includes('fetch') || msg.includes('cors') ||
+      msg.includes('quota') || msg.includes('failed to fetch')
+    )) return true;
+    return false;
+  }, []);
+
+  const handleSubmit = async (e, currentRetry = 0) => {
     e.preventDefault();
-    setError('');
+    if (currentRetry === 0) {
+      setError('');
+      abortRef.current = false;
+    }
+    if (abortRef.current) return;
 
     if (!validateForm()) {
       return;
@@ -69,18 +94,34 @@ const Register = () => {
 
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
-        fullName: formData.fullName,
-        email: formData.email,
-        whatsappNumber: formData.whatsappNumber,
-        role: 'student',
-        createdAt: serverTimestamp(),
-        uid: user.uid,
-      });
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          fullName: formData.fullName,
+          email: formData.email,
+          whatsappNumber: formData.whatsappNumber,
+          role: 'student',
+          createdAt: serverTimestamp(),
+          uid: user.uid,
+        });
+      } catch (docErr) {
+        console.warn('Could not save user profile:', docErr.message);
+      }
 
       navigate('/login');
     } catch (err) {
       console.error('Error registering user:', err);
+
+      if (isNetworkError(err) && currentRetry < MAX_RETRIES - 1) {
+        setRetrying(true);
+        setRetryCount(currentRetry + 1);
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        if (!abortRef.current) {
+          return handleSubmit(e, currentRetry + 1);
+        }
+      }
+
+      setRetrying(false);
+      setRetryCount(0);
       const code = err.code || '';
       switch (code) {
         case 'auth/email-already-in-use':
@@ -99,10 +140,12 @@ const Register = () => {
           setError('Too many attempts. Please wait a few minutes and try again.');
           break;
         case 'auth/network-request-failed':
-          setError('Network error. Check your connection and try again.');
+          setError('Unable to connect. Please try switching between WiFi and mobile data, or try a different network.');
           break;
         default:
-          if (!code.startsWith('auth/')) {
+          if (isNetworkError(err)) {
+            setError('Unable to connect. Please try switching between WiFi and mobile data, or try a different network.');
+          } else if (!code.startsWith('auth/')) {
             setError('Network error. Check your connection and try again.');
           } else {
             setError('Failed to create account. Please try again.');
@@ -134,6 +177,17 @@ const Register = () => {
             animate={{ opacity: 1, x: 0 }}
           >
             <FaExclamationCircle /> {error}
+          </motion.div>
+        )}
+
+        {retrying && !error && (
+          <motion.div
+            className="retry-message"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <FaWifi className="retry-icon" />
+            Connection issue. Retrying ({retryCount}/{MAX_RETRIES})...
           </motion.div>
         )}
 
@@ -237,7 +291,7 @@ const Register = () => {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="premium-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></span>
-                Creating...
+                {retrying ? `Retrying (${retryCount}/${MAX_RETRIES})...` : 'Creating...'}
               </span>
             ) : 'Create Account'}
           </motion.button>

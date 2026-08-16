@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
     const safetyTimeout = setTimeout(() => {
       setLoading(false);
-    }, 5000);
+    }, 10000);
 
     unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Use onSnapshot for real-time profile, with getDoc fallback on connection error
-        const fetchProfileOnce = async () => {
+        const fetchProfileOnce = async (retries = 1) => {
           try {
             const snap = await getDoc(doc(db, 'users', user.uid));
             if (snap.exists()) {
@@ -51,7 +51,11 @@ export const AuthProvider = ({ children }) => {
               setUserData({ uid: user.uid, email: user.email });
             }
           } catch (e) {
-            console.warn('Fallback profile fetch error:', e.message);
+            console.warn('Profile fetch error:', e.message);
+            if (retries > 0) {
+              await new Promise(r => setTimeout(r, 2000));
+              return fetchProfileOnce(retries - 1);
+            }
             setUserData({ uid: user.uid, email: user.email });
           }
           setLoading(false);
