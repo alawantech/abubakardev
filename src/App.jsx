@@ -37,6 +37,7 @@ const BookCall = React.lazy(() => import('./pages/BookCall'));
 const TermsAndConditions = React.lazy(() => import('./pages/TermsAndConditions'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 const AccountDeletion = React.lazy(() => import('./pages/AccountDeletion'));
+const DataDeletion = React.lazy(() => import('./pages/DataDeletion'));
 
 const CoursePage = React.lazy(() => import('./components/CoursePage'));
 const CourseLearning = React.lazy(() => import('./components/CourseLearning'));
@@ -447,6 +448,18 @@ function App() {
                 <NavHeader />
                 <React.Suspense fallback={null}>
                   <AccountDeletion />
+                </React.Suspense>
+                <NavFooter />
+              </div>
+            }
+          />
+          <Route
+            path="/delete-data"
+            element={
+              <div className="App">
+                <NavHeader />
+                <React.Suspense fallback={null}>
+                  <DataDeletion />
                 </React.Suspense>
                 <NavFooter />
               </div>
