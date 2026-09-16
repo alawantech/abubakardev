@@ -14,7 +14,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2>1. Introduction</h2>
             <p>
-              Welcome to ZedroTech Academy ("we," "us," or "our"). We operate the ZedroTech Academy website at <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a> and the ZedroTech Academy mobile application (collectively, the "Platform"). We are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform and services.
+              Welcome to ZedroTech Academy ("we," "us," or "our"). We operate the ZedroTech Academy website at <a href="https://school.zedrotech.com" target="_blank" rel="noopener noreferrer">school.zedrotech.com</a> and the ZedroTech Academy mobile application (collectively, the "Platform"). We are committed to protecting your privacy and personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform and services.
             </p>
           </section>
 
@@ -120,7 +120,7 @@ const PrivacyPolicy = () => {
             <ul>
               <li><strong>Email:</strong> <a href="mailto:info@zedrotech.com">info@zedrotech.com</a></li>
               <li><strong>WhatsApp:</strong> <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer">+234 815 685 3636</a></li>
-              <li><strong>Website:</strong> <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a></li>
+              <li><strong>Website:</strong> <a href="https://school.zedrotech.com" target="_blank" rel="noopener noreferrer">school.zedrotech.com</a></li>
             </ul>
           </section>
         </div>

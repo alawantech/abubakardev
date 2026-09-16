@@ -135,7 +135,7 @@ export default function WelcomeScreen({ navigation }) {
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          Register at school.zdrotech.com, then log in here
+          Register at school.zedrotech.com, then log in here
         </Text>
       </View>
     </LinearGradient>

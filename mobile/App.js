@@ -80,7 +80,7 @@ function AdminPlaceholder({ navigation }) {
       <Ionicons name="shield-checkmark" size={48} color={COLORS.primary} />
       <Text style={{ color: COLORS.text, fontSize: 22, fontWeight: '800' }}>Admin Panel</Text>
       <Text style={{ color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 40 }}>
-        Admin features are available on the web version at school.zdrotech.com
+        Admin features are available on the web version at school.zedrotech.com
       </Text>
       <TouchableOpacity
         onPress={signOut}

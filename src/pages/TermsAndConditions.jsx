@@ -14,7 +14,7 @@ const TermsAndConditions = () => {
           <section>
             <h2>1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the ZedroTech Academy website at <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a>, the ZedroTech Academy mobile application, or any related services (collectively, the "Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our Platform.
+              By accessing or using the ZedroTech Academy website at <a href="https://school.zedrotech.com" target="_blank" rel="noopener noreferrer">school.zedrotech.com</a>, the ZedroTech Academy mobile application, or any related services (collectively, the "Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our Platform.
             </p>
           </section>
 
@@ -33,7 +33,7 @@ const TermsAndConditions = () => {
           <section>
             <h2>3. Account Registration</h2>
             <ul>
-              <li>You must register an account to access course content. Registration is available through the website at school.zdrotech.com.</li>
+              <li>You must register an account to access course content. Registration is available through the website at school.zedrotech.com.</li>
               <li>You may log in to the mobile app using the same credentials you created on the website.</li>
               <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
               <li>You must provide accurate and complete information during registration.</li>
@@ -89,7 +89,7 @@ const TermsAndConditions = () => {
             <h2>8. Mobile Application</h2>
             <ul>
               <li>The ZedroTech Academy mobile app is provided as a convenience for accessing your courses on Android devices.</li>
-              <li>Course registration must be completed on the website at school.zdrotech.com.</li>
+              <li>Course registration must be completed on the website at school.zedrotech.com.</li>
               <li>The mobile app may request access to your photo gallery solely for uploading payment receipts.</li>
               <li>You may delete your account and all associated data from the mobile app via Profile &gt; Delete Account.</li>
               <li>We reserve the right to modify or discontinue the mobile app at any time with reasonable notice.</li>
@@ -134,7 +134,7 @@ const TermsAndConditions = () => {
             <ul>
               <li><strong>Email:</strong> <a href="mailto:info@zedrotech.com">info@zedrotech.com</a></li>
               <li><strong>WhatsApp:</strong> <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer">+234 815 685 3636</a></li>
-              <li><strong>Website:</strong> <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a></li>
+              <li><strong>Website:</strong> <a href="https://school.zedrotech.com" target="_blank" rel="noopener noreferrer">school.zedrotech.com</a></li>
             </ul>
           </section>
         </div>

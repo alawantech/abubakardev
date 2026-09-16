@@ -123,7 +123,7 @@ export default function LoginScreen({ navigation }) {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerHint}>
-            Use the same email and password you use on school.zdrotech.com
+            Use the same email and password you use on school.zedrotech.com
           </Text>
         </View>
       </ScrollView>

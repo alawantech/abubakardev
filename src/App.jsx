@@ -122,7 +122,7 @@ function App() {
 
   const SchoolRoute = ({ children }) => {
     if (!isSchool && !window.location.hostname.includes('localhost')) {
-      window.location.href = `https://school.zdrotech.com${window.location.pathname}`;
+      window.location.href = `https://school.zedrotech.com${window.location.pathname}`;
       return null;
     }
     return children;

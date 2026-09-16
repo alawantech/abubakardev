@@ -202,7 +202,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.menuText}>WhatsApp Support</Text>
           <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zdrotech.com')}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zedrotech.com')}>
           <Ionicons name="globe-outline" size={22} color={COLORS.text} />
           <Text style={styles.menuText}>Visit Website</Text>
           <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
@@ -211,12 +211,12 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Legal */}
       <View style={styles.card}>
-        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zdrotech.com/privacy')}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zedrotech.com/privacy')}>
           <Ionicons name="shield-checkmark-outline" size={22} color={COLORS.text} />
           <Text style={styles.menuText}>Privacy Policy</Text>
           <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zdrotech.com/terms')}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('https://school.zedrotech.com/terms')}>
           <Ionicons name="document-text-outline" size={22} color={COLORS.text} />
           <Text style={styles.menuText}>Terms & Conditions</Text>
           <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
