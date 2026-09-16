@@ -8,104 +8,114 @@ const TermsAndConditions = () => {
       <div className="legal-container">
         <Link to="/" className="legal-back">← Back to Home</Link>
         <h1>Terms and Conditions</h1>
-        <p className="legal-updated">Last updated: June 9, 2026</p>
+        <p className="legal-updated">Last updated: September 15, 2026</p>
 
         <div className="legal-content">
           <section>
             <h2>1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the services provided by ZedroTech ("we," "us," or "our"), including our website, software development services, AI automation solutions, and related products, you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.
+              By accessing or using the ZedroTech Academy website at <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a>, the ZedroTech Academy mobile application, or any related services (collectively, the "Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our Platform.
             </p>
           </section>
 
           <section>
             <h2>2. Services Description</h2>
-            <p>ZedroTech provides the following services:</p>
+            <p>ZedroTech Academy provides online technology education services, including:</p>
             <ul>
-              <li><strong>Web Development:</strong> Custom websites, web applications, e-commerce platforms, and SaaS solutions</li>
-              <li><strong>AI Automation:</strong> AI voice agents, chatbots, sales closers, and receptionists</li>
-              <li><strong>Mobile App Development:</strong> Native and cross-platform mobile applications for iOS and Android</li>
-              <li><strong>Custom Software:</strong> Bespoke software solutions tailored to specific business needs</li>
-              <li><strong>VTU Platforms:</strong> Data, airtime, electricity, and bill payment vending systems</li>
-              <li><strong>Marketing Technology:</strong> Email automation, CRM integration, and analytics solutions</li>
+              <li>Video-based courses on web development, mobile app development, UI/UX design, data science, and digital marketing</li>
+              <li>Project-based learning with structured curriculum and lesson progress tracking</li>
+              <li>Student dashboard for tracking enrollment, progress, and subscription status</li>
+              <li>Payment processing for course enrollment and subscription plans</li>
+            </ul>
+            <p>Services are available through our website and the ZedroTech Academy mobile app on Android.</p>
+          </section>
+
+          <section>
+            <h2>3. Account Registration</h2>
+            <ul>
+              <li>You must register an account to access course content. Registration is available through the website at school.zdrotech.com.</li>
+              <li>You may log in to the mobile app using the same credentials you created on the website.</li>
+              <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
+              <li>You must provide accurate and complete information during registration.</li>
+              <li>You must be at least 13 years old to create an account.</li>
+              <li>One person may not maintain more than one account.</li>
             </ul>
           </section>
 
           <section>
-            <h2>3. Payment Terms</h2>
+            <h2>4. Course Enrollment and Subscriptions</h2>
             <ul>
-              <li>All prices are quoted as one-time development fees unless otherwise specified</li>
-              <li><strong>Payment schedule:</strong> 50% upfront upon project commencement, 50% upon completion and delivery</li>
-              <li>International clients may pay in USD via invoice</li>
-              <li>Third-party services (hosting, domains, APIs, subscription tools) are billed separately and paid directly by the client</li>
-              <li>Late payments may result in project suspension until payment is received</li>
+              <li><strong>Enrollment Plans:</strong> Courses are available under monthly, yearly, or one-time payment plans as displayed on the course page.</li>
+              <li><strong>Payment:</strong> Enrollment is completed via bank transfer. You must upload a payment receipt through the Platform for verification.</li>
+              <li><strong>Verification:</strong> Payments are manually verified by our team. Enrollment access is granted after payment confirmation.</li>
+              <li><strong>Access Duration:</strong> Your access to course content is limited to the duration of your selected plan (monthly, yearly, or lifetime for one-time payments).</li>
+              <li><strong>Renewal:</strong> Monthly and yearly subscriptions must be renewed to maintain access. Expiry warnings are shown in the app.</li>
             </ul>
           </section>
 
           <section>
-            <h2>4. Project Scope and Changes</h2>
+            <h2>5. Payments and Refunds</h2>
             <ul>
-              <li>Project scope is defined in the initial agreement or proposal</li>
-              <li>Any changes to the project scope may result in additional charges</li>
-              <li>Change requests must be submitted in writing and approved by both parties</li>
-              <li>Timelines are estimates and may be adjusted based on scope changes</li>
+              <li>All prices are displayed in Nigerian Naira (₦) and are inclusive of applicable fees.</li>
+              <li>Payments are processed via bank transfer. We do not currently process payments through Google Play Billing.</li>
+              <li><strong>Refund Policy:</strong> Due to the digital nature of our courses, refunds are generally not provided once course access has been granted. In exceptional circumstances, refund requests may be considered within 7 days of payment, provided that course content has not been substantially accessed.</li>
+              <li>Chargebacks or payment disputes may result in immediate suspension of your account and access.</li>
             </ul>
           </section>
 
           <section>
-            <h2>5. Intellectual Property</h2>
+            <h2>6. User Conduct</h2>
+            <p>You agree not to:</p>
             <ul>
-              <li>Upon full payment, the client receives ownership of the source code and deliverables</li>
-              <li>ZedroTech retains the right to use general knowledge, skills, and non-proprietary techniques</li>
-              <li>Third-party libraries and frameworks remain subject to their respective licenses</li>
-              <li>The client is responsible for ensuring they have rights to any content they provide</li>
+              <li>Share your account credentials with others or allow unauthorized access to your account</li>
+              <li>Download, record, redistribute, or pirate course content</li>
+              <li>Use the Platform for any illegal or unauthorized purpose</li>
+              <li>Attempt to gain unauthorized access to other accounts or systems</li>
+              <li>Use automated tools to access or scrape course content</li>
+              <li>Impersonate another person or misrepresent your identity</li>
             </ul>
           </section>
 
           <section>
-            <h2>6. Third-Party Services</h2>
+            <h2>7. Intellectual Property</h2>
+            <ul>
+              <li>All course content, including videos, materials, and curriculum, is owned by ZedroTech Academy and is protected by copyright laws.</li>
+              <li>Your enrollment grants you a limited, non-transferable license to access course content for personal, non-commercial learning purposes.</li>
+              <li>You may not copy, reproduce, distribute, or create derivative works from course content without express written permission.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>8. Mobile Application</h2>
+            <ul>
+              <li>The ZedroTech Academy mobile app is provided as a convenience for accessing your courses on Android devices.</li>
+              <li>Course registration must be completed on the website at school.zdrotech.com.</li>
+              <li>The mobile app may request access to your photo gallery solely for uploading payment receipts.</li>
+              <li>You may delete your account and all associated data from the mobile app via Profile &gt; Delete Account.</li>
+              <li>We reserve the right to modify or discontinue the mobile app at any time with reasonable notice.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>9. Limitation of Liability</h2>
             <p>
-              Our projects may integrate with third-party services (payment gateways, hosting providers, APIs, VTU providers, etc.). These services are governed by their own terms and conditions. ZedroTech is not responsible for the availability, accuracy, or policies of third-party services. The client assumes all costs associated with third-party subscriptions and services.
-            </p>
-          </section>
-
-          <section>
-            <h2>7. Support and Maintenance</h2>
-            <ul>
-              <li>Free bug-fix support is provided for 30 days after project delivery (unless otherwise agreed)</li>
-              <li>Extended support and maintenance packages are available at additional cost</li>
-              <li>Support covers bugs and issues related to the delivered work, not new feature requests</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2>8. Limitation of Liability</h2>
-            <p>
-              ZedroTech shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from the use of our services. Our total liability shall not exceed the amount paid by the client for the specific service giving rise to the claim. We are not responsible for business losses, data loss, or interruptions caused by third-party services or force majeure events.
-            </p>
-          </section>
-
-          <section>
-            <h2>9. Confidentiality</h2>
-            <p>
-              Both parties agree to keep confidential any proprietary information shared during the course of the project. This includes business strategies, technical details, source code, and client data. Confidentiality obligations survive the termination of this agreement.
+              ZedroTech Academy shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Platform. Our total liability shall not exceed the amount paid by you for the specific course giving rise to the claim. We are not responsible for interruptions caused by third-party services, network issues, or force majeure events.
             </p>
           </section>
 
           <section>
             <h2>10. Termination</h2>
             <ul>
-              <li>Either party may terminate the agreement with 14 days written notice</li>
-              <li>If the client terminates, payment is due for work completed up to the termination date</li>
-              <li>If ZedroTech terminates due to non-payment, the client forfeits any upfront payment</li>
-              <li>Upon termination, all completed work and materials are delivered to the client</li>
+              <li>We reserve the right to suspend or terminate your account if you violate these Terms and Conditions.</li>
+              <li>You may delete your account at any time from the mobile app or by contacting us.</li>
+              <li>Upon termination, your access to course content will be revoked. We may retain your data as described in our Privacy Policy.</li>
             </ul>
           </section>
 
           <section>
-            <h2>11. Warranty</h2>
+            <h2>11. Changes to Terms</h2>
             <p>
-              ZedroTech warrants that services will be performed in a professional and workmanlike manner. We do not warrant that our services will be error-free or uninterrupted. The 30-day bug-fix support period serves as our limited warranty for delivered work.
+              ZedroTech Academy reserves the right to modify these Terms and Conditions at any time. Changes will be effective immediately upon posting on this page. Continued use of the Platform after changes constitutes acceptance of the updated terms.
             </p>
           </section>
 
@@ -117,21 +127,14 @@ const TermsAndConditions = () => {
           </section>
 
           <section>
-            <h2>13. Changes to Terms</h2>
-            <p>
-              ZedroTech reserves the right to modify these Terms and Conditions at any time. Changes will be effective immediately upon posting on our website. Continued use of our services constitutes acceptance of the updated terms.
-            </p>
-          </section>
-
-          <section>
-            <h2>14. Contact Information</h2>
+            <h2>13. Contact Information</h2>
             <p>
               For questions about these Terms and Conditions, please contact us:
             </p>
             <ul>
               <li><strong>Email:</strong> <a href="mailto:info@zedrotech.com">info@zedrotech.com</a></li>
               <li><strong>WhatsApp:</strong> <a href="https://wa.me/2348156853636" target="_blank" rel="noopener noreferrer">+234 815 685 3636</a></li>
-              <li><strong>Website:</strong> <a href="https://zedrotech.com" target="_blank" rel="noopener noreferrer">zedrotech.com</a></li>
+              <li><strong>Website:</strong> <a href="https://school.zdrotech.com" target="_blank" rel="noopener noreferrer">school.zdrotech.com</a></li>
             </ul>
           </section>
         </div>

@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "ZedroTech Academy",
+    "slug": "zedrotech",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "zedrotech",
+    "privacyPolicy": "https://school.zdrotech.com/privacy",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zedrotech.app",
+      "icon": "./assets/icon.png"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a",
+        "monochromeImage": "./assets/adaptive-icon.png"
+      },
+      "package": "com.zedrotech.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-image-picker",
+      "expo-document-picker",
+      "expo-video",
+      "expo-screen-orientation",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow ZedroTech Academy to access your photos to upload payment receipts.",
+          "savePhotosPermission": "Allow ZedroTech Academy to save receipts to your gallery."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "efa7e31a-fc34-446e-ab83-8c07050696fa"
+      }
+    },
+    "owner": "zedro-tech-ltd"
+  }
+}
