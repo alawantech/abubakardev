@@ -30,8 +30,6 @@ export default function RenewScreen({ route, navigation }) {
   }
 
   async function pickReceipt() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) { Alert.alert('Permission Required', 'Allow photo access to upload receipt'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (!result.canceled) setReceipt(result.assets[0]);
   }

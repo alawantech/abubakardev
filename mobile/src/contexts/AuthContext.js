@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext({});
@@ -13,14 +13,14 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const unsubUserRef = { current: null };
 
   useEffect(() => {
-    let unsubUser = null;
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
         const userRef = doc(db, 'users', user.uid);
-        unsubUser = onSnapshot(
+        unsubUserRef.current = onSnapshot(
           userRef,
           (snap) => {
             if (snap.exists()) {
@@ -29,13 +29,14 @@ export function AuthProvider({ children }) {
             setLoading(false);
           },
           () => {
-            getDoc(userRef).then((s) => {
-              if (s.exists()) setUserData({ id: s.id, ...s.data() });
-              setLoading(false);
-            }).catch(() => setLoading(false));
+            setLoading(false);
           }
         );
       } else {
+        if (unsubUserRef.current) {
+          unsubUserRef.current();
+          unsubUserRef.current = null;
+        }
         setUserData(null);
         setLoading(false);
       }
@@ -46,11 +47,15 @@ export function AuthProvider({ children }) {
     return () => {
       clearTimeout(timeout);
       unsubAuth();
-      if (unsubUser) unsubUser();
+      if (unsubUserRef.current) unsubUserRef.current();
     };
   }, []);
 
   async function signOut() {
+    if (unsubUserRef.current) {
+      unsubUserRef.current();
+      unsubUserRef.current = null;
+    }
     await firebaseSignOut(auth);
     setCurrentUser(null);
     setUserData(null);
