@@ -5,6 +5,72 @@ import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
 
+const RENEW_PRESETS = [
+  { id: '1', months: 1, label: '1 month' },
+  { id: '2', months: 2, label: '2 months' },
+  { id: '3', months: 3, label: '3 months' },
+  { id: '6', months: 6, label: '6 months' },
+  { id: '12', months: 12, label: '1 year' },
+];
+
+function addMonthsSafe(date, months) {
+  const next = new Date(date.getTime());
+  const day = next.getDate();
+  next.setMonth(next.getMonth() + months);
+  if (next.getDate() < day) next.setDate(0);
+  return next;
+}
+
+function getRenewalBase(enrollment) {
+  const now = new Date();
+  const expiry = enrollment?.dueDate instanceof Date ? enrollment.dueDate : null;
+  if (expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() > now.getTime()) {
+    return expiry;
+  }
+  return now;
+}
+
+function resolveRenewal(option, customMonths, planType) {
+  if (option === 'current') {
+    if (planType === 'yearly') return { months: 12, label: 'Current package (1 year)' };
+    if (planType === 'onetime') return { months: 120, label: 'Current package (lifetime)' };
+    return { months: 1, label: 'Current package (1 month)' };
+  }
+  if (option === 'custom') {
+    const months = Math.max(1, Math.min(60, Number(customMonths) || 1));
+    return { months, label: `${months} month${months === 1 ? '' : 's'}` };
+  }
+  const months = Number(option) || 1;
+  return {
+    months,
+    label: months === 12 ? '1 year' : `${months} month${months === 1 ? '' : 's'}`,
+  };
+}
+
+function getUnitPrices(enrollment, course) {
+  const planAmount = Number(enrollment?.planAmount) || 0;
+  const monthly = Number(course?.pricing?.monthly)
+    || (enrollment?.planType === 'monthly' ? planAmount : 0)
+    || 6500;
+  const yearly = Number(course?.pricing?.yearly)
+    || (enrollment?.planType === 'yearly' ? planAmount : 0)
+    || monthly * 12;
+  const onetime = Number(course?.price)
+    || (enrollment?.planType === 'onetime' ? planAmount : 0)
+    || 0;
+  return { monthly, yearly, onetime };
+}
+
+function getRenewalAmount(option, months, planType, prices) {
+  if (option === 'current') {
+    if (planType === 'yearly') return prices.yearly;
+    if (planType === 'onetime') return prices.onetime;
+    return prices.monthly;
+  }
+  if (months % 12 === 0 && prices.yearly) return prices.yearly * (months / 12);
+  return prices.monthly * months;
+}
+
 const StudentManagement = () => {
   const [enrollments, setEnrollments] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -13,10 +79,12 @@ const StudentManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlanType, setFilterPlanType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [extendModal, setExtendModal] = useState({
+  const [renewModal, setRenewModal] = useState({
     isOpen: false,
     enrollment: null,
-    months: 1
+    option: 'current',
+    customMonths: 1,
+    saving: false,
   });
   const [paymentHistoryModal, setPaymentHistoryModal] = useState({
     isOpen: false,
@@ -394,56 +462,110 @@ const StudentManagement = () => {
     }
   };
 
-  const handleExtendSubscription = async () => {
-    if (!extendModal.enrollment || extendModal.months < 1) return;
+  const openRenewModal = (enrollment) => {
+    setRenewModal({
+      isOpen: true,
+      enrollment,
+      option: 'current',
+      customMonths: 1,
+      saving: false,
+    });
+  };
+
+  const closeRenewModal = () => {
+    if (renewModal.saving) return;
+    setRenewModal({
+      isOpen: false,
+      enrollment: null,
+      option: 'current',
+      customMonths: 1,
+      saving: false,
+    });
+  };
+
+  const handleRenewPlan = async () => {
+    const enrollment = renewModal.enrollment;
+    if (!enrollment || renewModal.saving) return;
+
+    const planType = enrollment.planType || 'monthly';
+    const renewal = resolveRenewal(renewModal.option, renewModal.customMonths, planType);
+    const baseDate = getRenewalBase(enrollment);
+    const newExpiryDate = addMonthsSafe(baseDate, renewal.months);
+    const prices = getUnitPrices(enrollment, selectedCourseData);
+    const amount = getRenewalAmount(renewModal.option, renewal.months, planType, prices);
+    if (!window.confirm(
+      `Renew ${enrollment.user.fullName} for ${renewal.label}?\nNew expiry: ${formatDate(newExpiryDate)}`
+    )) return;
 
     try {
-      const enrollment = extendModal.enrollment;
-      const currentExpiryDate = enrollment.expiryDate?.toDate() || new Date();
-      const newExpiryDate = new Date(currentExpiryDate);
-      newExpiryDate.setMonth(newExpiryDate.getMonth() + extendModal.months);
+      setRenewModal(prev => ({ ...prev, saving: true }));
 
-      // Update the enrollment plan with new expiry date
       await updateDoc(doc(db, 'enrollmentPlans', enrollment.id), {
         expiryDate: newExpiryDate,
-        lastExtendedDate: new Date(),
-        extendedBy: 'admin',
-        extensionMonths: extendModal.months,
-        blocked: false // Unblock the user when extending
+        blocked: false,
+        paymentStatus: 'paid',
+        subscriptionStatus: 'active',
+        lastRenewedAt: new Date(),
+        lastRenewedBy: 'admin',
+        lastRenewalLabel: renewal.label,
+        lastRenewalMonths: renewal.months,
       });
 
-      // Create a payment record for the extension
+      if (enrollment.userId) {
+        try {
+          await updateDoc(doc(db, 'users', enrollment.userId), { blocked: false });
+        } catch (userErr) {
+          console.warn('Could not unblock user document:', userErr.message);
+        }
+      }
+
       await addDoc(collection(db, 'payments'), {
         userId: enrollment.userId,
-        userEmail: enrollment.user.email,
+        userEmail: enrollment.user?.email || '',
+        customerEmail: enrollment.user?.email || '',
         courseId: enrollment.courseId,
-        amount: extendModal.months * 6500, // Assuming ₦6,500 per month
-        status: 'approved', // Admin extensions are auto-approved
+        courseName: selectedCourseData?.title || '',
+        amount,
+        status: 'approved',
         submittedAt: new Date(),
-        type: 'extension',
-        isRenewal: false,
+        approvedAt: new Date(),
+        type: 'renewal',
+        isRenewal: true,
+        planType,
+        renewalOption: renewModal.option,
+        renewalLabel: renewal.label,
+        renewalMonths: renewal.months,
         extendedBy: 'admin',
-        extensionMonths: extendModal.months
+        previousExpiry: enrollment.dueDate || null,
+        newExpiry: newExpiryDate,
       });
 
-      // Update local state
-      setEnrollments(prev => prev.map(enrollmentItem =>
-        enrollmentItem.id === enrollment.id
+      setEnrollments(prev => prev.map(item =>
+        item.id === enrollment.id
           ? {
-            ...enrollmentItem,
+            ...item,
             expiryDate: newExpiryDate,
             dueDate: newExpiryDate,
             nextPaymentDate: newExpiryDate,
-            blocked: false // Update blocked status in local state
+            blocked: false,
+            paymentStatus: 'paid',
+            subscriptionStatus: 'active',
           }
-          : enrollmentItem
+          : item
       ));
 
-      alert(`Subscription extended by ${extendModal.months} month(s) successfully!`);
-      setExtendModal({ isOpen: false, enrollment: null, months: 1 });
+      alert(`${enrollment.user.fullName} renewed for ${renewal.label}. Access is active until ${formatDate(newExpiryDate)}.`);
+      setRenewModal({
+        isOpen: false,
+        enrollment: null,
+        option: 'current',
+        customMonths: 1,
+        saving: false,
+      });
     } catch (error) {
-      console.error('Error extending subscription:', error);
-      alert('Failed to extend subscription. Please try again.');
+      console.error('Error renewing plan:', error);
+      alert('Failed to renew plan. Please try again.');
+      setRenewModal(prev => ({ ...prev, saving: false }));
     }
   };
 
@@ -513,21 +635,7 @@ const StudentManagement = () => {
     });
   };
 
-  const openExtendModal = (enrollment) => {
-    setExtendModal({
-      isOpen: true,
-      enrollment: enrollment,
-      months: 1
-    });
-  };
 
-  const closeExtendModal = () => {
-    setExtendModal({
-      isOpen: false,
-      enrollment: null,
-      months: 1
-    });
-  };
 
   if (loading) {
     return (
@@ -752,6 +860,7 @@ const StudentManagement = () => {
                             </td>
                             <td>
                               <div className="action-buttons">
+                                <button className="renew-btn" onClick={() => openRenewModal(enrollment)} title="Renew plan">Renew</button>
                                 <button onClick={() => openPaymentHistory(enrollment)} title="History">🕒</button>
                                 <button onClick={() => openChangePlanModal(enrollment)} title="Change Plan">📁</button>
                                 <button
@@ -813,6 +922,7 @@ const StudentManagement = () => {
                           </div>
                         </div>
                         <div className="card-actions">
+                          <button className="renew-btn" onClick={() => openRenewModal(enrollment)}>Renew</button>
                           <button onClick={() => openPaymentHistory(enrollment)}>History</button>
                           <button onClick={() => openChangePlanModal(enrollment)}>Plan</button>
                           <button onClick={() => setPasswordResetModal({ isOpen: true, enrollment, newPassword: '' })}>🔑 Password</button>
@@ -856,61 +966,105 @@ const StudentManagement = () => {
         courseName={paymentHistoryModal.courseName}
       />
 
-      {/* Extend Subscription Modal */}
-      {extendModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Extend Subscription for {extendModal.enrollment?.user.fullName}
-            </h3>
+      {/* Renew Plan Modal */}
+      {renewModal.isOpen && renewModal.enrollment && (() => {
+        const enrollment = renewModal.enrollment;
+        const planType = enrollment.planType || 'monthly';
+        const renewal = resolveRenewal(renewModal.option, renewModal.customMonths, planType);
+        const baseDate = getRenewalBase(enrollment);
+        const newExpiry = addMonthsSafe(baseDate, renewal.months);
+        const prices = getUnitPrices(enrollment, selectedCourseData);
+        const amount = getRenewalAmount(renewModal.option, renewal.months, planType, prices);
+        const expired = !enrollment.dueDate || enrollment.dueDate.getTime() <= Date.now();
+        const currentLabel = planType === 'yearly'
+          ? 'Yearly — another 1 year'
+          : planType === 'onetime'
+            ? 'One-time — another 10 years'
+            : 'Monthly — another 1 month';
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of months to extend:
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="12"
-                value={extendModal.months}
-                onChange={(e) => setExtendModal(prev => ({ ...prev, months: parseInt(e.target.value) || 1 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
+        return (
+          <div className="renew-overlay" onClick={closeRenewModal}>
+            <div className="renew-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="renew-modal-header">
+                <div>
+                  <h3>Renew plan</h3>
+                  <p>{enrollment.user.fullName}</p>
+                </div>
+                <button type="button" className="renew-close" onClick={closeRenewModal} aria-label="Close">×</button>
+              </div>
 
-            <div className="mb-4 p-3 bg-gray-50 rounded-md">
-              <p className="text-sm text-gray-600">
-                <strong>Current expiry:</strong> {extendModal.enrollment?.dueDate ? formatDate(extendModal.enrollment.dueDate) : 'N/A'}
+              <div className="renew-summary">
+                <span>Current plan: <strong>{planType === 'onetime' ? 'One-time' : planType}</strong></span>
+                <span>Expires: <strong>{enrollment.dueDate ? formatDate(enrollment.dueDate) : 'N/A'}</strong></span>
+              </div>
+              <p className="renew-note">
+                {expired
+                  ? 'This plan is already expired, so the new time starts today.'
+                  : 'Time left is kept. The new period is added on top of the current expiry.'}
               </p>
-              <p className="text-sm text-gray-600">
-                <strong>New expiry:</strong> {extendModal.enrollment?.dueDate ? (() => {
-                  const previewDate = new Date(extendModal.enrollment.dueDate);
-                  previewDate.setMonth(previewDate.getMonth() + extendModal.months);
-                  return formatDate(previewDate);
-                })() : 'N/A'}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Amount:</strong> ₦{(extendModal.months * 6500).toLocaleString()}
-              </p>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={closeExtendModal}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExtendSubscription}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                Extend Subscription
-              </button>
+              <div className="renew-options">
+                <button
+                  type="button"
+                  className={`renew-option ${renewModal.option === 'current' ? 'active' : ''}`}
+                  onClick={() => setRenewModal(prev => ({ ...prev, option: 'current' }))}
+                >
+                  <strong>Current package</strong>
+                  <span>{currentLabel}</span>
+                </button>
+                {RENEW_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`renew-option ${renewModal.option === preset.id ? 'active' : ''}`}
+                    onClick={() => setRenewModal(prev => ({ ...prev, option: preset.id }))}
+                  >
+                    <strong>{preset.label}</strong>
+                    <span>Add {preset.label}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={`renew-option ${renewModal.option === 'custom' ? 'active' : ''}`}
+                  onClick={() => setRenewModal(prev => ({ ...prev, option: 'custom' }))}
+                >
+                  <strong>Custom</strong>
+                  <span>Choose months</span>
+                </button>
+              </div>
+
+              {renewModal.option === 'custom' && (
+                <label className="renew-custom">
+                  Months to add
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={renewModal.customMonths}
+                    onChange={(e) => setRenewModal(prev => ({
+                      ...prev,
+                      customMonths: Math.max(1, Math.min(60, parseInt(e.target.value, 10) || 1)),
+                    }))}
+                  />
+                </label>
+              )}
+
+              <div className="renew-preview">
+                <p><span>Adding</span><strong>{renewal.label}</strong></p>
+                <p><span>New expiry</span><strong>{formatDate(newExpiry)}</strong></p>
+                <p><span>Recorded amount</span><strong>{amount ? `₦${amount.toLocaleString()}` : '₦0'}</strong></p>
+              </div>
+
+              <div className="renew-actions">
+                <button type="button" onClick={closeRenewModal} disabled={renewModal.saving}>Cancel</button>
+                <button type="button" className="confirm" onClick={handleRenewPlan} disabled={renewModal.saving}>
+                  {renewModal.saving ? 'Renewing...' : 'Confirm renewal'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Change Plan Modal */}
       {changePlanModal.isOpen && (
