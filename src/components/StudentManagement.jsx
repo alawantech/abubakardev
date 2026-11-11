@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { initializeApp, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence, sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth, firebaseConfig } from '../firebase';
 import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from '../utils/subscription';
 import PaymentHistoryModal from './PaymentHistoryModal';
@@ -451,9 +451,25 @@ const StudentManagement = () => {
     }
   };
 
+  const sendResetLink = async (enrollment) => {
+    const email = enrollment?.user?.email;
+    if (!email || email === 'Unknown') {
+      throw new Error('This student has no email on file.');
+    }
+    await sendPasswordResetEmail(auth, email, {
+      url: 'https://www.zedrotech.com/login',
+      handleCodeInApp: false,
+    });
+    return email;
+  };
+
   const handlePasswordReset = async () => {
     const { enrollment, newPassword } = passwordResetModal;
-    if (!enrollment || !newPassword) return;
+    if (!enrollment) return;
+    if (!newPassword || newPassword.length < 6) {
+      alert('Enter a password of at least 6 characters, or send a reset email instead.');
+      return;
+    }
 
     if (!window.confirm(`Reset password for ${enrollment.user.fullName}? Their current password will stop working immediately.`)) return;
 
@@ -468,12 +484,30 @@ const StudentManagement = () => {
         body: JSON.stringify({ userId: enrollment.userId, newPassword })
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.message);
+      if (!data.success) throw new Error(data.message || 'Reset service rejected the request');
       setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' });
-      alert(`Password for ${enrollment.user.fullName} has been updated successfully.`);
+      alert(`Password for ${enrollment.user.fullName} has been updated. Tell them the new password.`);
     } catch (error) {
-      console.error('Error resetting password:', error);
-      alert('Failed to reset password. ' + (error.message || 'Please try again.'));
+      console.error('Direct password reset failed:', error);
+      try {
+        const email = await sendResetLink(enrollment);
+        setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' });
+        alert(`The password you typed could not be saved because the reset service is down. A reset link was sent to ${email}. They open that email and choose a new password.`);
+      } catch (mailErr) {
+        alert('Failed to reset password. ' + (mailErr.message || error.message || 'Please try again.'));
+      }
+    }
+  };
+
+  const handleSendResetEmail = async () => {
+    const { enrollment } = passwordResetModal;
+    if (!enrollment) return;
+    try {
+      const email = await sendResetLink(enrollment);
+      setPasswordResetModal({ isOpen: false, enrollment: null, newPassword: '' });
+      alert(`Reset link sent to ${email}.`);
+    } catch (error) {
+      alert('Failed to send reset email. ' + (error.message || 'Please try again.'));
     }
   };
 
@@ -1450,7 +1484,8 @@ const StudentManagement = () => {
 
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-sm text-amber-800">
-                <strong>Warning:</strong> The user's current password will stop working immediately. They will need to use the new password you set to log in.
+                <strong>Send reset email</strong> always works. The student opens the link and chooses a new password.
+                Setting a password here only works when the Firebase reset service is available.
               </p>
             </div>
 
@@ -1480,11 +1515,17 @@ const StudentManagement = () => {
                 Cancel
               </button>
               <button
+                onClick={handleSendResetEmail}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+              >
+                Send reset email
+              </button>
+              <button
                 onClick={handlePasswordReset}
                 disabled={!passwordResetModal.newPassword || passwordResetModal.newPassword.length < 6}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors"
+                className="flex-1 bg-slate-800 hover:bg-slate-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors"
               >
-                Save New Password
+                Save password
               </button>
             </div>
           </div>
