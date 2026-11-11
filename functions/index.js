@@ -458,3 +458,181 @@ exports.adminResetUserPassword = functions.https.onRequest({ cors: true }, async
     return res.status(500).json({ success: false, message: error.message });
   }
 });
+
+function addMonths(date, months) {
+  const next = new Date(date.getTime());
+  const day = next.getDate();
+  next.setMonth(next.getMonth() + months);
+  if (next.getDate() < day) next.setDate(0);
+  return next;
+}
+
+function planDurationMonths(planType) {
+  if (planType === 'yearly') return 12;
+  if (planType === 'onetime') return 120;
+  return 1;
+}
+
+function planAmountFor(course, planType) {
+  const pricing = course.pricing || {};
+  if (planType === 'yearly') return Number(pricing.yearly) || Number(course.price) || 0;
+  if (planType === 'onetime') return Number(course.price) || Number(pricing.monthly) || 0;
+  return Number(pricing.monthly) || Number(course.price) || 0;
+}
+
+exports.adminCreateStudent = functions.https.onRequest({ cors: true }, async (req, res) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  });
+
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, message: 'Method not allowed' });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Unauthenticated' });
+  }
+
+  let callerUid;
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.split('Bearer ')[1]);
+    callerUid = decoded.uid;
+  } catch (e) {
+    return res.status(401).json({ success: false, message: 'Invalid token' });
+  }
+
+  const callerDoc = await admin.firestore().collection('users').doc(callerUid).get();
+  if (!callerDoc.exists || callerDoc.data().role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+
+  const { fullName, email, password, whatsappNumber, courseId, planType } = req.body || {};
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanName = String(fullName || '').trim();
+  const cleanPhone = String(whatsappNumber || '').trim();
+  const allowedPlans = ['monthly', 'yearly', 'onetime'];
+
+  if (!cleanName) return res.status(400).json({ success: false, message: 'Full name is required' });
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    return res.status(400).json({ success: false, message: 'A valid email is required' });
+  }
+  if (cleanPhone.replace(/\D/g, '').length < 10) {
+    return res.status(400).json({ success: false, message: 'Enter a valid WhatsApp number' });
+  }
+  if (!courseId) return res.status(400).json({ success: false, message: 'Select a course' });
+  if (!allowedPlans.includes(planType)) {
+    return res.status(400).json({ success: false, message: 'Select monthly, yearly, or one-time' });
+  }
+
+  const db = admin.firestore();
+  const courseDoc = await db.collection('courses').doc(courseId).get();
+  if (!courseDoc.exists) {
+    return res.status(404).json({ success: false, message: 'Course not found' });
+  }
+  const course = courseDoc.data();
+  const amount = planAmountFor(course, planType);
+  const now = new Date();
+  const expiryDate = addMonths(now, planDurationMonths(planType));
+
+  let userRecord;
+  let createdAccount = false;
+  try {
+    userRecord = await admin.auth().getUserByEmail(cleanEmail);
+  } catch (e) {
+    if (e.code !== 'auth/user-not-found') {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+    userRecord = await admin.auth().createUser({
+      email: cleanEmail,
+      password: String(password),
+      displayName: cleanName,
+    });
+    createdAccount = true;
+  }
+
+  const uid = userRecord.uid;
+  const planRef = db.collection('enrollmentPlans').doc(`${uid}_${courseId}`);
+  const existingPlan = await planRef.get();
+  if (existingPlan.exists) {
+    return res.status(409).json({
+      success: false,
+      message: 'This student is already enrolled in that course',
+    });
+  }
+
+  const userRef = db.collection('users').doc(uid);
+  const existingUser = await userRef.get();
+  const userPayload = {
+    fullName: cleanName,
+    email: cleanEmail,
+    whatsappNumber: cleanPhone,
+    uid,
+    blocked: false,
+  };
+  if (!existingUser.exists) {
+    userPayload.role = 'student';
+    userPayload.createdAt = now;
+    userPayload.createdBy = 'admin';
+  }
+  await userRef.set(userPayload, { merge: true });
+
+  await planRef.set({
+    userId: uid,
+    courseId,
+    planType,
+    planAmount: amount,
+    paymentStatus: 'paid',
+    blocked: false,
+    subscriptionStatus: 'active',
+    expiryDate,
+    createdAt: now,
+    createdBy: 'admin',
+  });
+
+  await db.collection('payments').add({
+    userId: uid,
+    userEmail: cleanEmail,
+    customerEmail: cleanEmail,
+    courseId,
+    courseName: course.title || 'Course',
+    amount,
+    status: 'approved',
+    submittedAt: now,
+    approvedAt: now,
+    type: 'enrollment',
+    isRenewal: false,
+    planType,
+    paymentMethod: 'admin',
+    createdBy: 'admin',
+    note: 'Enrolled by admin. No receipt required.',
+  });
+
+  await db.collection('enrollments').add({
+    customerEmail: cleanEmail,
+    courseId,
+    courseName: course.title || 'Course',
+    enrolledAt: now,
+    completedLessons: [],
+    planType,
+    planAmount: amount,
+    userId: uid,
+    createdBy: 'admin',
+  });
+
+  return res.status(200).json({
+    success: true,
+    userId: uid,
+    createdAccount,
+    amount,
+    expiryDate: expiryDate.toISOString(),
+    courseName: course.title || 'Course',
+  });
+});

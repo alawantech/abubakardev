@@ -63,4 +63,4 @@ try {
   functions = null;
 }
 
-export { app, analytics, auth, db, storage, functions };
+export { app, analytics, auth, db, storage, functions, firebaseConfig };

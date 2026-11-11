@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { db, auth, firebaseConfig } from '../firebase';
 import { checkEnrollmentExpiry, restrictEnrollment, getSubscriptionStatus } from '../utils/subscription';
 import PaymentHistoryModal from './PaymentHistoryModal';
 import './StudentManagement.css';
@@ -110,6 +112,17 @@ const StudentManagement = () => {
     enrollment: null,
     newPassword: ''
   });
+  const [createModal, setCreateModal] = useState({
+    isOpen: false,
+    saving: false,
+    fullName: '',
+    email: '',
+    whatsappNumber: '',
+    password: '',
+    courseId: '',
+    planType: 'monthly',
+    error: '',
+  });
 
   useEffect(() => {
     fetchCourses();
@@ -149,7 +162,9 @@ const StudentManagement = () => {
       const coursesSnapshot = await getDocs(collection(db, 'courses'));
       const coursesData = coursesSnapshot.docs.map(doc => ({
         id: doc.id,
-        title: doc.data().title
+        title: doc.data().title,
+        pricing: doc.data().pricing || null,
+        price: doc.data().price || 0,
       }));
       setCourses(coursesData);
       setLoading(false);
@@ -462,6 +477,155 @@ const StudentManagement = () => {
     }
   };
 
+  const openCreateModal = () => {
+    setCreateModal({
+      isOpen: true,
+      saving: false,
+      fullName: '',
+      email: '',
+      whatsappNumber: '',
+      password: '',
+      courseId: selectedCourse || '',
+      planType: 'monthly',
+      error: '',
+    });
+  };
+
+  const closeCreateModal = () => {
+    if (createModal.saving) return;
+    setCreateModal(prev => ({ ...prev, isOpen: false, error: '' }));
+  };
+
+  const handleCreateStudent = async () => {
+    const { fullName, email, whatsappNumber, password, courseId, planType } = createModal;
+    if (!fullName.trim() || !email.trim() || !whatsappNumber.trim() || !courseId || !planType) {
+      setCreateModal(prev => ({ ...prev, error: 'Fill in every field and select a course.' }));
+      return;
+    }
+    if (password.length < 6) {
+      setCreateModal(prev => ({ ...prev, error: 'Password must be at least 6 characters.' }));
+      return;
+    }
+
+    try {
+      setCreateModal(prev => ({ ...prev, saving: true, error: '' }));
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanName = fullName.trim();
+      const cleanPhone = whatsappNumber.trim();
+      const course = courses.find(c => c.id === courseId);
+      const prices = getUnitPrices({ planType, planAmount: 0 }, course);
+      const amount = planType === 'yearly' ? prices.yearly : planType === 'onetime' ? prices.onetime : prices.monthly;
+      const months = planType === 'yearly' ? 12 : planType === 'onetime' ? 120 : 1;
+      const now = new Date();
+      const expiryDate = addMonthsSafe(now, months);
+
+      let uid = null;
+      let createdAccount = false;
+      const existingUsers = await getDocs(query(collection(db, 'users'), where('email', '==', cleanEmail)));
+      if (!existingUsers.empty) {
+        uid = existingUsers.docs[0].id;
+      } else {
+        const secondaryApp = initializeApp(firebaseConfig, `create-student-${Date.now()}`);
+        const secondaryAuth = getAuth(secondaryApp);
+        try {
+          await setPersistence(secondaryAuth, inMemoryPersistence);
+          const credential = await createUserWithEmailAndPassword(secondaryAuth, cleanEmail, password);
+          uid = credential.user.uid;
+          createdAccount = true;
+          await signOut(secondaryAuth);
+        } catch (authErr) {
+          if (authErr.code === 'auth/email-already-in-use') {
+            throw new Error('This email already has a login. Ask them to sign in once, then enroll them again.');
+          }
+          throw authErr;
+        } finally {
+          await deleteApp(secondaryApp);
+        }
+      }
+
+      const existingPlan = await getDoc(doc(db, 'enrollmentPlans', `${uid}_${courseId}`));
+      if (existingPlan.exists()) {
+        throw new Error('This student is already enrolled in that course.');
+      }
+
+      const userPayload = {
+        fullName: cleanName,
+        email: cleanEmail,
+        whatsappNumber: cleanPhone,
+        uid,
+        blocked: false,
+      };
+      if (createdAccount || existingUsers.empty) {
+        userPayload.role = 'student';
+        userPayload.createdAt = now;
+        userPayload.createdBy = 'admin';
+      }
+      await setDoc(doc(db, 'users', uid), userPayload, { merge: true });
+
+      await setDoc(doc(db, 'enrollmentPlans', `${uid}_${courseId}`), {
+        userId: uid,
+        courseId,
+        planType,
+        planAmount: amount,
+        paymentStatus: 'paid',
+        blocked: false,
+        subscriptionStatus: 'active',
+        expiryDate,
+        createdAt: now,
+        createdBy: 'admin',
+      });
+
+      await addDoc(collection(db, 'payments'), {
+        userId: uid,
+        userEmail: cleanEmail,
+        customerEmail: cleanEmail,
+        courseId,
+        courseName: course?.title || 'Course',
+        amount,
+        status: 'approved',
+        submittedAt: now,
+        approvedAt: now,
+        type: 'enrollment',
+        isRenewal: false,
+        planType,
+        paymentMethod: 'admin',
+        createdBy: 'admin',
+        note: 'Enrolled by admin. No receipt required.',
+      });
+
+      await addDoc(collection(db, 'enrollments'), {
+        customerEmail: cleanEmail,
+        courseId,
+        courseName: course?.title || 'Course',
+        enrolledAt: now,
+        completedLessons: [],
+        planType,
+        planAmount: amount,
+        userId: uid,
+        createdBy: 'admin',
+      });
+
+      setCreateModal(prev => ({ ...prev, isOpen: false, saving: false }));
+      if (courseId !== selectedCourse) setSelectedCourse(courseId);
+      else {
+        fetchEnrollments(courseId);
+        fetchPendingPayments(courseId);
+      }
+      alert(
+        createdAccount
+          ? `${cleanName} can now log in with ${cleanEmail}. Access is active. Share the password you set.`
+          : `${cleanEmail} already had an account. They are now enrolled. Their password was not changed.`
+      );
+    } catch (error) {
+      console.error('Error creating student:', error);
+      setCreateModal(prev => ({
+        ...prev,
+        saving: false,
+        error: error.message || 'Failed to create student.',
+      }));
+    }
+  };
+
   const openRenewModal = (enrollment) => {
     setRenewModal({
       isOpen: true,
@@ -650,9 +814,12 @@ const StudentManagement = () => {
 
   return (
     <div className="student-management">
-      <div className="header">
-        <h2>Student Management</h2>
-        <p>View and manage enrolled students</p>
+      <div className="header student-header">
+        <div>
+          <h2>Student Management</h2>
+          <p>View and manage enrolled students</p>
+        </div>
+        <button type="button" className="add-student-btn" onClick={openCreateModal}>Add student</button>
       </div>
 
       <div className="filters">
@@ -965,6 +1132,114 @@ const StudentManagement = () => {
         courseId={paymentHistoryModal.courseId}
         courseName={paymentHistoryModal.courseName}
       />
+
+      {createModal.isOpen && (() => {
+        const course = courses.find(c => c.id === createModal.courseId);
+        const prices = getUnitPrices({ planType: createModal.planType, planAmount: 0 }, course);
+        const months = createModal.planType === 'yearly' ? 12 : createModal.planType === 'onetime' ? 120 : 1;
+        const expiry = addMonthsSafe(new Date(), months);
+        const amount = createModal.planType === 'yearly'
+          ? prices.yearly
+          : createModal.planType === 'onetime'
+            ? prices.onetime
+            : prices.monthly;
+        return (
+          <div className="renew-overlay" onClick={closeCreateModal}>
+            <div className="renew-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="renew-modal-header">
+                <div>
+                  <h3>Add student</h3>
+                  <p>No payment or receipt needed. Access starts immediately.</p>
+                </div>
+                <button type="button" className="renew-close" onClick={closeCreateModal} aria-label="Close">×</button>
+              </div>
+
+              {createModal.error && <p className="create-error">{createModal.error}</p>}
+
+              <label className="renew-custom">
+                Course
+                <select
+                  value={createModal.courseId}
+                  onChange={(e) => setCreateModal(prev => ({ ...prev, courseId: e.target.value }))}
+                >
+                  <option value="">Select a course</option>
+                  {courses.map(item => (
+                    <option key={item.id} value={item.id}>{item.title}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="renew-custom">
+                Full name
+                <input
+                  type="text"
+                  value={createModal.fullName}
+                  onChange={(e) => setCreateModal(prev => ({ ...prev, fullName: e.target.value }))}
+                  placeholder="Student name"
+                />
+              </label>
+              <label className="renew-custom">
+                Email
+                <input
+                  type="email"
+                  value={createModal.email}
+                  onChange={(e) => setCreateModal(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="student@email.com"
+                />
+              </label>
+              <label className="renew-custom">
+                WhatsApp number
+                <input
+                  type="tel"
+                  value={createModal.whatsappNumber}
+                  onChange={(e) => setCreateModal(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                  placeholder="+234..."
+                />
+              </label>
+              <label className="renew-custom">
+                Password
+                <input
+                  type="text"
+                  value={createModal.password}
+                  onChange={(e) => setCreateModal(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="At least 6 characters"
+                />
+              </label>
+
+              <div className="renew-options">
+                {[
+                  { id: 'monthly', label: 'Monthly', hint: '1 month access' },
+                  { id: 'yearly', label: 'Yearly', hint: '1 year access' },
+                  { id: 'onetime', label: 'One-time', hint: 'Lifetime access' },
+                ].map(plan => (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    className={`renew-option ${createModal.planType === plan.id ? 'active' : ''}`}
+                    onClick={() => setCreateModal(prev => ({ ...prev, planType: plan.id }))}
+                  >
+                    <strong>{plan.label}</strong>
+                    <span>{plan.hint}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="renew-preview">
+                <p><span>Access until</span><strong>{formatDate(expiry)}</strong></p>
+                <p><span>Recorded amount</span><strong>{course ? `₦${Number(amount || 0).toLocaleString()}` : 'Select a course'}</strong></p>
+                <p><span>Payment history</span><strong>Approved enrollment</strong></p>
+              </div>
+
+              <div className="renew-actions">
+                <button type="button" onClick={closeCreateModal} disabled={createModal.saving}>Cancel</button>
+                <button type="button" className="confirm" onClick={handleCreateStudent} disabled={createModal.saving}>
+                  {createModal.saving ? 'Creating...' : 'Create student'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Renew Plan Modal */}
       {renewModal.isOpen && renewModal.enrollment && (() => {
